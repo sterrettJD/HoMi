@@ -31,27 +31,41 @@ def get_protein_name_from_fasta_description(description):
     return protein
 
 
-def sample_from_genome(genome, nreads):
+def sample_from_genome(genome, nreads, microbial):
     # with replacement
     reads = random.choices(genome, k=nreads)
     seqs = [read.seq for read in reads]
 
-    proteins = [get_protein_name_from_fasta_description(read.description) 
-                for read in reads]
+    if microbial == True:
+        proteins = [get_protein_name_from_fasta_description(read.description) 
+                    for read in reads]
+    else:
+        proteins = [read.description for read in reads]
     return dict(zip(proteins, seqs))
 
 
+def sample_reads_from_seqs(seqs, read_length):
+    for protein, seq in seqs.items():
+        start = random.randint(0,len(seq)-read_length)
+        new_seq = seq[start:start+read_length]
+        seqs[protein] = new_seq
+
+    return seqs
+
 def get_sampled_reads_from_all_genomes(genomes_read_num_dict, genomes_paths):
     all_reads = [None]*len(genomes_paths)
-    for genome_name, i in enumerate(genomes_read_num_dict):
+    for i, genome_name in enumerate(genomes_read_num_dict.keys()):
         genome_path = genomes_paths[i]
 
-        if genome_name.contains("human"):
+        if "human" in genome_name:
             genome = read_human_pangenome(genome_path)
+            sampled_seqs = sample_from_genome(genome, genomes_read_num_dict[genome_name], microbial=False)
         else:
             genome = read_microbial_genome(genome_path)
+            sampled_seqs = sample_from_genome(genome, genomes_read_num_dict[genome_name], microbial=True)
         
-        sampled_reads = sample_from_genome(genome, genomes_read_num_dict[genome_name])
+        
+        sampled_reads = sample_reads_from_seqs(sampled_seqs, 150)
         all_reads[i] = sampled_reads
     
     return all_reads
@@ -83,12 +97,14 @@ def main():
     # sample some reads with replacement
     random.seed(42)
     genomes_read_num_dict = {
-        "e_coli": 50, 
-        "c_beijerinckii": 50, 
-        "f_prausnitzii": 50, 
-        "human_pangenome": 150
+        "e_coli": 5, 
+        "c_beijerinckii": 5, 
+        "f_prausnitzii": 5, 
+        "human_pangenome": 15
     }
+
     sampled_reads = get_sampled_reads_from_all_genomes(genomes_read_num_dict, genomes_paths)
+    SeqRecord(sampled_reads)
 
 
     

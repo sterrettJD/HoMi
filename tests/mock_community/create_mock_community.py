@@ -2,6 +2,9 @@ import subprocess
 import os
 import random
 from Bio import SeqIO
+from Bio.SeqRecord import SeqRecord
+from Bio.Seq import Seq
+from itertools import chain
 
 def download_genomes(fpath=os.path.join("tests", "mock_community" ,"data")):
     print(os.getcwd())
@@ -104,7 +107,14 @@ def main():
     }
 
     sampled_reads = get_sampled_reads_from_all_genomes(genomes_read_num_dict, genomes_paths)
-    SeqRecord(sampled_reads)
+    sampled_reads_bio = [[SeqRecord(Seq(seq), seq_id, '', '') 
+                          for seq_id, seq in genome_sampled_reads.items()] 
+                         for genome_sampled_reads in sampled_reads]
+    sampled_reads_flattened = list(chain.from_iterable(sampled_reads_bio))
+
+    print(sampled_reads_flattened)
+
+    SeqIO.write(sampled_reads_flattened, "mock_community.fasta", "fasta")
 
 
     

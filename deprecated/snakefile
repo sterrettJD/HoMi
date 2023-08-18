@@ -1,0 +1,621 @@
+import pandas as pd
+
+df = pd.read_csv("ymp_metadata.csv")
+SAMPLES = df["Sample"].tolist()
+SAMPLESSHORT = SAMPLES.copy()
+SAMPLESSHORT.remove("K1Pcomb")
+READS = ["R1", "R2"]
+
+trim_front_forward=10
+trim_front_reverse=15
+
+rule all:
+# Starting input is data processed through YMP, feels a bit silly to use snakemake to run ymp, which runs snakemake
+# Consider the input to be trimmomatic-trimmed forward and reverse reads
+    input:
+        # Made by SeqTK
+        expand(f"t32.seqtktrim.f{trim_front_forward}.r{trim_front_reverse}/{{sample}}.{{read}}.fq",
+                sample=SAMPLES, read=READS),
+
+        # databases for centrifuge
+        "phv/p_compressed+h+v.1.cf",
+        "phv/p_compressed+h+v.2.cf",
+        "phv/p_compressed+h+v.3.cf",
+
+        # centrifuge outputs (trimmed)
+        expand("t32.sk.f{config[trim_front_forward]}.r{params.trim_front_reverse}.centrifuge/{sample}_report.txt",
+               sample=SAMPLES),
+        expand("t32.sk.f{config.trim_front_forward}.r{params.trim_front_reverse}.centrifuge/{sample}_class.txt",
+               sample=SAMPLES),
+        # made by kreportify_trimmed_centrifuge_outs
+        expand("t32.sk.f{config.trim_front_forward}.r{params.trim_front_reverse}.centrifuge/{sample}_kreport.txt",
+               sample=SAMPLES),
+
+        #centrifuge outputs (untrimmed)
+        expand("t32.centrifuge/{sample}_report.txt",
+               sample=SAMPLES),
+        expand("t32.centrifuge/{sample}_class.txt",
+               sample=SAMPLES),
+        # made by kreportify_untrimmed_centrifuge_outs
+        expand("t32.centrifuge/{sample}_kreport.txt",
+               sample=SAMPLES),
+        # human genome
+        "GRCh38/GRCh38_full_analysis_set.fna",
+        # human genome index
+        "t32.bbmap.GRCh38/ref",
+        # human genome mapping results
+        expand("t32.bbmap.GRCh38/{sample}.sam", sample=SAMPLESSHORT),
+        expand("t32.bbmap.GRCh38/{sample}.bam", sample=SAMPLESSHORT),
+        # Feature counts from human genome mapping
+        "t32.bbmap.GRCh38/counts.txt",
+        # nonhuman reads
+        expand("t32.bbmap.GRCh38/{sample}.nonhuman.fq.gz", sample=SAMPLES),
+        # nonhuman reads >= 40 base pairs (for nonpareil_on_nonhuman)
+        expand("t32.bbmap.GRCh38/{sample}.nonhuman.n40.fq.gz", sample=SAMPLES),
+        # nonpareil_on_nonhuman
+        expand("t32.bbmap.nonGRCh38.nonpareil/{sample}.npl", sample=SAMPLES),
+        expand("t32.bbmap.nonGRCh38.nonpareil/{sample}.npo", sample=SAMPLES),
+        expand("t32.bbmap.nonGRCh38.nonpareil/{sample}.npa", sample=SAMPLES),
+
+        # nonhuman reads run through HUMANN pipeline (yes I see the irony)
+        "t32.nonhuman.humann/all_pathabundance.tsv",
+        "t32.nonhuman.humann/all_pathcoverage.tsv",
+        "t32.nonhuman.humann/all_genefamilies.tsv",
+        "t32.nonhuman.humann/all_genefamilies_grouped.tsv",
+        "t32.nonhuman.humann/all_genefamilies_grouped_named.tsv",
+        "t32.nonhuman.humann/all_bugs_list.tsv",
+        expand("t32.nonhuman.humann/{sample}/{sample}.nonhuman_humann_temp/{sample}.nonhuman_metaphlan_bugs_list_v3.tsv",
+               sample=SAMPLES),
+
+        # all reads run through HUMANN pipeline
+        expand(f"t32.f{trim_front_forward}.r{trim_front_reverse}.humann/{{sample}}/{{sample}}_pathabundance.tsv", sample=SAMPLES),
+        expand(f"t32.f{trim_front_forward}.r{trim_front_reverse}.humann/{{sample}}/{{sample}}_pathcoverage.tsv", sample=SAMPLES),
+        expand(f"t32.f{trim_front_forward}.r{trim_front_reverse}.humann/{{sample}}/{{sample}}_genefamilies.tsv", sample=SAMPLES),
+        expand(f"t32.f{trim_front_forward}.r{trim_front_reverse}.humann/{{sample}}/{{sample}}_humann_temp/{{sample}}_metaphlan_bugs_list.tsv", sample=SAMPLES)
+
+
+# TODO: trim adapters
+
+rule run_seqtk_trim_forward:
+    input:
+        "test.trim_trimmomaticT32/{sample}.R1.fq.gz"
+    output:
+        f"t32.seqtktrim.f{trim_front_forward}.r{trim_front_reverse}/{{sample}}.R1.fq"
+    conda: "conda_envs/seqtk.yaml"
+    resources:
+        partition="short",
+        mem_mb=int(20*1000), # MB, or 20 GB
+        runtime=int(1*60) # min, or 1 hours
+    threads: 1
+    shell:
+        f"""
+        mkdir -p t32.seqtktrim.f{trim_front_forward}.r{trim_front_reverse}/
+        seqtk trimfq -b {trim_front_reverse} {{input}} > {{output}}
+        """
+
+rule run_seqtk_trim_reverse:
+    input:
+        "test.trim_trimmomaticT32/{sample}.R1.fq.gz"
+    output:
+        f"t32.seqtktrim.f{trim_front_forward}.r{trim_front_reverse}/{{sample}}.R2.fq"
+    conda: "conda_envs/seqtk.yaml"
+    resources:
+        partition="short",
+        mem_mb=int(20*1000), # MB, or 20 GB
+        runtime=int(1*60) # min, or 1 hours
+    threads: 1
+    shell:
+        f"""
+        mkdir -p t32.seqtktrim.f{trim_front_forward}.r{trim_front_reverse}/
+        seqtk trimfq -b {trim_front_reverse} {{input}} > {{output}}
+        """
+
+rule pull_centrifuge_db:
+    output:
+        "phv/p_compressed+h+v.1.cf",
+        "phv/p_compressed+h+v.2.cf",
+        "phv/p_compressed+h+v.3.cf"
+    resources:
+        partition="short",
+        mem_mb=int(20*1000), # MB, or 20 GB
+        runtime=int(1.5*60) # min, or 1.5 hours
+    threads: 1
+    shell:
+        """
+        wget https://genome-idx.s3.amazonaws.com/centrifuge/p_compressed%2Bh%2Bv.tar.gz
+        tar -xvf p_compressed+h+v.tar.gz
+        mkdir -p phv
+        mv p_compressed+h+v*.cf phv/
+        """
+
+
+rule run_centrifuge_on_trimmed:
+    input:
+        FORWARD=f"t32.seqtktrim.f{trim_front_forward}.r{trim_front_reverse}/{{sample}}.R1.fq",
+        REVERSE=f"t32.seqtktrim.f{trim_front_forward}.r{trim_front_reverse}/{{sample}}.R2.fq",
+        DB1="phv/p_compressed+h+v.1.cf",
+        DB2="phv/p_compressed+h+v.2.cf",
+        DB3="phv/p_compressed+h+v.3.cf"
+    output:
+        REPORT=f"t32.sk.f{trim_front_forward}.r{trim_front_reverse}.centrifuge/{{sample}}_report.txt",
+        CLASS=f"t32.sk.f{trim_front_forward}.r{trim_front_reverse}.centrifuge/{{sample}}_class.txt"
+    conda: "conda_envs/centrifuge.yaml"
+    resources:
+        partition="short",
+        mem_mb=int(80*1000), # MB, or 80 GB
+        runtime=int(10*60) # min, or 10 hours
+    threads: 16
+    shell:
+        f"""
+        mkdir -p t32.sk.f{trim_front_forward}.r{trim_front_reverse}.centrifuge/
+        centrifuge -x phv/p_compressed+h+v -1 {{input.FORWARD}} -2 {{input.REVERSE}} -S {{output.CLASS}} --report-file {{output.REPORT}} -p 16
+        """
+
+
+rule kreportify_trimmed_centrifuge_outs:
+    input:
+        f"t32.sk.f{trim_front_forward}.r{trim_front_reverse}.centrifuge/{{sample}}_class.txt"
+    output:
+        f"t32.sk.f{trim_front_forward}.r{trim_front_reverse}.centrifuge/{{sample}}_kreport.txt"
+    conda: "conda_envs/centrifuge.yaml"
+    resources:
+        partition="short",
+        mem_mb=int(10*1000), # MB, or 10 GB
+        runtime=int(1.5*60) # min, or 90 min
+    threads: 1
+    shell:
+        """
+        centrifuge-kreport -x phv/p_compressed+h+v {input} > {output}
+        """
+
+rule unzip_untrimmed_t32:
+    input:
+        FORWARD="test.trim_trimmomaticT32/{sample}.R1.fq.gz",
+        REVERSE="test.trim_trimmomaticT32/{sample}.R2.fq.gz"
+    output:
+        FORWARD="test.trim_trimmomaticT32/{sample}.R1.fq",
+        REVERSE="test.trim_trimmomaticT32/{sample}.R2.fq"
+    resources:
+        partition="short",
+        mem_mb=int(20*1000), # MB, or 20 GB
+        runtime=int(1*60) # min, or 1 hours
+    threads: 16
+    shell:
+        """
+        pigz -dc -p 16 {input.FORWARD} > {output.FORWARD}
+        pigz -dc -p 16 {input.REVERSE} > {output.REVERSE}
+        """
+
+
+rule run_centrifuge_notrim:
+    input:
+        FORWARD="test.trim_trimmomaticT32/{sample}.R1.fq",
+        REVERSE="test.trim_trimmomaticT32/{sample}.R2.fq",
+        DB1="phv/p_compressed+h+v.1.cf",
+        DB2="phv/p_compressed+h+v.2.cf",
+        DB3="phv/p_compressed+h+v.3.cf"
+    output:
+        REPORT="t32.centrifuge/{sample}_report.txt",
+        CLASS="t32.centrifuge/{sample}_class.txt"
+    conda: "conda_envs/centrifuge.yaml"
+    resources:
+        partition="short",
+        mem_mb=int(80*1000), # MB, or 80 GB
+        runtime=int(10*60) # min, or 10 hours
+    threads: 16
+    shell:
+        f"""
+        mkdir -p t32.centrifuge/
+        centrifuge -x phv/p_compressed+h+v -1 {{input.FORWARD}} -2 {{input.REVERSE}} -S {{output.CLASS}} --report-file {{output.REPORT}} -p 16
+        """
+
+
+rule kreportify_untrimmed_centrifuge_outs:
+    input:
+        "t32.centrifuge/{sample}_class.txt"
+    output:
+        "t32.centrifuge/{sample}_kreport.txt"
+    conda: "conda_envs/centrifuge.yaml"
+    resources:
+        partition="short",
+        mem_mb=int(10*1000), # MB, or 10 GB
+        runtime=int(1.5*60) # min, or 90 min
+    threads: 1
+    shell:
+        """
+        centrifuge-kreport -x phv/p_compressed+h+v {input} > {output}
+        """
+
+# pull human genome
+rule pull_human_genome:
+    output:
+        GENOME="GRCh38/GRCh38_full_analysis_set.fna",
+        ANNOTATION="GRCh38/GRCh38_full_analysis_set.refseq.gtf"
+    resources:
+        partition="short",
+        mem_mb=int(10*1000), # MB, or 10 GB
+        runtime=int(1*60) # min, or 1 hr
+    threads: 1
+    shell:
+        """
+        mkdir -p GRCh38
+        cd GRCh38
+
+        # genome
+        wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/seqs_for_alignment_pipelines.ucsc_ids/GCA_000001405.15_GRCh38_full_analysis_set.fna.gz
+        gunzip GCA_000001405.15_GRCh38_full_analysis_set.fna.gz
+        mv GCA_000001405.15_GRCh38_full_analysis_set.fna GRCh38_full_analysis_set.fna
+
+        # annotation
+        wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/seqs_for_alignment_pipelines.ucsc_ids/GCA_000001405.15_GRCh38_full_analysis_set.refseq_annotation.gtf.gz
+        gunzip GCA_000001405.15_GRCh38_full_analysis_set.refseq_annotation.gtf.gz
+        mv GCA_000001405.15_GRCh38_full_analysis_set.refseq_annotation.gtf GRCh38_full_analysis_set.refseq.gtf
+        """
+
+# make bbmap index for human genome
+rule build_human_genome_index_bbmap:
+    input:
+        "GRCh38/GRCh38_full_analysis_set.fna"
+    output:
+        directory("t32.bbmap.GRCh38/ref/")
+    conda: "conda_envs/bbmap.yaml"
+    resources:
+        partition="short",
+        mem_mb=int(30*1000), # MB, or 30 GB
+        runtime=int(1.5*60) # min, or 1.5 hrs
+    threads: 8
+    shell:
+        """
+        mkdir -p t32.bbmap.GRCh38/
+        bbmap.sh ref=GRCh38/GRCh38_full_analysis_set.fna path=t32.bbmap.GRCh38/ threads=8 -Xmx30g
+        # Xmx30g specifies max of 30 GB mem
+        """
+
+# Map to human genome
+rule bbmap_GRCh38:
+    input:
+        REF="t32.bbmap.GRCh38/ref/",
+        FORWARD="test.trim_trimmomaticT32/{sample}.R1.fq",
+        REVERSE="test.trim_trimmomaticT32/{sample}.R2.fq"
+    output:
+        SAM="t32.bbmap.GRCh38/{sample}.sam",
+        BAM="t32.bbmap.GRCh38/{sample}.bam"
+    conda: "conda_envs/bbmap.yaml"
+    resources:
+        partition="short",
+        mem_mb=int(210*1000), # MB, or 210 GB, can cut to ~100 for 16 threads
+        runtime=int(23.9*60) # min, or almost 24 hrs
+    threads: 32
+    shell:
+        """
+        cd t32.bbmap.GRCh38/
+
+        bbmap.sh in=../{input.FORWARD} in2=../{input.REVERSE} \
+        out={wildcards.sample}.sam \
+        trimreaddescriptions=t \
+        threads=32 \
+        -Xmx210g # Xmx210g specifies max of 210 GB mem
+
+        bash ../utils/sam2bam.sh {wildcards.sample}.sam
+        """
+
+rule validate_bams:
+    input:
+        BAM="t32.bbmap.GRCh38/{sample}.bam"
+    output:
+        "t32.bbmap.GRCh38/{sample}_valid_bam.tsv"
+    conda: "conda_envs/featureCounts.yaml"
+    resources:
+        partition="short",
+        mem_mb=int(32*1000), # MB, or 32 GB
+        runtime=int(1*60) # min, or 1 hr
+    threads: 16
+    shell:
+        """
+        samtools flagstat --threads 16 {input.BAM} > {output}
+        """
+
+# Assess classification of mapped reads
+rule generate_feature_counts:
+    input:
+        ANNOTATION="GRCh38/GRCh38_full_analysis_set.refseq.gtf",
+        # TODO: NEEDS TO BE UPDATED WHEN FULL SET AVAILABLE
+        VALID=expand("t32.bbmap.GRCh38/{sample}_valid_bam.tsv", sample=SAMPLESSHORT),
+        BAM=expand("t32.bbmap.GRCh38/{sample}.bam", sample=SAMPLESSHORT)
+    output:
+        COUNTS="t32.bbmap.GRCh38/counts.txt",
+        SUMMARY="t32.bbmap.GRCh38/counts.txt.summary"
+    conda: "conda_envs/featureCounts.yaml"
+    resources:
+        partition="short",
+        mem_mb=int(5*1000), # MB, or 5 GB
+        runtime=int(2*60) # min, or 2 hrs
+    threads: 16
+    shell:
+        """
+        featureCounts -T 16 -p --countReadPairs \
+        -t exon -g gene_id -a {input.ANNOTATION} -o {output.COUNTS} t32.bbmap.GRCh38/*.bam
+        """
+
+# reformat.sh -> get non-mapped
+rule get_unmapped:
+    input:
+        BAM="t32.bbmap.GRCh38/{sample}.bam"
+    output:
+        TEMPBAM=temp("t32.bbmap.GRCh38/{sample}.temp.unmapped.bam"),
+        OUT="t32.bbmap.GRCh38/{sample}.nonhuman.fq.gz"
+    conda: "conda_envs/bbmap.yaml"
+    resources:
+        partition="short",
+        mem_mb=int(5*1000), # MB, or 5 GB
+        runtime=int(5*60) # min, or 5 hrs
+    threads: 16
+    shell:
+        """
+        reformat.sh in={input.BAM} out={output.TEMPBAM} \
+        unmappedonly primaryonly -Xmx5g threads=16
+
+        reformat.sh in={output.TEMPBAM} \
+        out={output.OUT} \
+        addcolon -Xmx5g threads=16
+        """
+
+rule concat_nonhuman_split_seqs:
+    input:
+        expand("t32.bbmap.GRCh38/{sample}.nonhuman.fq.gz", sample=["K1Pa", "K1Pb"])
+    output:
+        UNZIPPED=temp("t32.bbmap.GRCh38/K1Pcomb.nonhuman.fq"),
+        ZIPPED="t32.bbmap.GRCh38/K1Pcomb.nonhuman.fq.gz"
+    # No conda env
+    resources:
+        partition="short",
+        mem_mb=int(10*1000), # MB, or 10 GB
+        runtime=int(1*60) # min, or 1 hrs
+    threads: 16
+    shell:
+        """
+        touch {output.UNZIPPED}
+        for FILE in {input}
+        do
+            pigz -dc -p 16 $FILE >> {output.UNZIPPED}
+        done
+
+        pigz -p 16 {output.UNZIPPED}
+
+        # touching it here so I can keep it in the output for snakemake.
+        # Labeled it as a temp file so it will be deleted anyway.
+        # Just wanted to be able to access it with "{output.UNZIPPED}" rather than writing it out.
+        touch {output.UNZIPPED}
+        """
+
+# Should maybe have done this in an initial processing step?
+# But it could be good to retain mapping results from short transcripts?
+rule nix_shortreads_nonhuman:
+    input:
+        "t32.bbmap.GRCh38/{sample}.nonhuman.fq.gz"
+    output:
+        UNZIPPED=temp("t32.bbmap.GRCh38/{sample}.temp.unzipped.fq"),
+        LINES=temp("t32.bbmap.GRCh38/{sample}.temp.lines.txt"),
+        OUT="t32.bbmap.GRCh38/{sample}.nonhuman.n40.fq.gz"
+    resources:
+        partition="short",
+        mem_mb=25000, # MB
+        runtime=60 # min
+    threads: 16
+    shell:
+        """
+        echo "STARTING"
+        # unzip
+        pigz -dc -p 16 {input} > {output.UNZIPPED}
+        echo "UNZIPPED"
+
+        # get the reads that are <40 bp long
+        awk -v min=40 '{{if(NR%4==2) if(length($0)<min) print NR"\\n"NR-1"\\n"NR+1"\\n"NR+2}}' {output.UNZIPPED} > {output.LINES}
+        echo "Made {output.LINES}"
+        
+        # Write all reads that are >=40 bp to the output file
+        awk 'NR==FNR{{l[$0];next;}} !(FNR in l)' {output.LINES} {output.UNZIPPED} > t32.bbmap.GRCh38/{wildcards.sample}.nonhuman.n40.fq
+        echo "Made t32.bbmap.GRCh38/{wildcards.sample}.nonhuman.n40.fq"
+
+        # compress the output
+        pigz -p 16 t32.bbmap.GRCh38/{wildcards.sample}.nonhuman.n40.fq
+        echo "OUTPUT SUCCESSFULY COMPRESSED"
+        """
+
+rule nonpareil_on_nonhuman:
+    input:
+        "t32.bbmap.GRCh38/{sample}.nonhuman.n40.fq.gz"
+    output:
+        "t32.bbmap.nonGRCh38.nonpareil/{sample}.npl",
+        "t32.bbmap.nonGRCh38.nonpareil/{sample}.npo",
+        "t32.bbmap.nonGRCh38.nonpareil/{sample}.npa"
+    resources:
+        partition="short",
+        mem_mb=30000, # MB
+        runtime=int(60*3) # min
+    threads: 16
+    conda: "conda_envs/nonpareil.yaml"
+    shell:
+        """
+        mkdir -p t32.bbmap.nonGRCh38.nonpareil/
+        bash utils/run_nonpareil.sh -i {input} -o t32.bbmap.nonGRCh38.nonpareil/{wildcards.sample}
+        """
+
+############# RUN BIOBAKERY HUMANN PIPELINE ON NONHUMAN READS #############
+
+rule get_biobakery_chocophlan_db:
+    output:
+        directory("humann_dbs/chocophlan/")
+    resources:
+        partition="short",
+        mem_mb= int(4*1000), # MB
+        runtime=int(60*4) # min
+    threads: 1
+    conda: "conda_envs/humann.yaml"
+    shell:
+        """
+        mkdir -p humann_dbs
+        humann_databases --download chocophlan full humann_dbs/chocophlan --update-config yes
+        """
+
+rule get_biobakery_uniref_db:
+    output:
+        directory("humann_dbs/uniref/")
+    resources:
+        partition="short",
+        mem_mb= int(4*1000), # MB
+        runtime=int(60*3) # min
+    threads: 1
+    conda: "conda_envs/humann.yaml"
+    shell:
+        """
+        mkdir -p humann_dbs
+        humann_databases --download uniref uniref90_diamond humann_dbs/uniref --update-config yes
+        """
+
+rule run_humann_nonhost:
+    input:
+        CHOCO_DB="humann_dbs/chocophlan/",
+        UNIREF_DB="humann_dbs/uniref/",
+        NONHUMAN_READS="t32.bbmap.GRCh38/{sample}.nonhuman.fq.gz"
+    output:
+        PATHABUND="t32.nonhuman.humann/{sample}/{sample}.nonhuman_pathabundance.tsv",
+        PATHCOV="t32.nonhuman.humann/{sample}/{sample}.nonhuman_pathcoverage.tsv",
+        GENEFAMS="t32.nonhuman.humann/{sample}/{sample}.nonhuman_genefamilies.tsv",
+        BUGSLIST="t32.nonhuman.humann/{sample}/{sample}.nonhuman_humann_temp/{sample}.nonhuman_metaphlan_bugs_list.tsv"
+    resources:
+        partition="short",
+        mem_mb=int(100*1000), # MB, or 100 GB
+        runtime=int(23.9*60) # min, or 48 hours
+    threads: 32
+    conda: "conda_envs/humann.yaml"
+    shell:
+        """
+        mkdir -p t32.nonhuman.humann
+        humann -i {input.NONHUMAN_READS} -o t32.nonhuman.humann/{wildcards.sample} --threads 32 --search-mode uniref90
+        """
+
+
+rule aggregate_humann_outs_nonhost:
+    input:
+        PATHABUND=expand("t32.nonhuman.humann/{sample}/{sample}.nonhuman_pathabundance.tsv",
+                sample=SAMPLES),
+        PATHCOV=expand("t32.nonhuman.humann/{sample}/{sample}.nonhuman_pathcoverage.tsv",
+                sample=SAMPLES),
+        GENEFAMS=expand("t32.nonhuman.humann/{sample}/{sample}.nonhuman_genefamilies.tsv",
+                sample=SAMPLES),
+        BUGSLIST=expand("t32.nonhuman.humann/{sample}/{sample}.nonhuman_humann_temp/{sample}.nonhuman_metaphlan_bugs_list.tsv",
+                sample=SAMPLES)
+    output:
+        PATHABUND="t32.nonhuman.humann/all_pathabundance.tsv",
+        PATHCOV="t32.nonhuman.humann/all_pathcoverage.tsv",
+        GENEFAMS="t32.nonhuman.humann/all_genefamilies.tsv",
+        GENEFAMS_GROUPED="t32.nonhuman.humann/all_genefamilies_grouped.tsv",
+        GENEFAMS_GROUPED_NAMED="t32.nonhuman.humann/all_genefamilies_grouped_named.tsv",
+        BUGSLIST="t32.nonhuman.humann/all_bugs_list.tsv",
+        V3_NOAGG_BUGS=expand("t32.nonhuman.humann/{sample}/{sample}.nonhuman_humann_temp/{sample}.nonhuman_metaphlan_bugs_list_v3.tsv", sample=SAMPLES)
+
+    resources:
+        partition="short",
+        mem_mb=int(10*1000), # MB, or 10 GB
+        runtime=60 # min
+    threads: 1
+    conda: "conda_envs/humann.yaml"
+    shell:
+        """
+        humann_join_tables -i t32.nonhuman.humann -o {output.PATHABUND} --file_name pathabundance.tsv --search-subdirectories
+
+        humann_join_tables -i t32.nonhuman.humann -o {output.PATHCOV} --file_name pathcoverage.tsv --search-subdirectories
+
+        humann_join_tables -i t32.nonhuman.humann -o {output.GENEFAMS} --file_name genefamilies.tsv --search-subdirectories
+        humann_regroup_table -i {output.GENEFAMS} -g uniref90_rxn -o {output.GENEFAMS_GROUPED}
+        humann_rename_table -i {output.GENEFAMS_GROUPED} -n metacyc-rxn -o {output.GENEFAMS_GROUPED_NAMED}
+
+        python utils/aggregate_metaphlan_bugslists.py -i t32.nonhuman.humann -p .nonhuman -o {output.BUGSLIST}
+
+        python utils/convert_mphlan_v4_to_v3.py -i t32.nonhuman.humann -p .nonhuman
+        """
+
+############# RUN BIOBAKERY HUMANN PIPELINE ON ALL READS #############
+        
+rule concat_files:
+    input:
+        FORWARD=f"t32.seqtktrim.f{trim_front_forward}.r{trim_front_reverse}/{{sample}}.R1.fq",
+        REVERSE=f"t32.seqtktrim.f{trim_front_forward}.r{trim_front_reverse}/{{sample}}.R2.fq"
+
+    output:
+        f"t32.seqtktrim.f{trim_front_forward}.r{trim_front_reverse}.concat/{{sample}}.fq.gz"
+    resources:
+        partition="short",
+        mem_mb=30000, # MB
+        runtime=int(60*2.5) # min
+    threads: 1
+    run:
+        shell(f"mkdir -p t32.seqtktrim.f{trim_front_forward}.r{trim_front_reverse}.concat") #in case this directory doesn't exist. if it does, nothing will be done
+        shell(f"bash utils/concat_files_unzipped.sh -f {{input.FORWARD}} -r {{input.REVERSE}} -o {{output}}")
+
+
+rule run_humann_allreads:
+    input:
+        CHOCO_DB="humann_dbs/chocophlan/",
+        UNIREF_DB="humann_dbs/uniref/",
+        READS=f"t32.seqtktrim.f{trim_front_forward}.r{trim_front_reverse}.concat/{{sample}}.fq.gz"
+    output:
+        PATHABUND=f"t32.f{trim_front_forward}.r{trim_front_reverse}.humann/{{sample}}/{{sample}}_pathabundance.tsv",
+        PATHCOV=f"t32.f{trim_front_forward}.r{trim_front_reverse}.humann/{{sample}}/{{sample}}_pathcoverage.tsv",
+        GENEFAMS=f"t32.f{trim_front_forward}.r{trim_front_reverse}.humann/{{sample}}/{{sample}}_genefamilies.tsv",
+        BUGSLIST=f"t32.f{trim_front_forward}.r{trim_front_reverse}.humann/{{sample}}/{{sample}}_humann_temp/{{sample}}_metaphlan_bugs_list.tsv"
+    resources:
+        partition="short",
+        mem_mb=int(80*1000), # MB, or 80 GB
+        runtime=int(23.9*60) # min, or 24 hours
+    threads: 32
+    conda: "conda_envs/humann.yaml"
+    shell:
+        f"""
+        mkdir -p t32.f{trim_front_forward}.r{trim_front_reverse}.humann
+        humann -i {{input.READS}} -o t32.f{trim_front_forward}.r{trim_front_reverse}.humann/{{wildcards.sample}} \
+        --threads 32 --search-mode uniref90
+        """
+
+
+rule aggregate_humann_outs_allreads:
+    input:
+        PATHABUND=expand(f"t32.f{trim_front_forward}.r{trim_front_reverse}.humann/{{sample}}/{{sample}}_pathabundance.tsv",
+                         sample=SAMPLES),
+        PATHCOV=expand(f"t32.f{trim_front_forward}.r{trim_front_reverse}.humann/{{sample}}/{{sample}}_pathcoverage.tsv",
+                        sample=SAMPLES),
+        GENEFAMS=expand(f"t32.f{trim_front_forward}.r{trim_front_reverse}.humann/{{sample}}/{{sample}}_genefamilies.tsv",
+                        sample=SAMPLES)
+        BUGSLIST=expand(f"t32.f{trim_front_forward}.r{trim_front_reverse}.humann/{{sample}}/{{sample}}_humann_temp/{{sample}}_metaphlan_bugs_list.tsv",
+                        sample=SAMPLES)
+    output:
+        PATHABUND=f"t32.f{trim_front_forward}.r{trim_front_reverse}.humann/all_pathabundance.tsv",
+        PATHCOV=f"t32.f{trim_front_forward}.r{trim_front_reverse}.humann/all_pathcoverage.tsv",
+        GENEFAMS=f"t32.f{trim_front_forward}.r{trim_front_reverse}.humann/all_genefamilies.tsv",
+        GENEFAMS_GROUPED=f"t32.f{trim_front_forward}.r{trim_front_reverse}.humann/all_genefamilies_grouped.tsv",
+        GENEFAMS_GROUPED_NAMED=f"t32.f{trim_front_forward}.r{trim_front_reverse}.humann/all_genefamilies_grouped_named.tsv",
+        BUGSLIST=f"t32.f{trim_front_forward}.r{trim_front_reverse}.humann/all_bugs_list.tsv",
+        V3_NOAGG_BUGS=expand(f"t32.f{trim_front_forward}.r{trim_front_reverse}.humann/{sample}/{sample}_humann_temp/{sample}_metaphlan_bugs_list_v3.tsv", 
+                            sample=SAMPLES)
+
+    resources:
+        partition="short",
+        mem_mb=int(4*1000), # MB, or 4 GB
+        runtime=60 # min
+    threads: 1
+    conda: "conda_envs/humann.yaml"
+    shell:
+        f"""
+        humann_join_tables -i t32.f{trim_front_forward}.r{trim_front_reverse}.humann -o {{output.PATHABUND}} --file_name pathabundance.tsv --search-subdirectories
+
+        humann_join_tables -i t32.f{trim_front_forward}.r{trim_front_reverse}.humann -o {{output.PATHCOV}} --file_name pathcoverage.tsv --search-subdirectories
+
+        humann_join_tables -i t32.f{trim_front_forward}.r{trim_front_reverse}.humann -o {{output.GENEFAMS}} --file_name genefamilies.tsv --search-subdirectories
+        humann_regroup_table -i {{output.GENEFAMS}} -g uniref90_rxn -o {{output.GENEFAMS_GROUPED}}
+        humann_rename_table -i {{output.GENEFAMS_GROUPED}} -n metacyc-rxn -o {{output.GENEFAMS_GROUPED_NAMED}}
+
+        python utils/aggregate_metaphlan_bugslists.py -i t32.f{trim_front_forward}.r{trim_front_reverse}.humann -o {{output.BUGSLIST}}
+
+        python utils/convert_mphlan_v4_to_v3.py -i t32.f{trim_front_forward}.r{trim_front_reverse}.humann
+        """

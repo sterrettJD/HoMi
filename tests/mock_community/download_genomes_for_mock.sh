@@ -36,6 +36,6 @@ mkdir -p human_pangenome
 cd human_pangenome
 wget https://s3-us-west-2.amazonaws.com/human-pangenomics/pangenomes/freeze/freeze1/minigraph/CHM13v11Y.fa.gz
 gunzip CHM13v11Y.fa.gz
-mkdir -o genome
+mkdir -p genome
 mv CHM13v11Y.fa genome/
 cd ..

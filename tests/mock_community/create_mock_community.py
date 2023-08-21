@@ -76,6 +76,7 @@ def get_sampled_reads_from_all_genomes(genomes_read_num_dict, genomes_paths):
     
     return all_reads
         
+
 def simulate_qual_score(mean_phred, var_phred, read_len, min_phred=10):
     # simulate from 40 "trials"
     n = 40
@@ -133,14 +134,16 @@ def main():
     sampled_reads_bio = [[SeqRecord(Seq(seq), seq_id, '', '') 
                           for seq_id, seq in genome_sampled_reads.items()] 
                          for genome_sampled_reads in sampled_reads]
+    
     sampled_reads_flattened = list(chain.from_iterable(sampled_reads_bio))
+
+    for read in sampled_reads_flattened:
+        read.letter_annotations["phred_quality"] = simulate_qual_score(35, 5, len(read.seq))
 
     print(sampled_reads_flattened)
 
-    SeqIO.write(sampled_reads_flattened, "tests/mock_community/mock_community.fasta", "fasta")
+    SeqIO.write(sampled_reads_flattened, "tests/mock_community/mock_community.fastq", "fastq")
 
-
-    
 
 if __name__=="__main__":
     main()

@@ -97,6 +97,25 @@ def simulate_qual_score(mean_phred, var_phred, read_len, min_phred=10):
 
     return phreds
 
+def get_error_probs(phred_score):
+    error = 1/(10**(phred_score/10))
+    no_error = 1-error
+    return[no_error, error]
+
+
+def mutate_seq_from_qual(seqrecord):
+    
+    letters = {"A", "C", "T", "G"}
+    to_mut = [random.choices([0,1], weights=get_error_probs(q))[0] 
+              for q in seqrecord.letter_annotations["phred_quality"]]
+    
+    sequence = list(seqrecord.seq)
+    for i, base in enumerate(sequence):
+        if to_mut[i]==1:
+            sequence[i] = random.choice(list(letters.difference({base})))
+    seqrecord.seq = Seq("".join(sequence))
+
+    return seqrecord
 
 
 def main():
@@ -124,10 +143,10 @@ def main():
     # sample some reads with replacement
     random.seed(42)
     genomes_read_num_dict = {
-        "e_coli": 50, 
-        "c_beijerinckii": 50, 
-        "f_prausnitzii": 50, 
-        "human_pangenome": 150
+        "e_coli": 10**6, 
+        "c_beijerinckii": 10**6, 
+        "f_prausnitzii": 10**6, 
+        "human_pangenome": 4*(10**6) 
     }
 
     sampled_reads = get_sampled_reads_from_all_genomes(genomes_read_num_dict, genomes_paths)
@@ -135,14 +154,17 @@ def main():
                           for seq_id, seq in genome_sampled_reads.items()] 
                          for genome_sampled_reads in sampled_reads]
     
-    sampled_reads_flattened = list(chain.from_iterable(sampled_reads_bio))
+    sampled_reads_flat = list(chain.from_iterable(sampled_reads_bio))
 
-    for read in sampled_reads_flattened:
-        read.letter_annotations["phred_quality"] = simulate_qual_score(35, 5, len(read.seq))
+    
+    for read in sampled_reads_flat:
+        read.letter_annotations["phred_quality"] = simulate_qual_score(30, 5, len(read.seq))
+    
+    sampled_reads_flat_mut = [mutate_seq_from_qual(seqrecord) 
+                               for seqrecord in sampled_reads_flat]
+    #print(sampled_reads_flat_mut)
 
-    print(sampled_reads_flattened)
-
-    SeqIO.write(sampled_reads_flattened, "tests/mock_community/mock_community.fastq", "fastq")
+    SeqIO.write(sampled_reads_flat_mut, "tests/mock_community/mock_community.fastq", "fastq")
 
 
 if __name__=="__main__":

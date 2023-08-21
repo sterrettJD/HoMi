@@ -40,22 +40,23 @@ def sample_from_genome(genome, nreads, microbial):
     reads = random.choices(genome, k=nreads)
     seqs = [read.seq for read in reads]
 
+    # Currently not using protein name but can maybe use this later
     if microbial == True:
         proteins = [get_protein_name_from_fasta_description(read.description) 
                     for read in reads]
     else:
         proteins = [read.description for read in reads]
-    return dict(zip(proteins, seqs))
+    return dict(zip(np.arange(len(seqs)), seqs))
 
 
 def sample_reads_from_seqs(seqs, read_length):
-    for protein, seq in seqs.items():
+    for i, seq in seqs.items():
         # only get a shorter read if the seq is long enough. 
         # Otherwise just leave the seq as is
         if len(seq) > read_length:
             start = random.randint(0,len(seq)-read_length)
             new_seq = seq[start:start+read_length]
-            seqs[protein] = new_seq
+            seqs[i] = new_seq
     return seqs
 
 
@@ -121,6 +122,17 @@ def mutate_seq_from_qual(seqrecord):
 
     return seqrecord
 
+def create_qual_scores_and_mutate(list_of_seqrecords, 
+                                  mean_phred, var_phred, min_phred=10):
+    # generate quality scores (somewhat naively)
+    for read in list_of_seqrecords:
+        read.letter_annotations["phred_quality"] = simulate_qual_score(mean_phred, var_phred, len(read.seq), min_phred)
+    
+    # mutate the reads based on quality scores
+    sampled_reads_flat_mut = [mutate_seq_from_qual(seqrecord) 
+                               for seqrecord in list_of_seqrecords]
+    return sampled_reads_flat_mut
+
 
 def main():
     # check for mock community data already existing
@@ -130,6 +142,12 @@ def main():
 
     # list of genomes to include
     genomes = ["e_coli", "c_beijerinckii", "f_prausnitzii", "human_pangenome"]
+    genomes_read_num_dict = {
+        "e_coli": int(1e6), 
+        "c_beijerinckii": int(1e6), 
+        "f_prausnitzii": int(1e6), 
+        "human_pangenome": int(1e6)
+    }
     genomes_paths = [os.path.join('tests', 'mock_community', 'data', g, 'genome')
                      for g in genomes]
     
@@ -146,29 +164,28 @@ def main():
 
     # sample some reads with replacement
     random.seed(42)
-    genomes_read_num_dict = {
-        "e_coli": 10**6, 
-        "c_beijerinckii": 10**6, 
-        "f_prausnitzii": 10**6, 
-        "human_pangenome": 3*(10**6) 
-    }
 
     sampled_reads = get_sampled_reads_from_all_genomes(genomes_read_num_dict, genomes_paths)
-    sampled_reads_bio = [[SeqRecord(Seq(seq), seq_id, '', '') 
+    sampled_reads_bio = [[SeqRecord(Seq(seq), '', '', '') 
                           for seq_id, seq in genome_sampled_reads.items()] 
                          for genome_sampled_reads in sampled_reads]
     # flatten the list of lists (reads per genome) to just a list (reads)
     sampled_reads_flat = list(chain.from_iterable(sampled_reads_bio))
-
-    # generate quality scores (somewhat naively)
-    for read in sampled_reads_flat:
-        read.letter_annotations["phred_quality"] = simulate_qual_score(30, 5, len(read.seq))
     
-    # mutate the reads based on quality scores
-    sampled_reads_flat_mut = [mutate_seq_from_qual(seqrecord) 
-                               for seqrecord in sampled_reads_flat]
+    # create the reverse reads
+    sampled_reads_flat_rev = sampled_reads_flat
+    for i, sequence in enumerate(sampled_reads_flat):
+        sampled_reads_flat_rev[i].seq = sequence.seq[::-1] 
 
-    SeqIO.write(sampled_reads_flat_mut, "tests/mock_community/mock_community.fastq", "fastq")
+    sampled_reads_flat_mut = create_qual_scores_and_mutate(sampled_reads_flat, 
+                                        mean_phred=35, var_phred=5, min_phred=10)
+    
+    sampled_reads_flat_rev_mut = create_qual_scores_and_mutate(sampled_reads_flat_rev, 
+                                        mean_phred=35, var_phred=5, min_phred=10)
+    
+    
+    SeqIO.write(sampled_reads_flat_mut, "tests/mock_community/mock_community_R1.fastq", "fastq")
+    SeqIO.write(sampled_reads_flat_rev_mut, "tests/mock_community/mock_community_R2.fastq", "fastq")
 
 
 if __name__=="__main__":

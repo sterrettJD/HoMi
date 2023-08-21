@@ -1,6 +1,7 @@
 import subprocess
 import os
 import random
+import numpy as np
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
@@ -49,10 +50,12 @@ def sample_from_genome(genome, nreads, microbial):
 
 def sample_reads_from_seqs(seqs, read_length):
     for protein, seq in seqs.items():
-        start = random.randint(0,len(seq)-read_length)
-        new_seq = seq[start:start+read_length]
-        seqs[protein] = new_seq
-
+        # only get a shorter read if the seq is long enough. 
+        # Otherwise just leave the seq as is
+        if len(seq) > read_length:
+            start = random.randint(0,len(seq)-read_length)
+            new_seq = seq[start:start+read_length]
+            seqs[protein] = new_seq
     return seqs
 
 def get_sampled_reads_from_all_genomes(genomes_read_num_dict, genomes_paths):
@@ -73,6 +76,26 @@ def get_sampled_reads_from_all_genomes(genomes_read_num_dict, genomes_paths):
     
     return all_reads
         
+def simulate_qual_score(mean_phred, var_phred, read_len, min_phred=10):
+    # simulate from 40 "trials"
+    n = 40
+    # setup for simulation from neg binom model
+    mean_nb = n - mean_phred
+    p = mean_nb/(var_phred**2) # calculate p and r (successes) for n binom
+    r = mean_nb**2/(var_phred**2 - mean_nb) # this comes from wikipedia
+
+    # instantiate rng
+    rng = np.random.default_rng(seed=42)
+
+    to_subtract = rng.negative_binomial(n=r, p=p, size=read_len)
+    # subtract from max phred
+    phreds = 40 - to_subtract
+    # don't let it be lower than the min phred
+    # probs not the best way to do this but good enough?
+    phreds = [max(phred, min_phred) for phred in phreds]
+
+    return phreds
+
 
 
 def main():
@@ -100,10 +123,10 @@ def main():
     # sample some reads with replacement
     random.seed(42)
     genomes_read_num_dict = {
-        "e_coli": 5, 
-        "c_beijerinckii": 5, 
-        "f_prausnitzii": 5, 
-        "human_pangenome": 15
+        "e_coli": 50, 
+        "c_beijerinckii": 50, 
+        "f_prausnitzii": 50, 
+        "human_pangenome": 150
     }
 
     sampled_reads = get_sampled_reads_from_all_genomes(genomes_read_num_dict, genomes_paths)
@@ -114,7 +137,7 @@ def main():
 
     print(sampled_reads_flattened)
 
-    SeqIO.write(sampled_reads_flattened, "mock_community.fasta", "fasta")
+    SeqIO.write(sampled_reads_flattened, "tests/mock_community/mock_community.fasta", "fasta")
 
 
     

@@ -58,6 +58,7 @@ def sample_reads_from_seqs(seqs, read_length):
             seqs[protein] = new_seq
     return seqs
 
+
 def get_sampled_reads_from_all_genomes(genomes_read_num_dict, genomes_paths):
     all_reads = [None]*len(genomes_paths)
     for i, genome_name in enumerate(genomes_read_num_dict.keys()):
@@ -69,7 +70,6 @@ def get_sampled_reads_from_all_genomes(genomes_read_num_dict, genomes_paths):
         else:
             genome = read_microbial_genome(genome_path)
             sampled_seqs = sample_from_genome(genome, genomes_read_num_dict[genome_name], microbial=True)
-        
         
         sampled_reads = sample_reads_from_seqs(sampled_seqs, 150)
         all_reads[i] = sampled_reads
@@ -98,21 +98,25 @@ def simulate_qual_score(mean_phred, var_phred, read_len, min_phred=10):
     return phreds
 
 def get_error_probs(phred_score):
+    # just using the PHRED score definition here
     error = 1/(10**(phred_score/10))
     no_error = 1-error
     return[no_error, error]
 
 
 def mutate_seq_from_qual(seqrecord):
-    
     letters = {"A", "C", "T", "G"}
+    # decide whether or not to mutate each base pair
     to_mut = [random.choices([0,1], weights=get_error_probs(q))[0] 
               for q in seqrecord.letter_annotations["phred_quality"]]
     
+    # gotta convert to an iterable because Seq doesn't allow assignment
     sequence = list(seqrecord.seq)
     for i, base in enumerate(sequence):
         if to_mut[i]==1:
+            # naive substitution
             sequence[i] = random.choice(list(letters.difference({base})))
+    # convert to string then Seq object
     seqrecord.seq = Seq("".join(sequence))
 
     return seqrecord
@@ -146,23 +150,23 @@ def main():
         "e_coli": 10**6, 
         "c_beijerinckii": 10**6, 
         "f_prausnitzii": 10**6, 
-        "human_pangenome": 4*(10**6) 
+        "human_pangenome": 3*(10**6) 
     }
 
     sampled_reads = get_sampled_reads_from_all_genomes(genomes_read_num_dict, genomes_paths)
     sampled_reads_bio = [[SeqRecord(Seq(seq), seq_id, '', '') 
                           for seq_id, seq in genome_sampled_reads.items()] 
                          for genome_sampled_reads in sampled_reads]
-    
+    # flatten the list of lists (reads per genome) to just a list (reads)
     sampled_reads_flat = list(chain.from_iterable(sampled_reads_bio))
 
-    
+    # generate quality scores (somewhat naively)
     for read in sampled_reads_flat:
         read.letter_annotations["phred_quality"] = simulate_qual_score(30, 5, len(read.seq))
     
+    # mutate the reads based on quality scores
     sampled_reads_flat_mut = [mutate_seq_from_qual(seqrecord) 
                                for seqrecord in sampled_reads_flat]
-    #print(sampled_reads_flat_mut)
 
     SeqIO.write(sampled_reads_flat_mut, "tests/mock_community/mock_community.fastq", "fastq")
 

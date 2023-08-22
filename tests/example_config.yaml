@@ -1,0 +1,21 @@
+# Root directory for the project
+ROOT: .
+
+# Project name
+PROJ: test
+
+# Metadata file
+METADATA: example_metadata.csv
+
+# Read suffixes containing information on directionality
+READS: 
+  - R1
+  - R2
+
+# Read trimming this many base pairs from the start of the read
+trim_fwd: 10
+trim_rev: 15
+
+# Read truncating this many base pairs from the end of the read
+trunc_fwd: 0
+trunc_rev: 0

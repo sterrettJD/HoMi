@@ -6,6 +6,7 @@ from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
 from itertools import chain
+import gzip
 
 def download_genomes(fpath=os.path.join("tests", "mock_community" ,"data")):
     print(os.getcwd())
@@ -122,6 +123,7 @@ def mutate_seq_from_qual(seqrecord):
 
     return seqrecord
 
+
 def create_qual_scores_and_mutate(list_of_seqrecords, 
                                   mean_phred, var_phred, min_phred=10):
     # generate quality scores (somewhat naively)
@@ -134,6 +136,11 @@ def create_qual_scores_and_mutate(list_of_seqrecords,
     return sampled_reads_flat_mut
 
 
+def compress_fastq(fp):
+    with open(fp, 'rb') as f_in, gzip.open(f"{fp}.gz", 'wb') as f_out:
+        f_out.writelines(f_in)
+
+
 def main():
     # check for mock community data already existing
     if os.path.exists("tests/mock_community/data") == False:
@@ -143,10 +150,10 @@ def main():
     # list of genomes to include
     genomes = ["e_coli", "c_beijerinckii", "f_prausnitzii", "human_pangenome"]
     genomes_read_num_dict = {
-        "e_coli": int(1e6), 
-        "c_beijerinckii": int(1e6), 
-        "f_prausnitzii": int(1e6), 
-        "human_pangenome": int(1e6)
+        "e_coli": int(1e4), 
+        "c_beijerinckii": int(1e4), 
+        "f_prausnitzii": int(1e4), 
+        "human_pangenome": int(1e4)
     }
     genomes_paths = [os.path.join('tests', 'mock_community', 'data', g, 'genome')
                      for g in genomes]
@@ -187,6 +194,8 @@ def main():
     SeqIO.write(sampled_reads_flat_mut, "tests/mock_community/mock_community_R1.fastq", "fastq")
     SeqIO.write(sampled_reads_flat_rev_mut, "tests/mock_community/mock_community_R2.fastq", "fastq")
 
+    compress_fastq("tests/mock_community/mock_community_R1.fastq")
+    compress_fastq("tests/mock_community/mock_community_R2.fastq")
 
 if __name__=="__main__":
     main()

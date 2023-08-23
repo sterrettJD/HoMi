@@ -19,12 +19,12 @@ rule all:
            sample=SAMPLES),
     expand(pj(PROJ,
               "{sample}.R2.fq.gz"),
-           sample=SAMPLES)
+           sample=SAMPLES),
 
     # Made by SeqTK
-#    expand(pj(trim_trunc_path,
-#              "{sample}.{read}.fq"),
-#           sample=SAMPLES, read=READS)
+    expand(pj(trim_trunc_path,
+              "{sample}.R1.fq.gz"),
+           sample=SAMPLES)
 
 rule symlink_fastqs:
   output:
@@ -70,4 +70,27 @@ rule symlink_fastqs:
     symlink(rev_full, 
             rev_symlink)
 
+
+rule trim_forward:
+  input:
+    pj(PROJ,"{sample}.R1.fq.gz")
+  output:
+    pj(trim_trunc_path,
+       "{sample}.R1.fq.gz")
+
+  conda: "conda_envs/seqtk.yaml"
+  resources:
+        partition="short",
+        mem_mb=int(12*1000), # MB, or 20 GB
+        runtime=int(1*60) # min, or 1 hours
+  threads: 1
+  params:
+    trim_trunc_path=trim_trunc_path,
+    trim=config['trim_fwd'],
+    trunc={config['trunc_fwd']}
+  shell:
+    """
+    mkdir -p {params.trim_trunc_path}
+    seqtk trimfq -b {params.trim} -e {params.trunc} {input} > {output}
+    """
 

@@ -5,12 +5,7 @@ ROOT: .
 PROJ: test
 
 # Metadata file
-METADATA: example_metadata.csv
-
-# Read suffixes containing information on directionality
-READS: 
-  - R1
-  - R2
+METADATA: tests/example_metadata.csv
 
 # Read trimming this many base pairs from the start of the read
 trim_fwd: 10

@@ -1,2 +1,2 @@
 Sample,forward_reads,reverse_reads
-mock_community,tests/mock_community/mock_community_R1.fastq,tests/mock_community/mock_community_R2.fastq
+mock_community,tests/mock_community/mock_community_R1.fastq.gz,tests/mock_community/mock_community_R2.fastq.gz

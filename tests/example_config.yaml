@@ -14,3 +14,9 @@ trim_rev: 15
 # Read truncating this many base pairs from the end of the read
 trunc_fwd: 0
 trunc_rev: 0
+
+adapters_path: data/adapters.fa
+
+min_readlen: 50
+readstart_qual_min: 20
+readend_qual_min: 20

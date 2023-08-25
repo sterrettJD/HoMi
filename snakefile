@@ -20,6 +20,25 @@ rule all:
     expand(pj(PROJ,
               "{sample}.R2.fq.gz"),
            sample=SAMPLES),
+    
+    # Adapter and quality-based trimming (trimmomatic)
+    # Also removal of short reads
+    expand(pj(f"{PROJ}.noadpt",
+              "{sample}",
+              "{sample}.trimmed.R1.fq"), # forward paired
+           sample=SAMPLES),
+    expand(pj(f"{PROJ}.noadpt",
+              "{sample}",
+              "{sample}.trimmed_1U"),    # forward unpaired (discard)
+           sample=SAMPLES),
+    expand(pj(f"{PROJ}.noadpt",
+              "{sample}",
+              "{sample}.trimmed.R2.fq"), # reverse unpaired
+          sample=SAMPLES),
+    expand(pj(f"{PROJ}.noadpt",
+              "{sample}",
+              "{sample}.trimmed_2U"),     # reverse unpaired (discard)
+          sample=SAMPLES),
 
     # Made by SeqTK
     expand(pj(trim_trunc_path,
@@ -73,6 +92,47 @@ rule symlink_fastqs:
     symlink(rev_full, 
             rev_symlink)
 
+rule remove_adapters:
+    input:
+        FORWARD=pj(PROJ,
+                  "{sample}.R1.fq.gz"),
+        REVERSE=pj(PROJ,
+                  "{sample}.R2.fq.gz")
+    output:
+        pj("{PROJ}.noadpt","{sample}","{sample}.trimmed.R1.fq"), # forward paired
+        pj("{PROJ}.noadpt","{sample}","{sample}.trimmed_1U"),    # forward unpaired (discard)
+        pj("{PROJ}.noadpt","{sample}","{sample}.trimmed.R2.fq"), # reverse unpaired
+        pj("{PROJ}.noadpt","{sample}","{sample}.trimmed_2U")     # reverse unpaired (discard)
+
+    conda:
+        "trimmomatic"
+    resources:
+        mem_mb=int(8*1000), # 8 GB
+        partition="short",
+        runtime=int(12*60)
+    threads: 8
+    params:
+      proj=PROJ,
+      adpt=config['adapters_path'],
+      minlen=config['min_readlen'],
+      leading=config['readstart_qual_min'],
+      trailing=config['readend_qual_min']
+    shell:
+        """
+        mkdir -p {params.proj}.noadpt/{wildcards.sample}
+        trimmomatic PE -threads 8 \
+            -trimlog {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimlog \
+            -summary {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.summary \
+            -validatePairs {input.FORWARD} {input.REVERSE} \
+            -baseout {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed \
+            ILLUMINACLIP:{params.adpt}:2:30:10 SLIDINGWINDOW:4:20 LEADING:{params.leading} TRAILING:{params.trailing} MINLEN:{params.minlen} \
+        
+        mv {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed_1P {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed.R1.fq
+        mv {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed_2P {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed.R2.fq
+
+        echo "completed adapter trimming of {wildcards.sample}"
+        """
+
 
 rule trim_forward:
   input:
@@ -81,7 +141,7 @@ rule trim_forward:
     pj(trim_trunc_path,
        "{sample}.R1.fq.gz")
 
-  conda: "conda_envs/seqtk.yaml"
+  conda: "seqtk"
   resources:
         partition="short",
         mem_mb=int(12*1000), # MB, or 20 GB
@@ -104,7 +164,7 @@ rule trim_reverse:
     pj(trim_trunc_path,
        "{sample}.R2.fq.gz")
 
-  conda: "conda_envs/seqtk.yaml"
+  conda: "seqtk"
   resources:
         partition="short",
         mem_mb=int(12*1000), # MB, or 20 GB

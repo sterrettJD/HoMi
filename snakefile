@@ -45,6 +45,11 @@ rule all:
               "{sample}.trimmed.{read}_fastqc.zip"),
            sample=SAMPLES, read=READS),
 
+    # first pass multiQC
+    pj(f"{PROJ}.noadpt.fastqc",
+        "multiqc_report",
+        "multiqc_report.html")
+
     # Made by SeqTK
     expand(pj(trim_trunc_path,
               "{sample}.R1.fq.gz"),
@@ -159,6 +164,28 @@ rule fastQC_pass1:
     """
     mkdir -p {params.proj}.noadpt.fastqc
     fastqc {input} -o {params.proj}.noadpt.fastqc
+    """
+
+rule multiqc_pass1:
+  input:
+    expand(pj(f"{PROJ}.noadpt.fastqc",
+              "{sample}.trimmed.{read}_fastqc.zip"),
+           sample=SAMPLES, read=READS)
+  output:
+    pj(f"{PROJ}.noadpt.fastqc",
+        "multiqc_report",
+        "multiqc_report.html")
+  conda: "fastqc"
+  resources:
+        partition="short",
+        mem_mb=int(2*1000), # MB, or 2 GB
+        runtime=int(0.5*60) # min, or 0.5 hours
+  threads: 1
+  params:
+    proj=PROJ
+  shell:
+    """
+    multiqc {params.proj}.noadpt.fastqc -o {params.proj}.noadpt.fastqc/multiqc_report
     """
 
 

@@ -1,0 +1,9 @@
+name: fastqc
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - multiqc
+  - fastqc
+prefix: /Users/johnsterrett/mambaforge/envs/fastqc

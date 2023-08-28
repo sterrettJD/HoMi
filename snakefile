@@ -99,10 +99,10 @@ rule remove_adapters:
         REVERSE=pj(PROJ,
                   "{sample}.R2.fq.gz")
     output:
-        pj("{PROJ}.noadpt","{sample}","{sample}.trimmed.R1.fq"), # forward paired
-        pj("{PROJ}.noadpt","{sample}","{sample}.trimmed_1U"),    # forward unpaired (discard)
-        pj("{PROJ}.noadpt","{sample}","{sample}.trimmed.R2.fq"), # reverse unpaired
-        pj("{PROJ}.noadpt","{sample}","{sample}.trimmed_2U")     # reverse unpaired (discard)
+        pj(f"{PROJ}.noadpt", "{sample}", "{sample}.trimmed.R1.fq"), # forward paired
+        pj(f"{PROJ}.noadpt", "{sample}", "{sample}.trimmed_1U"),    # forward unpaired (discard)
+        pj(f"{PROJ}.noadpt", "{sample}", "{sample}.trimmed.R2.fq"), # reverse unpaired
+        pj(f"{PROJ}.noadpt", "{sample}", "{sample}.trimmed_2U")     # reverse unpaired (discard)
 
     conda:
         "trimmomatic"
@@ -136,7 +136,7 @@ rule remove_adapters:
 
 rule trim_forward:
   input:
-    pj(PROJ,"{sample}.R1.fq.gz")
+    pj(f"{PROJ}.noadpt","{sample}","{sample}.trimmed.R1.fq")
   output:
     pj(trim_trunc_path,
        "{sample}.R1.fq.gz")
@@ -159,7 +159,7 @@ rule trim_forward:
 
 rule trim_reverse:
   input:
-    pj(PROJ,"{sample}.R2.fq.gz")
+    pj(f"{PROJ}.noadpt","{sample}","{sample}.trimmed.R2.fq")
   output:
     pj(trim_trunc_path,
        "{sample}.R2.fq.gz")
@@ -179,3 +179,6 @@ rule trim_reverse:
     mkdir -p {params.trim_trunc_path}
     seqtk trimfq -b {params.trim} -e {params.trunc} {input} > {output}
     """
+
+# TODO: fastQC/multiqc before seqtk
+# TODO: fastQC/multiqc after seqtk

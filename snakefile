@@ -40,6 +40,11 @@ rule all:
               "{sample}.trimmed_2U"),     # reverse unpaired (discard)
           sample=SAMPLES),
 
+    # first pass fastQC
+    expand(pj(f"{PROJ}.noadpt.fastqc",
+              "{sample}.trimmed.{read}_fastqc.zip"),
+           sample=SAMPLES, read=READS),
+
     # Made by SeqTK
     expand(pj(trim_trunc_path,
               "{sample}.R1.fq.gz"),
@@ -132,6 +137,29 @@ rule remove_adapters:
 
         echo "completed adapter trimming of {wildcards.sample}"
         """
+
+rule fastQC_pass1:
+  input:
+    pj(f"{PROJ}.noadpt", 
+        "{sample}",
+        "{sample}.trimmed.{read}.fq")
+  output:
+    pj(f"{PROJ}.noadpt.fastqc",
+        "{sample}.trimmed.{read}_fastqc.zip")
+
+  conda: "fastqc"
+  resources:
+        partition="short",
+        mem_mb=int(2*1000), # MB, or 2 GB
+        runtime=int(0.5*60) # min, or 0.5 hours
+  threads: 1
+  params:
+    proj=PROJ
+  shell:
+    """
+    mkdir -p {params.proj}.noadpt.fastqc
+    fastqc {input} -o {params.proj}.noadpt.fastqc
+    """
 
 
 rule trim_forward:

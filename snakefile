@@ -48,15 +48,27 @@ rule all:
     # first pass multiQC
     pj(f"{PROJ}.noadpt.fastqc",
         "multiqc_report",
-        "multiqc_report.html")
+        "multiqc_report.html"),
 
     # Made by SeqTK
     expand(pj(trim_trunc_path,
-              "{sample}.R1.fq.gz"),
+              "{sample}.R1.fq"),
            sample=SAMPLES),
     expand(pj(trim_trunc_path,
-              "{sample}.R2.fq.gz"),
-           sample=SAMPLES)
+              "{sample}.R2.fq"),
+           sample=SAMPLES),
+
+    # second pass fastQC
+    expand(pj(f"{trim_trunc_path}.fastqc",
+              "{sample}.{read}_fastqc.zip"),
+           sample=SAMPLES, read=READS),
+
+    # second pass multiQC
+    pj(f"{trim_trunc_path}.fastqc",
+        "multiqc_report",
+        "multiqc_report.html")
+
+
 
 rule symlink_fastqs:
   output:
@@ -83,22 +95,21 @@ rule symlink_fastqs:
 
     sample = wildcards.sample
     
+    print(sample)
+
     fwd = df.loc[df["Sample"]==sample, "forward_reads"].values[0]
     rev = df.loc[df["Sample"]==sample, "reverse_reads"].values[0]
 
     fwd_full = pj(cwd, fwd)
     fwd_symlink = pj(cwd, proj,f"{sample}.R1.fq.gz")
-
     rev_full = pj(cwd, rev)
     rev_symlink = pj(cwd, proj,f"{sample}.R2.fq.gz")
-
-
     print(f"{fwd_full} --> {fwd_symlink}")
     print(f"{rev_full} --> {rev_symlink}")
     
+    # do the symlink
     symlink(fwd_full, 
             fwd_symlink)
-
     symlink(rev_full, 
             rev_symlink)
 
@@ -194,7 +205,7 @@ rule trim_forward:
     pj(f"{PROJ}.noadpt","{sample}","{sample}.trimmed.R1.fq")
   output:
     pj(trim_trunc_path,
-       "{sample}.R1.fq.gz")
+       "{sample}.R1.fq")
 
   conda: "seqtk"
   resources:
@@ -217,7 +228,7 @@ rule trim_reverse:
     pj(f"{PROJ}.noadpt","{sample}","{sample}.trimmed.R2.fq")
   output:
     pj(trim_trunc_path,
-       "{sample}.R2.fq.gz")
+       "{sample}.R2.fq")
 
   conda: "seqtk"
   resources:
@@ -235,5 +246,46 @@ rule trim_reverse:
     seqtk trimfq -b {params.trim} -e {params.trunc} {input} > {output}
     """
 
-# TODO: fastQC/multiqc before seqtk
-# TODO: fastQC/multiqc after seqtk
+rule fastQC_pass2:
+  input:
+    pj(trim_trunc_path,
+       "{sample}.{read}.fq")
+  output:
+    pj(f"{trim_trunc_path}.fastqc",
+        "{sample}.{read}_fastqc.zip")
+
+  conda: "fastqc"
+  resources:
+        partition="short",
+        mem_mb=int(2*1000), # MB, or 2 GB
+        runtime=int(0.5*60) # min, or 0.5 hours
+  threads: 1
+  params:
+    trim_trunc_path=trim_trunc_path
+  shell:
+    """
+    mkdir -p {params.trim_trunc_path}.fastqc
+    fastqc {input} -o {params.trim_trunc_path}.fastqc
+    """
+
+rule multiqc_pass2:
+  input:
+    expand(pj(f"{trim_trunc_path}.fastqc",
+              "{sample}.{read}_fastqc.zip"),
+           sample=SAMPLES, read=READS)
+  output:
+    pj(f"{trim_trunc_path}.fastqc",
+        "multiqc_report",
+        "multiqc_report.html")
+  conda: "fastqc"
+  resources:
+        partition="short",
+        mem_mb=int(2*1000), # MB, or 2 GB
+        runtime=int(0.5*60) # min, or 0.5 hours
+  threads: 1
+  params:
+    trim_trunc_path=trim_trunc_path
+  shell:
+    """
+    multiqc {params.trim_trunc_path}.fastqc -o {params.trim_trunc_path}.fastqc/multiqc_report
+    """

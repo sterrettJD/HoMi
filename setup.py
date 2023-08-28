@@ -1,5 +1,5 @@
 from setuptools import setup, find_packages
-from HoMi import __version__ as version
+from HoMi.init import __version__ as version
 
 __author__ = 'sterrettJD'
 __version__ = version

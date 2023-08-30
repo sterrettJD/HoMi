@@ -1,6 +1,7 @@
 import subprocess
 import argparse
 import os
+from re import findall
 
 
 def get_args():
@@ -32,7 +33,17 @@ def make_prebuilt_conda_snakefile(snakepath):
     with open(snakepath, "r") as f:
         file = f.read()
 
-    file = file.replace("conda_envs/", "")
+    # Maybe just pulling the list of conda envs from that directory could be a better option?
+    conda_envs_patterns = findall(r"conda_envs\/[a-z]+.yaml", file)
+    conda_envs_patterns = set(conda_envs_patterns)
+    
+    for pattern in conda_envs_patterns:
+        replacement = pattern
+        replacement.replace("conda_envs/")
+        replacement.replace(".yaml")
+
+        file.replace(pattern, replacement)
+
 
     new_snakepath = make_prebuilt_conda_snakefile_name(snakepath)
     with open(new_snakepath, "w") as f:

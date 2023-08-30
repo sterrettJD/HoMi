@@ -206,7 +206,7 @@ rule trim_forward:
     pj(trim_trunc_path,
        "{sample}.R1.fq")
 
-  conda: "conda_envs/seqtk"
+  conda: "conda_envs/seqtk.yaml"
   resources:
         partition="short",
         mem_mb=int(12*1000), # MB, or 20 GB

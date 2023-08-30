@@ -124,7 +124,7 @@ rule remove_adapters:
         pj(f"{PROJ}.noadpt", "{sample}", "{sample}.trimmed.R2.fq"), # reverse unpaired
         pj(f"{PROJ}.noadpt", "{sample}", "{sample}.trimmed_2U")     # reverse unpaired (discard)
 
-    conda: "conda_envs/trimmomatic"
+    conda: "conda_envs/trimmomatic.yaml"
     resources:
         mem_mb=int(8*1000), # 8 GB
         partition="short",
@@ -162,7 +162,7 @@ rule fastQC_pass1:
     pj(f"{PROJ}.noadpt.fastqc",
         "{sample}.trimmed.{read}_fastqc.zip")
 
-  conda: "conda_envs/fastqc"
+  conda: "conda_envs/fastqc.yaml"
   resources:
         partition="short",
         mem_mb=int(2*1000), # MB, or 2 GB
@@ -185,7 +185,7 @@ rule multiqc_pass1:
   output:
     directory(pj(f"{PROJ}.noadpt.fastqc",
                 "multiqc_report"))
-  conda: "conda_envs/fastqc"
+  conda: "conda_envs/fastqc.yaml"
   resources:
         partition="short",
         mem_mb=int(2*1000), # MB, or 2 GB
@@ -230,7 +230,7 @@ rule trim_reverse:
     pj(trim_trunc_path,
        "{sample}.R2.fq")
 
-  conda: "conda_envs/seqtk"
+  conda: "conda_envs/seqtk.yaml"
   resources:
         partition="short",
         mem_mb=int(12*1000), # MB, or 20 GB
@@ -255,7 +255,7 @@ rule fastQC_pass2:
     pj(f"{trim_trunc_path}.fastqc",
         "{sample}.{read}_fastqc.zip")
 
-  conda: "conda_envs/fastqc"
+  conda: "conda_envs/fastqc.yaml"
   resources:
         partition="short",
         mem_mb=int(2*1000), # MB, or 2 GB
@@ -278,7 +278,7 @@ rule multiqc_pass2:
   output:
     directory(pj(f"{trim_trunc_path}.fastqc",
                   "multiqc_report"))
-  conda: "conda_envs/fastqc"
+  conda: "conda_envs/fastqc.yaml"
   resources:
         partition="short",
         mem_mb=int(2*1000), # MB, or 2 GB

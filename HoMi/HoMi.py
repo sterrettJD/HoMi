@@ -2,7 +2,7 @@ import subprocess
 import argparse
 import os
 
-# def get_args
+
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("config", help="path config file for pipeline (yaml)")
@@ -11,6 +11,9 @@ def get_args():
                         default=None)
     parser.add_argument("-c", "--cores", help="Number of cores for snakemake to use",
                         type=int, default=None)
+    parser.add_argument("--conda_prebuilt", 
+                        action="store_true",
+                        help="All conda environments have been prebuilt, snakemake should not build them")
     return parser.parse_args()
 
 
@@ -19,6 +22,23 @@ def get_snakefile_path():
     snakepath = os.path.join(path_2_script, "../snakefile")
     # remove ".."
     return os.path.normpath(snakepath)
+
+
+def make_prebuilt_conda_snakefile_name(old_snakepath):
+    return old_snakepath + "_prebuilt"
+
+
+def make_prebuilt_conda_snakefile(snakepath):
+    with open(snakepath, "r") as f:
+        file = f.read()
+
+    file = file.replace("conda_envs/", "")
+
+    new_snakepath = make_prebuilt_conda_snakefile_name(snakepath)
+    with open(new_snakepath, "w") as f:
+        f.write(file)
+
+    return new_snakepath
 
 
 def construct_snakemake_command(snakepath, args):
@@ -37,13 +57,16 @@ def construct_snakemake_command(snakepath, args):
         command.append("--cores")
         command.append(str(args.cores))
 
-    print(command)
     return command
 
 
 def main():
-    snakepath = get_snakefile_path()
     args = get_args()
+
+    snakepath = get_snakefile_path()
+
+    if args.conda_prebuilt is True:
+        snakepath = make_prebuilt_conda_snakefile(snakepath)
 
     command = construct_snakemake_command(snakepath, args)
     subprocess.run(command)

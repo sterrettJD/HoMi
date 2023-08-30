@@ -38,6 +38,7 @@ def make_prebuilt_conda_snakefile(snakepath):
     conda_envs_patterns = findall(r"conda_envs\/[a-z]+.yaml", file)
     conda_envs_patterns = set(conda_envs_patterns)
     
+    print("Conda environments should be named accordingly:")
     for pattern in conda_envs_patterns:
         replacement = pattern
         replacement = replacement.replace("conda_envs/", "")

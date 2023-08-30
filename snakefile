@@ -47,8 +47,7 @@ rule all:
 
     # first pass multiQC
     pj(f"{PROJ}.noadpt.fastqc",
-        "multiqc_report",
-        "multiqc_report.html"),
+        "multiqc_report"),
 
     # Made by SeqTK
     expand(pj(trim_trunc_path,
@@ -65,8 +64,7 @@ rule all:
 
     # second pass multiQC
     pj(f"{trim_trunc_path}.fastqc",
-        "multiqc_report",
-        "multiqc_report.html")
+        "multiqc_report")
 
 
 
@@ -113,6 +111,7 @@ rule symlink_fastqs:
     symlink(rev_full, 
             rev_symlink)
 
+
 rule remove_adapters:
     input:
         FORWARD=pj(PROJ,
@@ -125,8 +124,7 @@ rule remove_adapters:
         pj(f"{PROJ}.noadpt", "{sample}", "{sample}.trimmed.R2.fq"), # reverse unpaired
         pj(f"{PROJ}.noadpt", "{sample}", "{sample}.trimmed_2U")     # reverse unpaired (discard)
 
-    conda:
-        "trimmomatic"
+    conda: "conda_envs/trimmomatic"
     resources:
         mem_mb=int(8*1000), # 8 GB
         partition="short",
@@ -154,6 +152,7 @@ rule remove_adapters:
         echo "completed adapter trimming of {wildcards.sample}"
         """
 
+
 rule fastQC_pass1:
   input:
     pj(f"{PROJ}.noadpt", 
@@ -163,7 +162,7 @@ rule fastQC_pass1:
     pj(f"{PROJ}.noadpt.fastqc",
         "{sample}.trimmed.{read}_fastqc.zip")
 
-  conda: "fastqc"
+  conda: "conda_envs/fastqc"
   resources:
         partition="short",
         mem_mb=int(2*1000), # MB, or 2 GB
@@ -177,16 +176,16 @@ rule fastQC_pass1:
     fastqc {input} -o {params.proj}.noadpt.fastqc
     """
 
+
 rule multiqc_pass1:
   input:
     expand(pj(f"{PROJ}.noadpt.fastqc",
               "{sample}.trimmed.{read}_fastqc.zip"),
            sample=SAMPLES, read=READS)
   output:
-    pj(f"{PROJ}.noadpt.fastqc",
-        "multiqc_report",
-        "multiqc_report.html")
-  conda: "fastqc"
+    directory(pj(f"{PROJ}.noadpt.fastqc",
+                "multiqc_report"))
+  conda: "conda_envs/fastqc"
   resources:
         partition="short",
         mem_mb=int(2*1000), # MB, or 2 GB
@@ -207,7 +206,7 @@ rule trim_forward:
     pj(trim_trunc_path,
        "{sample}.R1.fq")
 
-  conda: "seqtk"
+  conda: "conda_envs/seqtk"
   resources:
         partition="short",
         mem_mb=int(12*1000), # MB, or 20 GB
@@ -223,6 +222,7 @@ rule trim_forward:
     seqtk trimfq -b {params.trim} -e {params.trunc} {input} > {output}
     """
 
+
 rule trim_reverse:
   input:
     pj(f"{PROJ}.noadpt","{sample}","{sample}.trimmed.R2.fq")
@@ -230,7 +230,7 @@ rule trim_reverse:
     pj(trim_trunc_path,
        "{sample}.R2.fq")
 
-  conda: "seqtk"
+  conda: "conda_envs/seqtk"
   resources:
         partition="short",
         mem_mb=int(12*1000), # MB, or 20 GB
@@ -246,6 +246,7 @@ rule trim_reverse:
     seqtk trimfq -b {params.trim} -e {params.trunc} {input} > {output}
     """
 
+
 rule fastQC_pass2:
   input:
     pj(trim_trunc_path,
@@ -254,7 +255,7 @@ rule fastQC_pass2:
     pj(f"{trim_trunc_path}.fastqc",
         "{sample}.{read}_fastqc.zip")
 
-  conda: "fastqc"
+  conda: "conda_envs/fastqc"
   resources:
         partition="short",
         mem_mb=int(2*1000), # MB, or 2 GB
@@ -268,16 +269,16 @@ rule fastQC_pass2:
     fastqc {input} -o {params.trim_trunc_path}.fastqc
     """
 
+
 rule multiqc_pass2:
   input:
     expand(pj(f"{trim_trunc_path}.fastqc",
               "{sample}.{read}_fastqc.zip"),
            sample=SAMPLES, read=READS)
   output:
-    pj(f"{trim_trunc_path}.fastqc",
-        "multiqc_report",
-        "multiqc_report.html")
-  conda: "fastqc"
+    directory(pj(f"{trim_trunc_path}.fastqc",
+                  "multiqc_report"))
+  conda: "conda_envs/fastqc"
   resources:
         partition="short",
         mem_mb=int(2*1000), # MB, or 2 GB

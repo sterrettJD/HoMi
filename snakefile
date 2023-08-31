@@ -64,8 +64,15 @@ rule all:
 
     # second pass multiQC
     pj(f"{trim_trunc_path}.fastqc",
-        "multiqc_report")
+        "multiqc_report"),
 
+    # nonhost reads
+    expand(pj(f"{trim_trunc_path}.nonhost",
+            "{sample}.R1.fq.gz"),
+          sample=SAMPLES),
+    expand(pj(f"{trim_trunc_path}.nonhost",
+            "{sample}.R2.fq.gz"),
+          sample=SAMPLES)
 
 
 rule symlink_fastqs:
@@ -289,4 +296,36 @@ rule multiqc_pass2:
   shell:
     """
     multiqc {params.trim_trunc_path}.fastqc -o {params.trim_trunc_path}.fastqc/multiqc_report
+    """
+
+
+rule host_filter:
+  input:
+    FWD=pj(trim_trunc_path,
+       "{sample}.R1.fq"),
+    REV=pj(trim_trunc_path,
+       "{sample}.R2.fq")
+  output:
+    FWD=pj(f"{trim_trunc_path}.nonhost",
+            "{sample}.R1.fq.gz"),
+    REV=pj(f"{trim_trunc_path}.nonhost",
+            "{sample}.R2.fq.gz")
+  conda: "conda_envs/hostile.yaml"
+  resources:
+        partition="short",
+        mem_mb=int(6*1000), # MB, or 6 GB, hostile should max at 4, but playing it safe
+        runtime=int(4*60) # min, or 4 hours
+  threads: 8
+  params:
+    trim_trunc_path=trim_trunc_path
+  shell:
+    """
+    hostile clean \
+    --fastq1 {input.FWD} --fastq2 {input.REV} \
+    --out-dir {params.trim_trunc_path}.nonhost \
+    --threads {threads}
+
+    # cleanup filepaths
+    mv {params.trim_trunc_path}.nonhost/{wildcards.sample}.R1.clean_1.fastq.gz {output.FWD}
+    mv {params.trim_trunc_path}.nonhost/{wildcards.sample}.R2.clean_2.fastq.gz {output.REV}
     """

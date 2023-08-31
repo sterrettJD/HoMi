@@ -152,6 +152,7 @@ rule remove_adapters:
             -validatePairs {input.FORWARD} {input.REVERSE} \
             -baseout {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed \
             ILLUMINACLIP:{params.adpt}:2:30:10 SLIDINGWINDOW:4:20 LEADING:{params.leading} TRAILING:{params.trailing} MINLEN:{params.minlen} \
+            -phred33
         
         mv {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed_1P {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed.R1.fq
         mv {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed_2P {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed.R2.fq
@@ -323,7 +324,10 @@ rule host_filter:
     hostile clean \
     --fastq1 {input.FWD} --fastq2 {input.REV} \
     --out-dir {params.trim_trunc_path}.nonhost \
-    --threads {threads}
+    --threads {threads} \
+    --index human-t2t-hla-argos985/human-t2t-hla-argos985 \
+    --debug \
+    --aligner bowtie2
 
     # cleanup filepaths
     mv {params.trim_trunc_path}.nonhost/{wildcards.sample}.R1.clean_1.fastq.gz {output.FWD}

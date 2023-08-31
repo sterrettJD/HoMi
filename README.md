@@ -26,7 +26,7 @@ If conda environments have already been built, and you'd like snakemake to not b
 ### Running with example dataset
 ```
 # Create the mock community (too big for github)
-python create_mock_community.py
+python tests/mock_community/create_mock_community.py
 
 # Use the example config and example metadata provided
 HoMi.py tests/example_config.yaml --cores 1

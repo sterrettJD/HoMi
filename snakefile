@@ -66,6 +66,11 @@ rule all:
     pj(f"{trim_trunc_path}.fastqc",
         "multiqc_report"),
 
+    # hostile index
+    multiext("human-t2t-hla-argos985/human-t2t-hla-argos985",
+             ".1.bt2", ".2.bt2", ".3.bt2", ".4.bt2",
+             ".rev.1.bt2", ".rev.2.bt2"),
+
     # nonhost reads
     expand(pj(f"{trim_trunc_path}.nonhost",
             "{sample}.R1.fq.gz"),
@@ -240,9 +245,9 @@ rule trim_reverse:
 
   conda: "conda_envs/seqtk.yaml"
   resources:
-        partition="short",
-        mem_mb=int(12*1000), # MB, or 20 GB
-        runtime=int(1*60) # min, or 1 hours
+    partition="short",
+    mem_mb=int(12*1000), # MB, or 20 GB
+    runtime=int(1*60) # min, or 1 hours
   threads: 1
   params:
     trim_trunc_path=trim_trunc_path,
@@ -265,9 +270,9 @@ rule fastQC_pass2:
 
   conda: "conda_envs/fastqc.yaml"
   resources:
-        partition="short",
-        mem_mb=int(2*1000), # MB, or 2 GB
-        runtime=int(0.5*60) # min, or 0.5 hours
+    partition="short",
+    mem_mb=int(2*1000), # MB, or 2 GB
+    runtime=int(0.5*60) # min, or 0.5 hours
   threads: 1
   params:
     trim_trunc_path=trim_trunc_path
@@ -299,9 +304,31 @@ rule multiqc_pass2:
     multiqc {params.trim_trunc_path}.fastqc -o {params.trim_trunc_path}.fastqc/multiqc_report
     """
 
+rule download_hostile_db:
+  output:
+    multiext("human-t2t-hla-argos985/human-t2t-hla-argos985",
+             ".1.bt2", ".2.bt2", ".3.bt2", ".4.bt2",
+             ".rev.1.bt2", ".rev.2.bt2")
+  resources:
+    partition="short",
+    mem_mb=int(4*1000), # MB, or 4 GB,
+    runtime=int(1*60) # min, or 1 hour
+  threads: 1
+  shell:
+    """
+    mkdir -p human-t2t-hla-argos985
+    cd human-t2t-hla-argos985
+    wget https://objectstorage.uk-london-1.oraclecloud.com/n/lrbvkel2wjot/b/human-genome-bucket/o/human-t2t-hla-argos985.tar
+    tar -xzvf human-t2t-hla-argos985.tar
+    rm human-t2t-hla-argos985.tar
+    """
+
 
 rule host_filter:
   input:
+    INDEX=multiext("human-t2t-hla-argos985/human-t2t-hla-argos985",
+             ".1.bt2", ".2.bt2", ".3.bt2", ".4.bt2",
+             ".rev.1.bt2", ".rev.2.bt2"),
     FWD=pj(trim_trunc_path,
        "{sample}.R1.fq"),
     REV=pj(trim_trunc_path,
@@ -313,9 +340,9 @@ rule host_filter:
             "{sample}.R2.fq.gz")
   conda: "conda_envs/hostile.yaml"
   resources:
-        partition="short",
-        mem_mb=int(6*1000), # MB, or 6 GB, hostile should max at 4, but playing it safe
-        runtime=int(4*60) # min, or 4 hours
+    partition="short",
+    mem_mb=int(6*1000), # MB, or 6 GB, hostile should max at 4, but playing it safe
+    runtime=int(4*60) # min, or 4 hours
   threads: 8
   params:
     trim_trunc_path=trim_trunc_path

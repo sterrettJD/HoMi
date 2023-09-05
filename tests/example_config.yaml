@@ -7,16 +7,36 @@ PROJ: test
 # Metadata file
 METADATA: tests/example_metadata.csv
 
+################################################
+### TRIMMOMATIC ADAPTER AND QUALITY TRIMMING ###
+# filepath to adapter sequences to be removed from sequences
+adapters_path: data/adapters.fa
+# minimum read length after trimming
+min_readlen: 50
+# the minimum quality for the start of a read. If it's below this quality, trim that base pair
+readstart_qual_min: 20
+# the minimum quality for the end of a read. If it's below this quality, trim that base pair
+readend_qual_min: 20
+
+######################
+### SEQTK TRIMMING ###
+# This is a second pass hard trimming, after trimmomatic has done quality-based and adapter trimming
 # Read trimming this many base pairs from the start of the read
-trim_fwd: 10
-trim_rev: 15
+trim_fwd: 5
+trim_rev: 10
 
 # Read truncating this many base pairs from the end of the read
 trunc_fwd: 0
 trunc_rev: 0
 
-adapters_path: data/adapters.fa
-
-min_readlen: 50
-readstart_qual_min: 20
-readend_qual_min: 20
+############################
+### Hostile host read removal ###
+# Database for host read removal
+# Current supported options include:
+# - human-t2t-hla
+# - human-t2t-hla-argos985
+# - filepath to an already downloaded and bowtie2-indexed database 
+#   (with no .bt1, .bt2 etc file extensions in this argument)
+hostile_db: human-t2t-hla-argos985
+# Where to download a database for hostile (if applicable)
+loc_for_hostile_db_download: data

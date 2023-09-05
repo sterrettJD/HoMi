@@ -79,20 +79,30 @@ def get_sampled_reads_from_all_genomes(genomes_read_num_dict, genomes_paths):
     return all_reads
         
 
-def simulate_qual_score(mean_phred, var_phred, read_len, min_phred=10):
-    # simulate from 40 "trials"
-    n = 40
-    # setup for simulation from neg binom model
-    mean_nb = n - mean_phred
-    p = mean_nb/(var_phred**2) # calculate p and r (successes) for n binom
-    r = mean_nb**2/(var_phred**2 - mean_nb) # this comes from wikipedia
-
+def simulate_qual_score(mean_phred, var_phred, read_len, min_phred=10, method="gaussian"):
     # instantiate rng
-    rng = np.random.default_rng(seed=42)
+    rng = np.random.default_rng(seed=random.randint(0,9999))
 
-    to_subtract = rng.negative_binomial(n=r, p=p, size=read_len)
-    # subtract from max phred
-    phreds = 40 - to_subtract
+    if method=="gaussian":
+        phreds = rng.normal(mean_phred, var_phred, size=read_len)
+        phreds = phreds.astype(int)
+
+    elif method=="negative_binomial":
+        # simulate from 40 "trials"
+        n = 40
+        # setup for simulation from neg binom model
+        mean_nb = n - mean_phred
+        p = mean_nb/(var_phred**2) # calculate p and r (successes) for n binom
+        r = mean_nb**2/(var_phred**2 - mean_nb) # this comes from wikipedia
+
+        to_subtract = rng.negative_binomial(n=r, p=p, size=read_len)
+
+        # subtract from max phred
+        phreds = 40 - to_subtract
+    
+    else:
+        raise ValueError(f"argument method {method} is not available. Please use 'gaussian' or 'negative_binomial'")
+
     # don't let it be lower than the min phred
     # probs not the best way to do this but good enough?
     phreds = [max(phred, min_phred) for phred in phreds]
@@ -111,7 +121,6 @@ def mutate_seq_from_qual(seqrecord):
     # decide whether or not to mutate each base pair
     to_mut = [random.choices([0,1], weights=get_error_probs(q))[0] 
               for q in seqrecord.letter_annotations["phred_quality"]]
-    
     # gotta convert to an iterable because Seq doesn't allow assignment
     sequence = list(seqrecord.seq)
     for i, base in enumerate(sequence):
@@ -119,9 +128,10 @@ def mutate_seq_from_qual(seqrecord):
             # naive substitution
             sequence[i] = random.choice(list(letters.difference({base})))
     # convert to string then Seq object
-    seqrecord.seq = Seq("".join(sequence))
+    new_seqrecord = seqrecord
+    new_seqrecord.seq = Seq("".join(sequence))
 
-    return seqrecord
+    return new_seqrecord
 
 
 def create_qual_scores_and_mutate(list_of_seqrecords, 
@@ -178,17 +188,17 @@ def main():
                          for genome_sampled_reads in sampled_reads]
     # flatten the list of lists (reads per genome) to just a list (reads)
     sampled_reads_flat = list(chain.from_iterable(sampled_reads_bio))
-    
+
     # create the reverse reads
-    sampled_reads_flat_rev = sampled_reads_flat
+    sampled_reads_flat_rev = [SeqRecord(Seq(''), '', '', '')] * len(sampled_reads_flat)
     for i, sequence in enumerate(sampled_reads_flat):
         sampled_reads_flat_rev[i].seq = sequence.seq[::-1] 
-
+    
     sampled_reads_flat_mut = create_qual_scores_and_mutate(sampled_reads_flat, 
                                         mean_phred=35, var_phred=5, min_phred=10)
     
     sampled_reads_flat_rev_mut = create_qual_scores_and_mutate(sampled_reads_flat_rev, 
-                                        mean_phred=35, var_phred=5, min_phred=10)
+                                        mean_phred=35, var_phred=3, min_phred=10)
     
     
     SeqIO.write(sampled_reads_flat_mut, "tests/mock_community/mock_community_R1.fastq", "fastq")

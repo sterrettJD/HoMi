@@ -1,5 +1,6 @@
 import pandas as pd
 from os.path import join as pj
+from src.snake_utils import hostile_db_to_path
 
 METADATA = pd.read_csv(config['METADATA'])
 SAMPLES = METADATA["Sample"].tolist()
@@ -8,6 +9,11 @@ RAW_REV_READS = METADATA["reverse_reads"]
 
 READS = ["R1", "R2"]
 PROJ = config['PROJ']
+
+HOSTILE_DB_NAME = config['hostile_db']
+HOSTILE_DB_DWNLD_PATH = config['loc_for_hostile_db_download']
+HOSTILE_DB_PATH = hostile_db_to_path(HOSTILE_DB_NAME, 
+                                                 HOSTILE_DB_DWNLD_PATH)
 
 trim_trunc_path = f"{config['PROJ']}.f{config['trim_fwd']}.{config['trunc_fwd']}.r{config['trim_rev']}.{config['trunc_rev']}"
 
@@ -64,8 +70,20 @@ rule all:
 
     # second pass multiQC
     pj(f"{trim_trunc_path}.fastqc",
-        "multiqc_report")
+        "multiqc_report"),
 
+    # hostile index
+    multiext(HOSTILE_DB_PATH,
+             ".1.bt2", ".2.bt2", ".3.bt2", ".4.bt2",
+             ".rev.1.bt2", ".rev.2.bt2"),
+
+    # nonhost reads
+    expand(pj(f"{trim_trunc_path}.nonhost",
+            "{sample}.R1.fq.gz"),
+          sample=SAMPLES),
+    expand(pj(f"{trim_trunc_path}.nonhost",
+            "{sample}.R2.fq.gz"),
+          sample=SAMPLES)
 
 
 rule symlink_fastqs:
@@ -145,6 +163,7 @@ rule remove_adapters:
             -validatePairs {input.FORWARD} {input.REVERSE} \
             -baseout {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed \
             ILLUMINACLIP:{params.adpt}:2:30:10 SLIDINGWINDOW:4:20 LEADING:{params.leading} TRAILING:{params.trailing} MINLEN:{params.minlen} \
+            -phred33
         
         mv {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed_1P {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed.R1.fq
         mv {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed_2P {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed.R2.fq
@@ -232,9 +251,9 @@ rule trim_reverse:
 
   conda: "conda_envs/seqtk.yaml"
   resources:
-        partition="short",
-        mem_mb=int(12*1000), # MB, or 20 GB
-        runtime=int(1*60) # min, or 1 hours
+    partition="short",
+    mem_mb=int(12*1000), # MB, or 20 GB
+    runtime=int(1*60) # min, or 1 hours
   threads: 1
   params:
     trim_trunc_path=trim_trunc_path,
@@ -257,9 +276,9 @@ rule fastQC_pass2:
 
   conda: "conda_envs/fastqc.yaml"
   resources:
-        partition="short",
-        mem_mb=int(2*1000), # MB, or 2 GB
-        runtime=int(0.5*60) # min, or 0.5 hours
+    partition="short",
+    mem_mb=int(2*1000), # MB, or 2 GB
+    runtime=int(0.5*60) # min, or 0.5 hours
   threads: 1
   params:
     trim_trunc_path=trim_trunc_path
@@ -289,4 +308,73 @@ rule multiqc_pass2:
   shell:
     """
     multiqc {params.trim_trunc_path}.fastqc -o {params.trim_trunc_path}.fastqc/multiqc_report
+    """
+
+rule download_hostile_db:
+  output:
+    multiext(HOSTILE_DB_PATH,
+             ".1.bt2", ".2.bt2", ".3.bt2", ".4.bt2",
+             ".rev.1.bt2", ".rev.2.bt2")
+  resources:
+    partition="short",
+    mem_mb=int(4*1000), # MB, or 4 GB,
+    runtime=int(1*60) # min, or 1 hour
+  threads: 1
+  params:
+    hostile_db_name=HOSTILE_DB_NAME,
+    db_parent_path=HOSTILE_DB_DWNLD_PATH
+  shell:
+    """
+    if [[ "{params.hostile_db_name}" == "human-t2t-hla-argos985" ]]; then
+      mkdir -p {params.db_parent_path}
+      cd {params.db_parent_path}
+      wget https://objectstorage.uk-london-1.oraclecloud.com/n/lrbvkel2wjot/b/human-genome-bucket/o/human-t2t-hla-argos985.tar
+      tar -xzvf {params.hostile_db_name}.tar
+      rm {params.hostile_db_name}.tar
+    elif [[ "{params.hostile_db_name}" == "human-t2t-hla" ]]; then
+      mkdir -p {params.db_parent_path}
+      cd {params.db_parent_path}
+      wget https://objectstorage.uk-london-1.oraclecloud.com/n/lrbvkel2wjot/b/human-genome-bucket/o/human-t2t-hla.tar
+      tar -xzvf {params.hostile_db_name}.tar
+      rm {params.hostile_db_name}.tar
+    fi
+    """
+
+
+rule host_filter:
+  input:
+    INDEX=multiext(HOSTILE_DB_PATH,
+             ".1.bt2", ".2.bt2", ".3.bt2", ".4.bt2",
+             ".rev.1.bt2", ".rev.2.bt2"),
+    FWD=pj(trim_trunc_path,
+       "{sample}.R1.fq"),
+    REV=pj(trim_trunc_path,
+       "{sample}.R2.fq")
+  output:
+    FWD=pj(f"{trim_trunc_path}.nonhost",
+            "{sample}.R1.fq.gz"),
+    REV=pj(f"{trim_trunc_path}.nonhost",
+            "{sample}.R2.fq.gz")
+  conda: "conda_envs/hostile.yaml"
+  resources:
+    partition="short",
+    mem_mb=int(6*1000), # MB, or 6 GB, hostile should max at 4, but playing it safe
+    runtime=int(4*60) # min, or 4 hours
+  threads: 8
+  params:
+    trim_trunc_path=trim_trunc_path,
+    hostile_db_path=HOSTILE_DB_PATH
+  shell:
+    """
+    hostile clean \
+    --fastq1 {input.FWD} --fastq2 {input.REV} \
+    --out-dir {params.trim_trunc_path}.nonhost \
+    --threads {threads} \
+    --index {params.hostile_db_path} \
+    --debug \
+    --aligner bowtie2
+
+    # cleanup filepaths
+    mv {params.trim_trunc_path}.nonhost/{wildcards.sample}.R1.clean_1.fastq.gz {output.FWD}
+    mv {params.trim_trunc_path}.nonhost/{wildcards.sample}.R2.clean_2.fastq.gz {output.REV}
     """

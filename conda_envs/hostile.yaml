@@ -1,0 +1,8 @@
+name: hostile
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - hostile
+prefix: /Users/johnsterrett/mambaforge/envs/hostile

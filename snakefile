@@ -325,13 +325,13 @@ rule download_hostile_db:
     db_parent_path=HOSTILE_DB_DWNLD_PATH
   shell:
     """
-    if [{params.hostile_db_name} == "human-t2t-hla-argos985"]; then
+    if [[ "{params.hostile_db_name}" == "human-t2t-hla-argos985" ]]; then
       mkdir -p {params.db_parent_path}
       cd {params.db_parent_path}
       wget https://objectstorage.uk-london-1.oraclecloud.com/n/lrbvkel2wjot/b/human-genome-bucket/o/human-t2t-hla-argos985.tar
       tar -xzvf {params.hostile_db_name}.tar
       rm {params.hostile_db_name}.tar
-    elif [{params.hostile_db_name} == "human-t2t-hla"]; then
+    elif [[ "{params.hostile_db_name}" == "human-t2t-hla" ]]; then
       mkdir -p {params.db_parent_path}
       cd {params.db_parent_path}
       wget https://objectstorage.uk-london-1.oraclecloud.com/n/lrbvkel2wjot/b/human-genome-bucket/o/human-t2t-hla.tar

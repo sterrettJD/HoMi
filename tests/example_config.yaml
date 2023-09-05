@@ -9,8 +9,6 @@ METADATA: tests/example_metadata.csv
 
 ################################################
 ### TRIMMOMATIC ADAPTER AND QUALITY TRIMMING ###
-# filepath to adapter sequences to be removed from sequences
-adapters_path: data/adapters.fa
 # minimum read length after trimming
 min_readlen: 50
 # the minimum quality for the start of a read. If it's below this quality, trim that base pair

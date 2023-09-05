@@ -31,4 +31,12 @@ trunc_rev: 0
 
 ############################
 ### Hostile host read removal ###
+# Database for host read removal
+# Current supported options include:
+# - human-t2t-hla
+# - human-t2t-hla-argos985
+# - filepath to an already downloaded and bowtie2-indexed database 
+#   (with no .bt1, .bt2 etc file extensions in this argument)
 hostile_db: human-t2t-hla-argos985
+# Where to download a database for hostile (if applicable)
+loc_for_hostile_db_download: data

@@ -1,5 +1,6 @@
 import pandas as pd
 from os.path import join as pj
+from src.snake_utils import hostile_db_to_path
 
 METADATA = pd.read_csv(config['METADATA'])
 SAMPLES = METADATA["Sample"].tolist()
@@ -8,6 +9,11 @@ RAW_REV_READS = METADATA["reverse_reads"]
 
 READS = ["R1", "R2"]
 PROJ = config['PROJ']
+
+HOSTILE_DB_NAME = config['hostile_db']
+HOSTILE_DB_DWNLD_PATH = config['loc_for_hostile_db_download']
+HOSTILE_DB_PATH = hostile_db_to_path(HOSTILE_DB_NAME, 
+                                                 HOSTILE_DB_DWNLD_PATH)
 
 trim_trunc_path = f"{config['PROJ']}.f{config['trim_fwd']}.{config['trunc_fwd']}.r{config['trim_rev']}.{config['trunc_rev']}"
 
@@ -67,7 +73,7 @@ rule all:
         "multiqc_report"),
 
     # hostile index
-    multiext("human-t2t-hla-argos985/human-t2t-hla-argos985",
+    multiext(HOSTILE_DB_PATH,
              ".1.bt2", ".2.bt2", ".3.bt2", ".4.bt2",
              ".rev.1.bt2", ".rev.2.bt2"),
 
@@ -306,7 +312,7 @@ rule multiqc_pass2:
 
 rule download_hostile_db:
   output:
-    multiext("human-t2t-hla-argos985/human-t2t-hla-argos985",
+    multiext(HOSTILE_DB_PATH,
              ".1.bt2", ".2.bt2", ".3.bt2", ".4.bt2",
              ".rev.1.bt2", ".rev.2.bt2")
   resources:
@@ -314,19 +320,30 @@ rule download_hostile_db:
     mem_mb=int(4*1000), # MB, or 4 GB,
     runtime=int(1*60) # min, or 1 hour
   threads: 1
+  params:
+    hostile_db_name=HOSTILE_DB_NAME,
+    db_parent_path=HOSTILE_DB_DWNLD_PATH
   shell:
     """
-    mkdir -p human-t2t-hla-argos985
-    cd human-t2t-hla-argos985
-    wget https://objectstorage.uk-london-1.oraclecloud.com/n/lrbvkel2wjot/b/human-genome-bucket/o/human-t2t-hla-argos985.tar
-    tar -xzvf human-t2t-hla-argos985.tar
-    rm human-t2t-hla-argos985.tar
+    if [{params.hostile_db_name} == "human-t2t-hla-argos985"]; then
+      mkdir -p {params.db_parent_path}
+      cd {params.db_parent_path}
+      wget https://objectstorage.uk-london-1.oraclecloud.com/n/lrbvkel2wjot/b/human-genome-bucket/o/human-t2t-hla-argos985.tar
+      tar -xzvf {params.hostile_db_name}.tar
+      rm {params.hostile_db_name}.tar
+    elif [{params.hostile_db_name} == "human-t2t-hla"]; then
+      mkdir -p {params.db_parent_path}
+      cd {params.db_parent_path}
+      wget https://objectstorage.uk-london-1.oraclecloud.com/n/lrbvkel2wjot/b/human-genome-bucket/o/human-t2t-hla.tar
+      tar -xzvf {params.hostile_db_name}.tar
+      rm {params.hostile_db_name}.tar
+    fi
     """
 
 
 rule host_filter:
   input:
-    INDEX=multiext("human-t2t-hla-argos985/human-t2t-hla-argos985",
+    INDEX=multiext(HOSTILE_DB_PATH,
              ".1.bt2", ".2.bt2", ".3.bt2", ".4.bt2",
              ".rev.1.bt2", ".rev.2.bt2"),
     FWD=pj(trim_trunc_path,
@@ -345,14 +362,15 @@ rule host_filter:
     runtime=int(4*60) # min, or 4 hours
   threads: 8
   params:
-    trim_trunc_path=trim_trunc_path
+    trim_trunc_path=trim_trunc_path,
+    hostile_db_path=HOSTILE_DB_PATH
   shell:
     """
     hostile clean \
     --fastq1 {input.FWD} --fastq2 {input.REV} \
     --out-dir {params.trim_trunc_path}.nonhost \
     --threads {threads} \
-    --index human-t2t-hla-argos985/human-t2t-hla-argos985 \
+    --index {params.hostile_db_path} \
     --debug \
     --aligner bowtie2
 

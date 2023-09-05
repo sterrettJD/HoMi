@@ -1,6 +1,6 @@
 import pandas as pd
 from os.path import join as pj
-from src.snake_utils import hostile_db_to_path
+from src.snake_utils import hostile_db_to_path, get_adapters_path
 
 METADATA = pd.read_csv(config['METADATA'])
 SAMPLES = METADATA["Sample"].tolist()
@@ -150,7 +150,7 @@ rule remove_adapters:
     threads: 8
     params:
       proj=PROJ,
-      adpt=config['adapters_path'],
+      adpt=get_adapters_path(),
       minlen=config['min_readlen'],
       leading=config['readstart_qual_min'],
       trailing=config['readend_qual_min']

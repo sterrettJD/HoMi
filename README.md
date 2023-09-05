@@ -39,6 +39,7 @@ HoMi.py tests/example_config.yaml --cores 1
 - `data/` contains relevant data, such as adapter sequences to be removed during trimming.
 
 ## Pipeline steps
+### Preprocessing
 1. Create a symbolic link to the sequencing files.
 2. Trim reads using Trimmomatic
     - Trims adapter sequences from reads
@@ -50,3 +51,8 @@ HoMi.py tests/example_config.yaml --cores 1
 4. Trim read ends using Seqtk
     - Consider this a second pass, in case Trimmomatic didn't catch something
 5. Generates a second pass quality report with FastQC + MultiQC after the second trimming step
+
+### Read mapping
+6. Remove host reads using Hostile
+    - User should pass a database in the config file. Currently supported options are `human-t2t-hla` and `human-t2t-hla-argos985`.
+    - OR users can pass a filepath to a bowtie2 index without the `.bt` extensions (e.g., `index/example_index`, where files exist named `index/example_index.bt1`, `index/example_index.bt2`, etc.).

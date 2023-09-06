@@ -4,8 +4,8 @@ from src.snake_utils import hostile_db_to_path, get_adapters_path
 
 METADATA = pd.read_csv(config['METADATA'])
 SAMPLES = METADATA["Sample"].tolist()
-RAW_FWD_READS = METADATA["forward_reads"]
-RAW_REV_READS = METADATA["reverse_reads"]
+RAW_FWD_READS = METADATA[config['fwd_reads_path']]
+RAW_REV_READS = METADATA[config['fwd_reads_path']]
 
 READS = ["R1", "R2"]
 PROJ = config['PROJ']

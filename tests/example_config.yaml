@@ -6,6 +6,8 @@ PROJ: test
 
 # Metadata file
 METADATA: tests/example_metadata.csv
+fwd_reads_path: forward_reads
+rev_reads_path: reverse_reads
 
 ################################################
 ### TRIMMOMATIC ADAPTER AND QUALITY TRIMMING ###

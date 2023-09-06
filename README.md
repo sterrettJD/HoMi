@@ -18,7 +18,7 @@ An example config file is provided in `tests/example_config.yaml`.
 
 ### Metadata file
 An example metadata file is provided in `tests/example_metadata.csv`.
-Metadata files should contain (at the minimum) a SampleID column, a forward reads filepath column (`forward_reads`), and a reverse reads filepath column (`reverse_reads`). These filepaths should be relative to the directory from which you are running `HoMi`.
+Metadata files should contain (at the minimum) a SampleID column, a forward reads filepath column (column name specified in the config file under `fwd_reads_path`), and a reverse reads filepath column (column name specified in the config file under `rev_reads_path`). These filepaths should be relative to the directory from which you are running `HoMi`.
 
 ### Conda environment building
 If conda environments have already been built, and you'd like snakemake to not build them, pass the argument `--conda_prebuilt`.

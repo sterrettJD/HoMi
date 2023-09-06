@@ -5,7 +5,7 @@ from src.snake_utils import hostile_db_to_path, get_adapters_path
 METADATA = pd.read_csv(config['METADATA'])
 SAMPLES = METADATA["Sample"].tolist()
 RAW_FWD_READS = METADATA[config['fwd_reads_path']]
-RAW_REV_READS = METADATA[config['fwd_reads_path']]
+RAW_REV_READS = METADATA[config['rev_reads_path']]
 
 READS = ["R1", "R2"]
 PROJ = config['PROJ']
@@ -113,8 +113,8 @@ rule symlink_fastqs:
     
     print(sample)
 
-    fwd = df.loc[df["Sample"]==sample, "forward_reads"].values[0]
-    rev = df.loc[df["Sample"]==sample, "reverse_reads"].values[0]
+    fwd = df.loc[df["Sample"]==sample, config['fwd_reads_path']].values[0]
+    rev = df.loc[df["Sample"]==sample, config['rev_reads_path']].values[0]
 
     fwd_full = pj(cwd, fwd)
     fwd_symlink = pj(cwd, proj,f"{sample}.R1.fq.gz")

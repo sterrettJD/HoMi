@@ -185,7 +185,7 @@ rule fastQC_pass1:
   resources:
         partition="short",
         mem_mb=int(2*1000), # MB, or 2 GB
-        runtime=int(0.5*60) # min, or 0.5 hours
+        runtime=int(2*60) # min, or 2 hours
   threads: 1
   params:
     proj=PROJ
@@ -278,7 +278,7 @@ rule fastQC_pass2:
   resources:
     partition="short",
     mem_mb=int(2*1000), # MB, or 2 GB
-    runtime=int(0.5*60) # min, or 0.5 hours
+    runtime=int(2*60) # min, or 0.5 hours
   threads: 1
   params:
     trim_trunc_path=trim_trunc_path
@@ -318,7 +318,7 @@ rule download_hostile_db:
   resources:
     partition="short",
     mem_mb=int(4*1000), # MB, or 4 GB,
-    runtime=int(1*60) # min, or 1 hour
+    runtime=int(8*60) # min, or 8 hours (in the case of a bad connection)
   threads: 1
   params:
     hostile_db_name=HOSTILE_DB_NAME,
@@ -358,9 +358,9 @@ rule host_filter:
   conda: "conda_envs/hostile.yaml"
   resources:
     partition="short",
-    mem_mb=int(6*1000), # MB, or 6 GB, hostile should max at 4, but playing it safe
-    runtime=int(4*60) # min, or 4 hours
-  threads: 8
+    mem_mb=int(12*1000), # MB, or 12 GB, hostile should max at 4 (under 8 thread example), but playing it safe
+    runtime=int(20*60) # min, or 20 hours
+  threads: 16
   params:
     trim_trunc_path=trim_trunc_path,
     hostile_db_path=HOSTILE_DB_PATH

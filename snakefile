@@ -83,8 +83,11 @@ rule all:
           sample=SAMPLES),
     expand(pj(f"{trim_trunc_path}.nonhost",
             "{sample}.R2.fq.gz"),
-          sample=SAMPLES)
+          sample=SAMPLES),
 
+    # HUMAnN pipeline
+    "data/humann_dbs/uniref/",
+    "data/humann_dbs/chocophlan/"
 
 rule symlink_fastqs:
   output:
@@ -378,3 +381,37 @@ rule host_filter:
     mv {params.trim_trunc_path}.nonhost/{wildcards.sample}.R1.clean_1.fastq.gz {output.FWD}
     mv {params.trim_trunc_path}.nonhost/{wildcards.sample}.R2.clean_2.fastq.gz {output.REV}
     """
+
+
+
+############# RUN BIOBAKERY HUMANN PIPELINE ON NONHOST READS #############
+
+rule get_biobakery_chocophlan_db:
+    output:
+        directory("data/humann_dbs/chocophlan/")
+    resources:
+        partition="short",
+        mem_mb= int(4*1000), # MB
+        runtime=int(60*4) # min
+    threads: 1
+    conda: "conda_envs/humann.yaml"
+    shell:
+        """
+        mkdir -p data/humann_dbs
+        humann_databases --download chocophlan full data/humann_dbs/chocophlan --update-config yes
+        """
+
+rule get_biobakery_uniref_db:
+    output:
+        directory("data/humann_dbs/uniref/")
+    resources:
+        partition="short",
+        mem_mb= int(4*1000), # MB
+        runtime=int(60*4) # min
+    threads: 1
+    conda: "conda_envs/humann.yaml"
+    shell:
+        """
+        mkdir -p data/humann_dbs
+        humann_databases --download uniref uniref90_diamond data/humann_dbs/uniref --update-config yes
+        """

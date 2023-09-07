@@ -530,9 +530,10 @@ rule aggregate_humann_outs_nonhost:
                               "all_genefamilies_grouped_named.tsv"),
     BUGSLIST=pj(f"{trim_trunc_path}.nonhost.humann", 
                 "all_bugs_list.tsv"),
-    V3_NOAGG_BUGS=pj(f"{trim_trunc_path}.nonhost.humann",
+    V3_NOAGG_BUGS=expand(pj(f"{trim_trunc_path}.nonhost.humann",
                 "{sample}", "{sample}_humann_temp", 
-                "{sample}_metaphlan_bugs_list_v3.tsv")
+                "{sample}_metaphlan_bugs_list_v3.tsv"),
+                sample=SAMPLES)
 
   resources:
     partition="short",

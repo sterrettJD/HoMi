@@ -417,6 +417,23 @@ rule host_filter:
 
 ############# RUN BIOBAKERY HUMANN PIPELINE ON NONHOST READS #############
 
+rule setup_metaphlan:
+  output:
+    "data/metaphlan.has.been.set.up"
+  resources:
+    partition="short",
+    mem_mb= int(4*1000), # MB
+    runtime=int(60*4) # min
+  threads: 1
+  conda: "conda_envs/humann.yaml"
+  shell:
+    """
+    mkdir -p data/
+    metaphlan --install
+    touch data/metaphlan.has.been.set.up
+    """
+
+
 rule get_biobakery_chocophlan_db:
   output:
     directory("data/humann_dbs/chocophlan/")
@@ -473,6 +490,7 @@ rule concat_nonhost_reads:
 
 rule run_humann_nonhost:
   input:
+    METAPHLAN_SETUP="data/metaphlan.has.been.set.up",
     CHOCO_DB="data/humann_dbs/chocophlan/",
     UNIREF_DB="data/humann_dbs/uniref/",
     NONHUMAN_READS=pj(f"{trim_trunc_path}.nonhost.concat",

@@ -15,6 +15,9 @@ def get_args():
     parser.add_argument("--conda_prebuilt", 
                         action="store_true",
                         help="All conda environments have been prebuilt, snakemake should not build them")
+    parser.add_argument("--unlock", action="store_true",
+                        help="Pass this to unlock a snakemake directory before running the pipeline.\
+                              This is useful if the pipeline failed and you need to rerun it.")
     return parser.parse_args()
 
 
@@ -79,11 +82,17 @@ def main():
 
     snakepath = get_snakefile_path()
 
-    if args.conda_prebuilt is True:
+    if args.conda_prebuilt == True:
         snakepath = make_prebuilt_conda_snakefile(snakepath)
 
+    if args.unlock == True:
+        subprocess.run(["snakemake", 
+                        "-s", snakepath,
+                        "--configfile", args.config,
+                        "--unlock"])
+    
     command = construct_snakemake_command(snakepath, args)
-    subprocess.run(command)
+    completed_process = subprocess.run(command)
 
 if __name__=="__main__":
     main()

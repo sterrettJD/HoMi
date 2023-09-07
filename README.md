@@ -32,7 +32,10 @@ python tests/mock_community/create_mock_community.py
 HoMi.py tests/example_config.yaml --cores 1
 ```
 
-## Repository contents
+#### Unlocking a snakemake directory
+Sometimes, when snakemake unexpectedly exits (e.g., due to a server connection timeout), the directory may be locked. Pass the argument `--unlock` to unlock the directory before running `HoMi.py`.
+
+## Main repository contents
 - `snakefile` contains the bulk of the pipeline
 - `HoMi/` contains `HoMi.py`, a wrapper controlling the behavior of the snakemake pipeline
 - `conda_envs/` contains the conda environments for each rule in the snakemake pipeline

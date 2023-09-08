@@ -86,9 +86,6 @@ rule all:
           sample=SAMPLES),
 
     # HUMAnN pipeline
-    "data/humann_dbs/uniref/",
-    "data/humann_dbs/chocophlan/",
-
     expand(pj(f"{trim_trunc_path}.nonhost.humann",
                 "{sample}", "{sample}_pathabundance.tsv"),
             sample=SAMPLES),
@@ -419,24 +416,27 @@ rule host_filter:
 
 rule setup_metaphlan:
   output:
-    "data/metaphlan.has.been.set.up"
+    directory(config['metaphlan_bowtie_db'])
   resources:
     partition="short",
     mem_mb= int(32*1000), # MB
     runtime=int(60*8) # min
-  threads: 4
+  threads: 8
   conda: "conda_envs/humann.yaml"
   shell:
     """
-    mkdir -p data/
-    metaphlan --install
-    touch data/metaphlan.has.been.set.up
+    mkdir -p {output}
+    # metaphlan --install --bowtie2db  --nproc {threads} {output}
+    cd {output}
+    wget mpa_vOct22_CHOCOPhlAnSGB_202212_bt2.tar
+    tar -xvf mpa_vOct22_CHOCOPhlAnSGB_202212_bt2
+    rm mpa_vOct22_CHOCOPhlAnSGB_202212_bt2.tar
     """
 
 
 rule get_biobakery_chocophlan_db:
   output:
-    directory("data/humann_dbs/chocophlan/")
+    directory(config['chocophlan_db'])
   resources:
     partition="short",
     mem_mb= int(4*1000), # MB
@@ -445,13 +445,13 @@ rule get_biobakery_chocophlan_db:
   conda: "conda_envs/humann.yaml"
   shell:
     """
-    mkdir -p data/humann_dbs
-    humann_databases --download chocophlan full data/humann_dbs/chocophlan --update-config yes
+    mkdir -p {output}
+    humann_databases --download chocophlan full {output} --update-config yes
     """
 
 rule get_biobakery_uniref_db:
   output:
-    directory("data/humann_dbs/uniref/")
+    directory(config['uniref_db'])
   resources:
     partition="short",
     mem_mb= int(4*1000), # MB
@@ -460,8 +460,8 @@ rule get_biobakery_uniref_db:
   conda: "conda_envs/humann.yaml"
   shell:
     """
-    mkdir -p data/humann_dbs
-    humann_databases --download uniref uniref90_diamond data/humann_dbs/uniref --update-config yes
+    mkdir -p {output}
+    humann_databases --download uniref uniref90_diamond {output} --update-config yes
     """
 
 
@@ -490,9 +490,9 @@ rule concat_nonhost_reads:
 
 rule run_humann_nonhost:
   input:
-    METAPHLAN_SETUP="data/metaphlan.has.been.set.up",
-    CHOCO_DB="data/humann_dbs/chocophlan/",
-    UNIREF_DB="data/humann_dbs/uniref/",
+    METAPHLAN_DB=config['metaphlan_bowtie_db'],
+    CHOCO_DB=config['chocophlan_db'],
+    UNIREF_DB=config['uniref_db'],
     NONHUMAN_READS=pj(f"{trim_trunc_path}.nonhost.concat",
         "{sample}.fq.gz") 
   output:
@@ -512,11 +512,14 @@ rule run_humann_nonhost:
   threads: 32
   conda: "conda_envs/humann.yaml"
   params:
-    dirpath=f"{trim_trunc_path}.nonhost.humann"
+    dirpath=f"{trim_trunc_path}.nonhost.humann",
+    metaphlan_bowtie_db=pj(config['metaphlan_bowtie_db'],"mpa_vOct22_CHOCOPhlAnSGB_202212_bt2")
   shell:
     """
     mkdir -p {params.dirpath}
-    humann -i {input.NONHUMAN_READS} -o {params.dirpath}/{wildcards.sample} --threads 32 --search-mode uniref90
+    humann -i {input.NONHUMAN_READS} -o {params.dirpath}/{wildcards.sample} \
+    --threads {threads} --search-mode uniref90 \
+    --metaphlan-options "-x {params.metaphlan_bowtie_db}"
     """
 
 

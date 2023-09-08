@@ -40,3 +40,12 @@ trunc_rev: 0
 hostile_db: human-t2t-hla-argos985
 # Where to download a database for hostile (if applicable)
 loc_for_hostile_db_download: data
+
+
+#################################
+### HUMAnN BioBakery pipeline ###
+
+# Paths to Chocophlan and UniRef databases for HUMAnN
+# If these aren't already downloaded, HoMi will download them
+chocophlan_db: data/humann_dbs/chocophlan
+uniref_db: data/humann_dbs/uniref

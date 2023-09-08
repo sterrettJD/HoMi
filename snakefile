@@ -83,8 +83,42 @@ rule all:
           sample=SAMPLES),
     expand(pj(f"{trim_trunc_path}.nonhost",
             "{sample}.R2.fq.gz"),
-          sample=SAMPLES)
+          sample=SAMPLES),
 
+    # HUMAnN pipeline
+    "data/humann_dbs/uniref/",
+    "data/humann_dbs/chocophlan/",
+
+    expand(pj(f"{trim_trunc_path}.nonhost.humann",
+                "{sample}", "{sample}_pathabundance.tsv"),
+            sample=SAMPLES),
+    expand(pj(f"{trim_trunc_path}.nonhost.humann",
+                "{sample}", "{sample}_pathcoverage.tsv"),
+            sample=SAMPLES),
+    expand(pj(f"{trim_trunc_path}.nonhost.humann",
+                "{sample}", "{sample}_genefamilies.tsv"),
+            sample=SAMPLES),
+    expand(pj(f"{trim_trunc_path}.nonhost.humann",
+                "{sample}", "{sample}_humann_temp", 
+                "{sample}_metaphlan_bugs_list.tsv"),
+            sample=SAMPLES),
+    
+    pj(f"{trim_trunc_path}.nonhost.humann", 
+                "all_pathabundance.tsv"),
+    pj(f"{trim_trunc_path}.nonhost.humann", 
+                "all_pathcoverage.tsv"),
+    pj(f"{trim_trunc_path}.nonhost.humann", 
+                "all_genefamilies.tsv"),
+    pj(f"{trim_trunc_path}.nonhost.humann", 
+                        "all_genefamilies_grouped.tsv"),
+    pj(f"{trim_trunc_path}.nonhost.humann", 
+                              "all_genefamilies_grouped_named.tsv"),
+    pj(f"{trim_trunc_path}.nonhost.humann", 
+                "all_bugs_list.tsv"),
+    expand(pj(f"{trim_trunc_path}.nonhost.humann",
+                "{sample}", "{sample}_humann_temp", 
+                "{sample}_metaphlan_bugs_list_v3.tsv"), 
+                sample=SAMPLES)
 
 rule symlink_fastqs:
   output:
@@ -377,4 +411,167 @@ rule host_filter:
     # cleanup filepaths
     mv {params.trim_trunc_path}.nonhost/{wildcards.sample}.R1.clean_1.fastq.gz {output.FWD}
     mv {params.trim_trunc_path}.nonhost/{wildcards.sample}.R2.clean_2.fastq.gz {output.REV}
+    """
+
+
+
+############# RUN BIOBAKERY HUMANN PIPELINE ON NONHOST READS #############
+
+rule setup_metaphlan:
+  output:
+    "data/metaphlan.has.been.set.up"
+  resources:
+    partition="short",
+    mem_mb= int(32*1000), # MB
+    runtime=int(60*8) # min
+  threads: 4
+  conda: "conda_envs/humann.yaml"
+  shell:
+    """
+    mkdir -p data/
+    metaphlan --install
+    touch data/metaphlan.has.been.set.up
+    """
+
+
+rule get_biobakery_chocophlan_db:
+  output:
+    directory("data/humann_dbs/chocophlan/")
+  resources:
+    partition="short",
+    mem_mb= int(4*1000), # MB
+    runtime=int(60*4) # min
+  threads: 1
+  conda: "conda_envs/humann.yaml"
+  shell:
+    """
+    mkdir -p data/humann_dbs
+    humann_databases --download chocophlan full data/humann_dbs/chocophlan --update-config yes
+    """
+
+rule get_biobakery_uniref_db:
+  output:
+    directory("data/humann_dbs/uniref/")
+  resources:
+    partition="short",
+    mem_mb= int(4*1000), # MB
+    runtime=int(60*4) # min
+  threads: 1
+  conda: "conda_envs/humann.yaml"
+  shell:
+    """
+    mkdir -p data/humann_dbs
+    humann_databases --download uniref uniref90_diamond data/humann_dbs/uniref --update-config yes
+    """
+
+
+rule concat_nonhost_reads:
+  input:
+    FWD=pj(f"{trim_trunc_path}.nonhost",
+            "{sample}.R1.fq.gz"),
+    REV=pj(f"{trim_trunc_path}.nonhost",
+            "{sample}.R2.fq.gz")
+  output:
+    pj(f"{trim_trunc_path}.nonhost.concat",
+            "{sample}.fq.gz")
+  resources:
+    partition="short",
+    mem_mb= int(8*1000), # MB
+    runtime=int(60*4) # min
+  threads: 1
+  params:
+    dirpath=f"{trim_trunc_path}.nonhost.concat"
+  shell:
+    """
+    mkdir -p {params.dirpath}
+    cat {input.FWD} {input.REV} > {output}
+    """
+
+
+rule run_humann_nonhost:
+  input:
+    METAPHLAN_SETUP="data/metaphlan.has.been.set.up",
+    CHOCO_DB="data/humann_dbs/chocophlan/",
+    UNIREF_DB="data/humann_dbs/uniref/",
+    NONHUMAN_READS=pj(f"{trim_trunc_path}.nonhost.concat",
+        "{sample}.fq.gz") 
+  output:
+    PATHABUND=pj(f"{trim_trunc_path}.nonhost.humann",
+                "{sample}", "{sample}_pathabundance.tsv"),
+    PATHCOV=pj(f"{trim_trunc_path}.nonhost.humann",
+                "{sample}", "{sample}_pathcoverage.tsv"),
+    GENEFAMS=pj(f"{trim_trunc_path}.nonhost.humann",
+                "{sample}", "{sample}_genefamilies.tsv"),
+    BUGSLIST=pj(f"{trim_trunc_path}.nonhost.humann",
+                "{sample}", "{sample}_humann_temp", 
+                "{sample}_metaphlan_bugs_list.tsv")
+  resources:
+    partition="short",
+    mem_mb=int(64*1000), # MB, or 64 GB
+    runtime=int(23.9*60) # min, or 23 hours
+  threads: 32
+  conda: "conda_envs/humann.yaml"
+  params:
+    dirpath=f"{trim_trunc_path}.nonhost.humann"
+  shell:
+    """
+    mkdir -p {params.dirpath}
+    humann -i {input.NONHUMAN_READS} -o {params.dirpath}/{wildcards.sample} --threads 32 --search-mode uniref90
+    """
+
+
+rule aggregate_humann_outs_nonhost:
+  input:
+    PATHABUND=expand(pj(f"{trim_trunc_path}.nonhost.humann",
+                "{sample}", "{sample}_pathabundance.tsv"),
+            sample=SAMPLES),
+    PATHCOV=expand(pj(f"{trim_trunc_path}.nonhost.humann",
+                "{sample}", "{sample}_pathcoverage.tsv"),
+            sample=SAMPLES),
+    GENEFAMS=expand(pj(f"{trim_trunc_path}.nonhost.humann",
+                "{sample}", "{sample}_genefamilies.tsv"),
+            sample=SAMPLES),
+    BUGSLIST=expand(pj(f"{trim_trunc_path}.nonhost.humann",
+                "{sample}", "{sample}_humann_temp", 
+                "{sample}_metaphlan_bugs_list.tsv"),
+            sample=SAMPLES)
+  output:
+    PATHABUND=pj(f"{trim_trunc_path}.nonhost.humann", 
+                "all_pathabundance.tsv"),
+    PATHCOV=pj(f"{trim_trunc_path}.nonhost.humann", 
+                "all_pathcoverage.tsv"),
+    GENEFAMS=pj(f"{trim_trunc_path}.nonhost.humann", 
+                "all_genefamilies.tsv"),
+    GENEFAMS_GROUPED=pj(f"{trim_trunc_path}.nonhost.humann", 
+                        "all_genefamilies_grouped.tsv"),
+    GENEFAMS_GROUPED_NAMED=pj(f"{trim_trunc_path}.nonhost.humann", 
+                              "all_genefamilies_grouped_named.tsv"),
+    BUGSLIST=pj(f"{trim_trunc_path}.nonhost.humann", 
+                "all_bugs_list.tsv"),
+    V3_NOAGG_BUGS=expand(pj(f"{trim_trunc_path}.nonhost.humann",
+                "{sample}", "{sample}_humann_temp", 
+                "{sample}_metaphlan_bugs_list_v3.tsv"),
+                sample=SAMPLES)
+
+  resources:
+    partition="short",
+    mem_mb=int(10*1000), # MB, or 10 GB
+    runtime=60 # min
+  threads: 1
+  conda: "conda_envs/humann.yaml"
+  params:
+    dirpath=f"{trim_trunc_path}.nonhost.humann"
+  shell:
+    """
+    humann_join_tables -i {params.dirpath} -o {output.PATHABUND} --file_name pathabundance.tsv --search-subdirectories
+
+    humann_join_tables -i {params.dirpath} -o {output.PATHCOV} --file_name pathcoverage.tsv --search-subdirectories
+
+    humann_join_tables -i {params.dirpath} -o {output.GENEFAMS} --file_name genefamilies.tsv --search-subdirectories
+    humann_regroup_table -i {output.GENEFAMS} -g uniref90_rxn -o {output.GENEFAMS_GROUPED}
+    humann_rename_table -i {output.GENEFAMS_GROUPED} -n metacyc-rxn -o {output.GENEFAMS_GROUPED_NAMED}
+
+    python utils/aggregate_metaphlan_bugslists.py -i {params.dirpath} -o {output.BUGSLIST}
+
+    python utils/convert_mphlan_v4_to_v3.py -i {params.dirpath} 
     """

@@ -422,14 +422,14 @@ rule setup_metaphlan:
     "data/metaphlan.has.been.set.up"
   resources:
     partition="short",
-    mem_mb= int(4*1000), # MB
+    mem_mb= int(32*1000), # MB
     runtime=int(60*8) # min
-  threads: 1
+  threads: 4
   conda: "conda_envs/humann.yaml"
   shell:
     """
     mkdir -p data/
-    metaphlan --install --verbose
+    metaphlan --install
     touch data/metaphlan.has.been.set.up
     """
 

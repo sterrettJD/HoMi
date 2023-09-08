@@ -59,3 +59,4 @@ Sometimes, when snakemake unexpectedly exits (e.g., due to a server connection t
 6. Remove host reads using Hostile
     - User should pass a database in the config file. Currently supported options are `human-t2t-hla` and `human-t2t-hla-argos985`.
     - OR users can pass a filepath to a bowtie2 index without the `.bt` extensions (e.g., `index/example_index`, where files exist named `index/example_index.bt1`, `index/example_index.bt2`, etc.).
+7. Run HUMAnN pipeline to profile microbial reads

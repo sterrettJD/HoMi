@@ -423,13 +423,13 @@ rule setup_metaphlan:
   resources:
     partition="short",
     mem_mb= int(4*1000), # MB
-    runtime=int(60*4) # min
+    runtime=int(60*8) # min
   threads: 1
   conda: "conda_envs/humann.yaml"
   shell:
     """
     mkdir -p data/
-    metaphlan --install
+    metaphlan --install --verbose
     touch data/metaphlan.has.been.set.up
     """
 

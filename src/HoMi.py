@@ -18,6 +18,9 @@ def get_args():
     parser.add_argument("--unlock", action="store_true",
                         help="Pass this to unlock a snakemake directory before running the pipeline.\
                               This is useful if the pipeline failed and you need to rerun it.")
+    parser.add_argument("--snakemake_extra",
+                        help="Extra parameters to pass snakemake",
+                        default=None)
     return parser.parse_args()
 
 
@@ -73,6 +76,9 @@ def construct_snakemake_command(snakepath, args):
     if args.cores is not None:
         command.append("--cores")
         command.append(str(args.cores))
+    
+    if args.snakemake_extra is not None:
+        command.extend(args.snakemake_extra.split())
 
     return command
 

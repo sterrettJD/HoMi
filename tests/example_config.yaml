@@ -45,6 +45,9 @@ loc_for_hostile_db_download: data
 #################################
 ### HUMAnN BioBakery pipeline ###
 
+# Path to MetaPhlan bowtie database (step 1 of HUMAnN)
+metaphlan_bowtie_db: data/metaphlan_db/
+
 # Paths to Chocophlan and UniRef databases for HUMAnN
 # If these aren't already downloaded, HoMi will download them
 chocophlan_db: data/humann_dbs/chocophlan

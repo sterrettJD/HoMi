@@ -115,7 +115,15 @@ rule all:
     expand(pj(f"{trim_trunc_path}.nonhost.humann",
                 "{sample}", "{sample}_humann_temp", 
                 "{sample}_metaphlan_bugs_list_v3.tsv"), 
-                sample=SAMPLES)
+                sample=SAMPLES),
+
+    # Nonhost coverage (via nonpareil)
+    expand(pj(f"{trim_trunc_path}.nonhost.nonpareil", "{sample}.npl"),
+            sample=SAMPLES),
+    expand(pj(f"{trim_trunc_path}.nonhost.nonpareil", "{sample}.npo"),
+            sample=SAMPLES),
+    expand(pj(f"{trim_trunc_path}.nonhost.nonpareil", "{sample}.npa"),
+            sample=SAMPLES)
 
 rule symlink_fastqs:
   output:
@@ -577,4 +585,42 @@ rule aggregate_humann_outs_nonhost:
     python utils/aggregate_metaphlan_bugslists.py -i {params.dirpath} -o {output.BUGSLIST}
 
     python utils/convert_mphlan_v4_to_v3.py -i {params.dirpath} 
+    """
+
+
+#################################
+### Estimate nonhost coverage ###
+
+rule nonpareil:
+  input:
+    # Only with forward reads for now. 
+    # Could also run separately with reverse, but not sure there's much reason to do so.
+    FWD=pj(f"{trim_trunc_path}.nonhost",
+        "{sample}.R1.fq.gz")
+  output:
+    pj(f"{trim_trunc_path}.nonhost.nonpareil", "{sample}.npl"),
+    pj(f"{trim_trunc_path}.nonhost.nonpareil", "{sample}.npo"),
+    pj(f"{trim_trunc_path}.nonhost.nonpareil", "{sample}.npa")
+  resources:
+    partition="short",
+    mem_mb=int(30*1000), # MB
+    runtime=int(60*3) # min
+  threads: 16
+  conda: "conda_envs/nonpareil.yaml"
+  params:
+    dirpath=f"{trim_trunc_path}.nonhost.nonpareil"
+  shell:
+    """
+    mkdir -p {params.dirpath}
+
+    # Unzip fastq
+    pigz -dc -p {threads} {input.FWD} > {params.dirpath}/{wildcards.sample}_temp_unzipped_input.fq
+
+    # fastq is recommended for kmer algorithm, so defaulting to those
+    nonpareil -s {params.dirpath}/{wildcards.sample}_temp_unzipped_input.fq \
+    -b {params.dirpath}/{wildcards.sample} \
+    -T kmer -f fastq -t {threads}
+
+    # remove the temp file
+    rm {params.dirpath}/{wildcards.sample}_temp_unzipped_input.fq
     """

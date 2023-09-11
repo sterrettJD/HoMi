@@ -436,8 +436,8 @@ rule setup_metaphlan:
     mkdir -p {output}
     # metaphlan --install --bowtie2db  --nproc {threads} {output}
     cd {output}
-    wget mpa_vOct22_CHOCOPhlAnSGB_202212_bt2.tar
-    tar -xvf mpa_vOct22_CHOCOPhlAnSGB_202212_bt2
+    wget http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/bowtie2_indexes/mpa_vOct22_CHOCOPhlAnSGB_202212_bt2.tar
+    tar -xvf mpa_vOct22_CHOCOPhlAnSGB_202212_bt2.tar
     rm mpa_vOct22_CHOCOPhlAnSGB_202212_bt2.tar
     """
 

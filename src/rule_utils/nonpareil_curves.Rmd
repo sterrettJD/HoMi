@@ -7,21 +7,20 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 
 if (!require("Nonpareil")){
-  install.packages('Nonpareil');  
+  install.packages('Nonpareil', repos="http://cran.us.r-project.org");  
 }
 if (!require("data.table")){
-  install.packages('data.table');  
+  install.packages('data.table', repos="http://cran.us.r-project.org");
 }
 if (!require("ggplot2")){
-  install.packages('ggplot2');  
+  install.packages('ggplot2', repos="http://cran.us.r-project.org");
 }
-setwd("analysis")
 ```
 
 # Curves
 ```{r}
-metadata <- data.table::fread("metadata.csv")
-filepaths <- paste0("seq.f0.0.r0.0.nonhost.nonpareil/", 
+metadata <- data.table::fread("/scratch/Users/jost9358/Aug_23_dual_seq/metadata.csv")
+filepaths <- paste0("/scratch/Users/jost9358/Aug_23_dual_seq/seq.f0.0.r0.0.nonhost.nonpareil/", 
                     metadata$Sample, 
                     ".npo")
 

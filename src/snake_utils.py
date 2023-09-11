@@ -16,3 +16,23 @@ def get_adapters_path():
         return adapters_path
     else:
         raise FileNotFoundError(f"Adapters were not found in {adapters_path}.")
+    
+def get_nonpareil_rmd_path():
+    path_2_script = path.dirname(__file__)
+    rmd_path = path.join(path_2_script, "rule_utils", "nonpareil_curves.Rmd")
+    # remove ".."
+    rmd_path = path.normpath(rmd_path)
+
+    if path.exists(rmd_path):
+        return rmd_path
+    else:
+        raise FileNotFoundError(f"Nonpareil Rmd was not found at {rmd_path}.")
+
+def get_nonpareil_html_path():
+    path_2_script = path.dirname(__file__)
+    html_path = path.join(path_2_script, "rule_utils", "nonpareil_curves.html")
+    # remove ".."
+    html_path = path.normpath(html_path)
+
+    return html_path
+    

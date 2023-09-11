@@ -1,6 +1,6 @@
 import pandas as pd
 from os.path import join as pj
-from src.snake_utils import hostile_db_to_path, get_adapters_path
+from src.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil_rmd_path, get_nonpareil_html_path
 
 METADATA = pd.read_csv(config['METADATA'])
 SAMPLES = METADATA["Sample"].tolist()
@@ -115,7 +115,16 @@ rule all:
     expand(pj(f"{trim_trunc_path}.nonhost.humann",
                 "{sample}", "{sample}_humann_temp", 
                 "{sample}_metaphlan_bugs_list_v3.tsv"), 
-                sample=SAMPLES)
+                sample=SAMPLES),
+
+    # Nonhost coverage (via nonpareil)
+    expand(pj(f"{trim_trunc_path}.nonhost.nonpareil", "{sample}.npl"),
+            sample=SAMPLES),
+    expand(pj(f"{trim_trunc_path}.nonhost.nonpareil", "{sample}.npo"),
+            sample=SAMPLES),
+    expand(pj(f"{trim_trunc_path}.nonhost.nonpareil", "{sample}.npa"),
+            sample=SAMPLES),
+    get_nonpareil_html_path()
 
 rule symlink_fastqs:
   output:
@@ -428,8 +437,8 @@ rule setup_metaphlan:
     mkdir -p {output}
     # metaphlan --install --bowtie2db  --nproc {threads} {output}
     cd {output}
-    wget mpa_vOct22_CHOCOPhlAnSGB_202212_bt2.tar
-    tar -xvf mpa_vOct22_CHOCOPhlAnSGB_202212_bt2
+    wget http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/bowtie2_indexes/mpa_vOct22_CHOCOPhlAnSGB_202212_bt2.tar
+    tar -xvf mpa_vOct22_CHOCOPhlAnSGB_202212_bt2.tar
     rm mpa_vOct22_CHOCOPhlAnSGB_202212_bt2.tar
     """
 
@@ -519,7 +528,8 @@ rule run_humann_nonhost:
     mkdir -p {params.dirpath}
     humann -i {input.NONHUMAN_READS} -o {params.dirpath}/{wildcards.sample} \
     --threads {threads} --search-mode uniref90 \
-    --metaphlan-options="-x {params.metaphlan_bowtie_db}"
+#    --metaphlan-options="--bowtie2db /scratch/Users/jost9358/Aug_23_dual_seq/data/metaphlan_db/"
+
     """
 
 
@@ -577,4 +587,64 @@ rule aggregate_humann_outs_nonhost:
     python utils/aggregate_metaphlan_bugslists.py -i {params.dirpath} -o {output.BUGSLIST}
 
     python utils/convert_mphlan_v4_to_v3.py -i {params.dirpath} 
+    """
+
+
+#################################
+### Estimate nonhost coverage ###
+
+rule nonpareil:
+  input:
+    # Only with forward reads for now. 
+    # Could also run separately with reverse, but not sure there's much reason to do so.
+    FWD=pj(f"{trim_trunc_path}.nonhost",
+        "{sample}.R1.fq.gz")
+  output:
+    pj(f"{trim_trunc_path}.nonhost.nonpareil", "{sample}.npl"),
+    pj(f"{trim_trunc_path}.nonhost.nonpareil", "{sample}.npo"),
+    pj(f"{trim_trunc_path}.nonhost.nonpareil", "{sample}.npa")
+  resources:
+    partition="short",
+    mem_mb=int(30*1000), # MB
+    runtime=int(60*3) # min
+  threads: 16
+  conda: "conda_envs/nonpareil.yaml"
+  params:
+    dirpath=f"{trim_trunc_path}.nonhost.nonpareil"
+  shell:
+    """
+    mkdir -p {params.dirpath}
+
+    # Unzip fastq
+    pigz -dc -p {threads} {input.FWD} > {params.dirpath}/{wildcards.sample}_temp_unzipped_input.fq
+
+    # fastq is recommended for kmer algorithm, so defaulting to those
+    nonpareil -s {params.dirpath}/{wildcards.sample}_temp_unzipped_input.fq \
+    -b {params.dirpath}/{wildcards.sample} \
+    -T kmer -f fastq -t {threads}
+
+    # remove the temp file
+    rm {params.dirpath}/{wildcards.sample}_temp_unzipped_input.fq
+    """
+
+
+rule nonpareil_curves:
+  input:
+    expand(pj(f"{trim_trunc_path}.nonhost.nonpareil", "{sample}.npo"),
+          sample=SAMPLES)
+  output:
+    get_nonpareil_html_path()
+  resources:
+    partition="short",
+    mem_mb=int(8*1000), # MB
+    runtime=int(60*1) # min
+  conda: "conda_envs/r_env.yaml"
+  params:
+    rmd_path=get_nonpareil_rmd_path(),
+    output_dir=f"{trim_trunc_path}.nonhost.nonpareil",
+    metadata=pj(os.getcwd(), config['METADATA'])
+  shell:
+    """
+    Rscript \
+    -e "rmarkdown::render('{params.rmd_path}', output_dir='{params.output_dir}'', params=c(npo_path='{params.output_dir}', metadata='{params.metadata}''))"
     """

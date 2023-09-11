@@ -123,7 +123,8 @@ rule all:
     expand(pj(f"{trim_trunc_path}.nonhost.nonpareil", "{sample}.npo"),
             sample=SAMPLES),
     expand(pj(f"{trim_trunc_path}.nonhost.nonpareil", "{sample}.npa"),
-            sample=SAMPLES)
+            sample=SAMPLES),
+    get_nonpareil_html_path()
 
 rule symlink_fastqs:
   output:

@@ -1,6 +1,6 @@
 import pandas as pd
 from os.path import join as pj
-from src.snake_utils import hostile_db_to_path, get_adapters_path
+from src.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil_rmd_path, get_nonpareil_html_path
 
 METADATA = pd.read_csv(config['METADATA'])
 SAMPLES = METADATA["Sample"].tolist()
@@ -623,4 +623,23 @@ rule nonpareil:
 
     # remove the temp file
     rm {params.dirpath}/{wildcards.sample}_temp_unzipped_input.fq
+    """
+
+
+rule nonpareil_curves:
+  input:
+    expand(pj(f"{trim_trunc_path}.nonhost.nonpareil", "{sample}.npo"),
+          sample=SAMPLES)
+  output:
+    get_nonpareil_html_path()
+  resources:
+    partition="short",
+    mem_mb=int(8*1000), # MB
+    runtime=int(60*1) # min
+  conda: "conda_envs/r_env.yaml"
+  params:
+    rmd_path=get_nonpareil_rmd_path()
+  shell:
+    """
+    Rscript -e "rmarkdown::render('{params.rmd_path}')"
     """

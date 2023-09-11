@@ -528,7 +528,7 @@ rule run_humann_nonhost:
     mkdir -p {params.dirpath}
     humann -i {input.NONHUMAN_READS} -o {params.dirpath}/{wildcards.sample} \
     --threads {threads} --search-mode uniref90 \
-    --metaphlan-options="-x {params.metaphlan_bowtie_db}"
+    --metaphlan-options="-x {params.metaphlan_bowtie_db} --offline"
     """
 
 

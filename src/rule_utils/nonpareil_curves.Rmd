@@ -1,6 +1,9 @@
 ---
 title: "Nonpareil curves"
 output: html_document
+params:
+    metadata: "metadata.csv"
+    npo_path: "seq.f0.0.r0.0.nonhost.nonpareil/"
 ---
 
 ```{r setup, include=FALSE}
@@ -19,8 +22,8 @@ if (!require("ggplot2")){
 
 # Curves
 ```{r}
-metadata <- data.table::fread("/scratch/Users/jost9358/Aug_23_dual_seq/metadata.csv")
-filepaths <- paste0("/scratch/Users/jost9358/Aug_23_dual_seq/seq.f0.0.r0.0.nonhost.nonpareil/", 
+metadata <- data.table::fread(metadata)
+filepaths <- paste0(npo_path, "/",
                     metadata$Sample, 
                     ".npo")
 

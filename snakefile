@@ -639,8 +639,11 @@ rule nonpareil_curves:
     runtime=int(60*1) # min
   conda: "conda_envs/r_env.yaml"
   params:
-    rmd_path=get_nonpareil_rmd_path()
+    rmd_path=get_nonpareil_rmd_path(),
+    output_dir=f"{trim_trunc_path}.nonhost.nonpareil",
+    metadata=pj(os.getcwd(), config['METADATA'])
   shell:
     """
-    Rscript -e "rmarkdown::render('{params.rmd_path}')"
+    Rscript \
+    -e "rmarkdown::render('{params.rmd_path}', output_dir='{params.output_dir}'', params=c(npo_path='{params.output_dir}', metadata='{params.metadata}''))"
     """

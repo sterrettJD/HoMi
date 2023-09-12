@@ -36,3 +36,24 @@ def get_nonpareil_html_path():
 
     return html_path
     
+def get_agg_script_path():
+    path_2_script = path.dirname(__file__)
+    agg_path = path.join(path_2_script, "rule_utils", "aggregate_metaphlan_bugslists.py")
+    # remove ".."
+    agg_path = path.normpath(agg_path)
+
+    if path.exists(agg_path):
+        return agg_path
+    else:
+        raise FileNotFoundError(f"Aggregation script was not found at {agg_path}.")
+    
+def get_mphlan_conv_script_path():
+    path_2_script = path.dirname(__file__)
+    cov_path = path.join(path_2_script, "rule_utils", "convert_mphlan_v4_to_v3.py")
+    # remove ".."
+    conv_path = path.normpath(conv_path)
+
+    if path.exists(conv_path):
+        return conv_path
+    else:
+        raise FileNotFoundError(f"MetaPhlan conversion script was not found at {conv_path}.")

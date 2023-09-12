@@ -1,6 +1,6 @@
 import pandas as pd
 from os.path import join as pj
-from src.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil_rmd_path, get_nonpareil_html_path
+from src.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil_rmd_path, get_nonpareil_html_path, get_agg_script_path, get_mphlan_conv_script_path
 
 METADATA = pd.read_csv(config['METADATA'])
 SAMPLES = METADATA["Sample"].tolist()
@@ -573,7 +573,9 @@ rule aggregate_humann_outs_nonhost:
   threads: 1
   conda: "conda_envs/humann.yaml"
   params:
-    dirpath=f"{trim_trunc_path}.nonhost.humann"
+    dirpath=f"{trim_trunc_path}.nonhost.humann",
+    agg_bugslists=get_agg_script_path(),
+    mphlan_conv=get_mphlan_conv_script_path()
   shell:
     """
     humann_join_tables -i {params.dirpath} -o {output.PATHABUND} --file_name pathabundance.tsv --search-subdirectories
@@ -584,9 +586,9 @@ rule aggregate_humann_outs_nonhost:
     humann_regroup_table -i {output.GENEFAMS} -g uniref90_rxn -o {output.GENEFAMS_GROUPED}
     humann_rename_table -i {output.GENEFAMS_GROUPED} -n metacyc-rxn -o {output.GENEFAMS_GROUPED_NAMED}
 
-    python utils/aggregate_metaphlan_bugslists.py -i {params.dirpath} -o {output.BUGSLIST}
+    python {params.agg_bugslists} -i {params.dirpath} -o {output.BUGSLIST}
 
-    python utils/convert_mphlan_v4_to_v3.py -i {params.dirpath} 
+    python {params.mphlan_conv} -i {params.dirpath} 
     """
 
 

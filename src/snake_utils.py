@@ -49,7 +49,7 @@ def get_agg_script_path():
     
 def get_mphlan_conv_script_path():
     path_2_script = path.dirname(__file__)
-    cov_path = path.join(path_2_script, "rule_utils", "convert_mphlan_v4_to_v3.py")
+    conv_path = path.join(path_2_script, "rule_utils", "convert_mphlan_v4_to_v3.py")
     # remove ".."
     conv_path = path.normpath(conv_path)
 

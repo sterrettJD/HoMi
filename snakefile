@@ -611,7 +611,7 @@ rule taxa_barplot:
   shell:
     """
     Rscript \
-    -e "rmarkdown::render('{params.rmd_path}', output_dir='{params.output_dir}'', params=c(bugslist='{input}', metadata='{params.metadata}''))"
+    -e "rmarkdown::render('{params.rmd_path}', output_dir='{params.output_dir}', params=c(bugslist='{input}', metadata='{params.metadata}'))"
     """
 
 
@@ -672,5 +672,5 @@ rule nonpareil_curves:
   shell:
     """
     Rscript \
-    -e "rmarkdown::render('{params.rmd_path}', output_dir='{params.output_dir}'', params=c(npo_path='{params.output_dir}', metadata='{params.metadata}''))"
+    -e "rmarkdown::render('{params.rmd_path}', output_dir='{params.output_dir}', params=c(npo_path='{params.output_dir}', metadata='{params.metadata}'))"
     """

@@ -57,3 +57,14 @@ def get_mphlan_conv_script_path():
         return conv_path
     else:
         raise FileNotFoundError(f"MetaPhlan conversion script was not found at {conv_path}.")
+    
+def get_taxa_barplot_rmd_path():
+    path_2_script = path.dirname(__file__)
+    rmd_path = path.join(path_2_script, "rule_utils", "Metaphlan_microshades.Rmd")
+    # remove ".."
+    rmd_path = path.normpath(rmd_path)
+
+    if path.exists(rmd_path):
+        return rmd_path
+    else:
+        raise FileNotFoundError(f"Taxa Barplot Rmd was not found at {rmd_path}.")

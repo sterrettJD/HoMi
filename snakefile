@@ -116,6 +116,7 @@ rule all:
                 "{sample}", "{sample}_humann_temp", 
                 "{sample}_metaphlan_bugs_list_v3.tsv"), 
                 sample=SAMPLES),
+    pj(f"{trim_trunc_path}.nonhost.humann", "Metaphlan_microshades.html"),
 
     # Nonhost coverage (via nonpareil)
     expand(pj(f"{trim_trunc_path}.nonhost.nonpareil", "{sample}.npl"),
@@ -124,7 +125,7 @@ rule all:
             sample=SAMPLES),
     expand(pj(f"{trim_trunc_path}.nonhost.nonpareil", "{sample}.npa"),
             sample=SAMPLES),
-    get_nonpareil_html_path()
+    pj(f"{trim_trunc_path}.nonhost.nonpareil", "nonpareil_curves.html")
 
 rule symlink_fastqs:
   output:
@@ -659,7 +660,7 @@ rule nonpareil_curves:
     expand(pj(f"{trim_trunc_path}.nonhost.nonpareil", "{sample}.npo"),
           sample=SAMPLES)
   output:
-    get_nonpareil_html_path()
+    pj(f"{trim_trunc_path}.nonhost.nonpareil", "nonpareil_curves.html")
   resources:
     partition="short",
     mem_mb=int(8*1000), # MB

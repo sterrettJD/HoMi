@@ -125,7 +125,7 @@ rule all:
             sample=SAMPLES),
     expand(pj(f"{trim_trunc_path}.nonhost.nonpareil", "{sample}.npa"),
             sample=SAMPLES),
-    pj(f"{trim_trunc_path}.nonhost.nonpareil", "nonpareil_curves.html")
+    pj(f"{trim_trunc_path}.nonhost.nonpareil", "nonpareil_curves.html"),
 
     # Host gene counts
     pj(f"{trim_trunc_path}.GRCh38", "counts.txt"),
@@ -719,7 +719,7 @@ rule build_human_genome_index_bbmap:
   input:
     "GRCh38/GRCh38_full_analysis_set.fna"
   output:
-    directory(pj(f"{trim_trunc_path}.GRCh38", "/ref/"))
+    directory(pj(f"{trim_trunc_path}.GRCh38", "ref/"))
   conda: "conda_envs/bbmap.yaml"
   resources:
     partition="short",
@@ -730,7 +730,7 @@ rule build_human_genome_index_bbmap:
     ref_dir=f"{trim_trunc_path}.GRCh38"
   shell:
     """
-    mkdir -p {output}
+    mkdir -p {params.ref_dir}
     bbmap.sh ref=GRCh38/GRCh38_full_analysis_set.fna path={params.ref_dir} threads={threads} -Xmx30g
     # Xmx30g specifies max of 30 GB mem
     """
@@ -738,7 +738,7 @@ rule build_human_genome_index_bbmap:
 # Map to human genome
 rule bbmap_GRCh38:
   input:
-      REF=pj(f"{trim_trunc_path}.GRCh38", "/ref/"),
+      REF=pj(f"{trim_trunc_path}.GRCh38", "ref/"),
       FWD=pj(trim_trunc_path,
             "{sample}.R1.fq"),
       REV=pj(trim_trunc_path,
@@ -759,7 +759,7 @@ rule bbmap_GRCh38:
     """
     cd {params.out_dir}
 
-    bbmap.sh in=../{input.FORWARD} in2=../{input.REVERSE} \
+    bbmap.sh in=../{input.FWD} in2=../{input.REV} \
     out={wildcards.sample}.sam \
     trimreaddescriptions=t \
     threads={threads} \

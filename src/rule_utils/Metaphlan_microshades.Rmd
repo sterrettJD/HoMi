@@ -89,7 +89,7 @@ rownames(taxonomy.table) <- bugs
 
 # read metadata
 metadata <- fread(params$metadata) %>% as.data.frame()
-rownames(metadata) <- metadata$PID
+rownames(metadata) <- metadata$Sample
 
 # create phyloseq object
 pseq <- phyloseq(otu_table=otu_table(bugslist, taxa_are_rows=T),

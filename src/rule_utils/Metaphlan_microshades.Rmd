@@ -5,6 +5,7 @@ output: html_document
 params:
     metadata: "metadata.csv"
     bugslist: NULL
+    directory: NULL
 ---
 
 ```{r setup, include=FALSE}
@@ -193,8 +194,9 @@ custom_legend <- function (mdf, cdf,
 }
 
 ```
+
 ## All taxa { .tabset}
-### By MSM
+### Phylum-Genus
 ```{r, warning=T, fig.height=8}
 # prep the microshades colors
 mdf_prep <- prep_mdf(pseq, subgroup_level="Genus")
@@ -229,12 +231,62 @@ plot_1 <- plot + scale_y_continuous(labels = scales::percent, expand = expansion
         plot.background = element_rect(fill='transparent', color=NA), #transparent plot bg
         panel.grid.major = element_blank(), #remove major gridlines
         panel.grid.minor = element_blank() #remove minor gridlines
-        ) #+ #transparent legend panel
-  # facet_grid(~facet.label, scales="free_x", space="free_x",
-  #           )
+        ) #transparent legend panel
 
 multi <- plot_grid(plot_1, GP_legend,  rel_widths = c(1, .25))
 multi
-ggsave("taxa-bar-phyum-genus-microshades.pdf",plot=multi,height=10,width=10, bg="transparent")
+ggsave(paste0(params$directory, "taxa-bar-phyum-genus-microshades.pdf"),
+        plot=multi, height=10, width=10, 
+        bg="transparent")
 
+```
+
+### Phylum-Family
+```{r, warning=T, fig.height=8}
+# prep the microshades colors
+mdf_prep <- prep_mdf(pseq, subgroup_level="Family")
+# sort the phylum names
+phylum_table <- tax_glom(pseq, taxrank="Phylum") %>% otu_table()
+phyla.otunames <- rownames(phylum_table)
+
+phylums <- taxonomy.table[phyla.otunames, "Phylum"]
+
+sorted_phylums <- phylums[order(rowSums(phylum_table), decreasing=T)]
+# create the colors object
+color_objs_GP <- create_color_dfs(mdf_prep,
+                                  selected_groups=sorted_phylums[5:1],
+                                  cvd=TRUE)
+# Extract
+mdf_GP <- color_objs_GP$mdf
+cdf_GP <- color_objs_GP$cdf
+
+
+
+# create a custom legend
+GP_legend <-custom_legend(mdf_GP, cdf_GP,
+                          legend_key_size=unit(0.4, "cm"),
+                          legend_text_size=10)
+
+# plot
+plot <- plot_microshades(mdf_GP, cdf_GP)
+plot_1 <- plot + scale_y_continuous(labels = scales::percent, expand = expansion(0)) +
+  theme(legend.position = "none")  +
+  theme(axis.text.x = element_text(size= 7),
+        panel.background = element_rect(fill='transparent'), #transparent panel bg
+        plot.background = element_rect(fill='transparent', color=NA), #transparent plot bg
+        panel.grid.major = element_blank(), #remove major gridlines
+        panel.grid.minor = element_blank() #remove minor gridlines
+        ) 
+
+multi <- plot_grid(plot_1, GP_legend,  rel_widths = c(1, .25))
+multi
+ggsave(paste0(params$directory, "taxa-bar-phyum-family-microshades.pdf"),
+        plot=multi, height=10, width=10, 
+        bg="transparent")
+
+```
+
+# Taxonomy Table
+```{r}
+taxonomy.table %>% knitr::kable()
 ```

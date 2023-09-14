@@ -614,7 +614,7 @@ rule taxa_barplot:
   shell:
     """
     Rscript \
-    -e "rmarkdown::render('{params.rmd_path}', output_dir='{params.output_dir}', params=list(bugslist='{params.bugslist}', metadata='{params.metadata}'))"
+    -e "rmarkdown::render('{params.rmd_path}', output_dir='{params.output_dir}', params=list(bugslist='{params.bugslist}', metadata='{params.metadata}', directory='{params.output_dir}'))"
     """
 
 

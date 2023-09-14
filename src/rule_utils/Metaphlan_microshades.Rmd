@@ -254,6 +254,7 @@ phylums <- taxonomy.table[phyla.otunames, "Phylum"]
 sorted_phylums <- phylums[order(rowSums(phylum_table), decreasing=T)]
 # create the colors object
 color_objs_GP <- create_color_dfs(mdf_prep,
+                                  subgroup_level="Family",
                                   selected_groups=sorted_phylums[5:1],
                                   cvd=TRUE)
 # Extract
@@ -264,6 +265,7 @@ cdf_GP <- color_objs_GP$cdf
 
 # create a custom legend
 GP_legend <-custom_legend(mdf_GP, cdf_GP,
+                          subgroup_level="Family",
                           legend_key_size=unit(0.4, "cm"),
                           legend_text_size=10)
 

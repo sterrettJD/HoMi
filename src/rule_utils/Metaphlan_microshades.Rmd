@@ -1,0 +1,294 @@
+---
+title: "Taxa Barplot"
+author: "John Sterrett"
+output: html_document
+params:
+    metadata: "metadata.csv"
+    bugslist: NULL
+    directory: NULL
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+if (!require("tidyverse")) {
+    install.packages("tidyverse", repos="http://cran.us.r-project.org")
+}
+
+if (!require("data.table")) {
+    install.packages("data.table", repos="http://cran.us.r-project.org")
+}
+
+if (!require("ggplot2")) {
+    install.packages("ggplot2", repos="http://cran.us.r-project.org")
+}
+
+if (!require("patchwork")) {
+    install.packages("patchwork", repos="http://cran.us.r-project.org")
+}
+
+if (!require("cowplot")) {
+    install.packages("cowplot", repos="http://cran.us.r-project.org")
+}
+
+#if (!requireNamespace("BiocManager", quietly = TRUE)) {
+#    install.packages("BiocManager", repos="http://cran.us.r-project.org")
+#}
+
+if (!require("remotes")) {
+    install.packages("remotes", repos="http://cran.us.r-project.org")
+}
+
+if (!require("phyloseq")) {
+    remotes::install_github("joey711/phyloseq")
+}
+if (!require("microshades")) {
+    remotes::install_github("KarstensLab/microshades")
+}
+if (!require("speedyseq")) {
+    remotes::install_github("mikemc/speedyseq")
+}
+
+library("phyloseq")
+library("microshades")
+library("speedyseq")
+
+kable.mod.cols <- c("Estimate", "Std. Error", "deg. freedom", "t value", "p")
+```
+
+# Load data
+```{r, message=F, error=T}
+source("metaphlan_to_phyloseq_helper.R")
+bugslist <- data.table::fread(params$bugslist) %>% as.data.frame()
+rownames(bugslist) <- bugslist$`#clade_name`
+bugslist <- bugslist %>% 
+    dplyr::select(-c(`#clade_name`,
+               NCBI_tax_id,
+               additional_species))
+
+# just get the lowest tax level. We can collapse again later
+bugslist <- filter_mphlan_by_taxonomy_level(bugslist, level="max")
+
+# replace NA with 0
+bugslist[is.na(bugslist)] <- 0
+
+# check that our data are relative abundance adding up to 100 still
+hundreds <- rep(100, ncol(bugslist))
+names(hundreds) <- colnames(bugslist)
+if (isFALSE(all.equal(target=hundreds, 
+                      current=colSums(bugslist, na.rm=T), 
+                      tolerance=0.001))){
+    print("Data are NOT relative abundances summing to 100! Please check what's going on.")
+} else {
+    print("Samples sum to 100 (or close enough).")
+}
+
+# create tax table
+bugs <- rownames(bugslist)
+taxonomy.table <- names_to_tax_table(bugs)
+rownames(taxonomy.table) <- bugs
+
+# read metadata
+metadata <- fread(params$metadata) %>% as.data.frame()
+rownames(metadata) <- metadata$Sample
+
+# create phyloseq object
+pseq <- phyloseq(otu_table=otu_table(bugslist, taxa_are_rows=T),
+                 tax_table=tax_table(taxonomy.table),
+                 sample_data=sample_data(metadata)
+                 )
+
+taxonomy.table <- as.data.frame(taxonomy.table)
+```
+
+# Unclassified Reads
+```{r, error=T}
+sum(bugs %>% sapply(FUN=function(x) grepl(x, "Unassigned")))
+unique(taxonomy.table$Phylum)
+
+eu_un <- bugs[grepl(x=bugs, pattern="Eukaryota_unclassified")]
+rowSums(bugslist[eu_un,])/ncol(bugslist)
+
+```
+
+# Taxa barplot {.tabset}
+## Custom Microshades legend functions
+```{r}
+individual_legend <- function (mdf,
+                               cdf,
+                               group_name,
+                               col_name_group = "Top_Phylum",
+                               col_name_subgroup = "Top_Genus",
+                               x = "Sample",
+                               y = "Abundance",
+                               legend_key_size = 0.4,
+                               legend_text_size = 10)
+{
+  select_mdf <- mdf %>% filter(!!sym(col_name_group) == group_name)
+  select_cdf <- cdf %>% filter(!!sym(col_name_group) == group_name)
+
+  select_plot <- ggplot(select_mdf,
+    aes_string(x = x, y = y, fill = col_name_subgroup, text = col_name_subgroup)) +
+    geom_col( position="fill") +
+    scale_fill_manual(name = group_name,
+                      values = select_cdf$hex,
+                      breaks = select_cdf[[col_name_subgroup]]) +
+    theme(legend.justification = "left") +
+    theme(legend.title = element_text(face = "bold")) +
+    theme(legend.key.size = unit(legend_key_size, "lines"), text=element_text(size=legend_text_size)) +
+    theme(legend.background = element_rect(fill='transparent'),
+         legend.box.background = element_rect(fill='transparent'))
+
+  legend <- get_legend(select_plot)
+}
+
+custom_legend <- function (mdf, cdf, 
+                           group_level = "Phylum", subgroup_level = "Genus",
+                           x = "Sample", y = "Abundance",
+                           legend_key_size = 0.4, legend_text_size = 10)
+{
+  if (is.null(mdf[[group_level]])) {
+    stop("mdf 'group_level' does not exist")
+  }
+
+  if (is.null(mdf[[subgroup_level]])) {
+    stop("mdf 'subgroup_level' does not exist")
+  }
+
+  if (is.null(cdf$hex)) {
+    stop("cdf 'hex' does not exist")
+  }
+
+  col_name_group <- paste0("Top_", group_level)
+  col_name_subgroup <- paste0("Top_", subgroup_level)
+
+  group_level_names <- unique(cdf[[col_name_group]])
+
+  for (i in 1:length(group_level_names))
+  {
+    if( i == 1)
+    {
+      complete_legend <- individual_legend (mdf, cdf, 
+                                           group_level_names[i], 
+                                           col_name_group, col_name_subgroup, 
+                                           legend_key_size = legend_key_size, 
+                                           legend_text_size = legend_text_size)
+    }
+    else
+    {
+      new_legend <- individual_legend (mdf, cdf,
+                                       group_level_names[i], col_name_group,
+                                       col_name_subgroup, 
+                                       legend_key_size = legend_key_size,
+                                       legend_text_size = legend_text_size)
+
+      complete_height <- i - 1
+      new_height <- 1
+
+      complete_legend <-plot_grid(complete_legend, new_legend, 
+                                  ncol = 1, 
+                                  rel_heights = c(complete_height,new_height))
+    }
+  }
+  complete_legend
+}
+
+```
+
+## All taxa { .tabset}
+### Phylum-Genus
+```{r, warning=T, fig.height=8}
+# prep the microshades colors
+mdf_prep <- prep_mdf(pseq, subgroup_level="Genus")
+# sort the phylum names
+phylum_table <- tax_glom(pseq, taxrank="Phylum") %>% otu_table()
+phyla.otunames <- rownames(phylum_table)
+
+phylums <- taxonomy.table[phyla.otunames, "Phylum"]
+
+sorted_phylums <- phylums[order(rowSums(phylum_table), decreasing=T)]
+# create the colors object
+color_objs_GP <- create_color_dfs(mdf_prep,
+                                  selected_groups=sorted_phylums[5:1],
+                                  cvd=TRUE)
+# Extract
+mdf_GP <- color_objs_GP$mdf
+cdf_GP <- color_objs_GP$cdf
+
+
+
+# create a custom legend
+GP_legend <-custom_legend(mdf_GP, cdf_GP,
+                          legend_key_size=unit(0.4, "cm"),
+                          legend_text_size=10)
+
+# plot
+plot <- plot_microshades(mdf_GP, cdf_GP)
+plot_1 <- plot + scale_y_continuous(labels = scales::percent, expand = expansion(0)) +
+  theme(legend.position = "none")  +
+  theme(axis.text.x = element_text(size= 7),
+        panel.background = element_rect(fill='transparent'), #transparent panel bg
+        plot.background = element_rect(fill='transparent', color=NA), #transparent plot bg
+        panel.grid.major = element_blank(), #remove major gridlines
+        panel.grid.minor = element_blank() #remove minor gridlines
+        ) #transparent legend panel
+
+multi <- plot_grid(plot_1, GP_legend,  rel_widths = c(1, .25))
+multi
+ggsave(paste0(params$directory, "taxa-bar-phyum-genus-microshades.pdf"),
+        plot=multi, height=10, width=10, 
+        bg="transparent")
+
+```
+
+### Phylum-Family
+```{r, warning=T, fig.height=8}
+# prep the microshades colors
+mdf_prep <- prep_mdf(pseq, subgroup_level="Family")
+# sort the phylum names
+phylum_table <- tax_glom(pseq, taxrank="Phylum") %>% otu_table()
+phyla.otunames <- rownames(phylum_table)
+
+phylums <- taxonomy.table[phyla.otunames, "Phylum"]
+
+sorted_phylums <- phylums[order(rowSums(phylum_table), decreasing=T)]
+# create the colors object
+color_objs_GP <- create_color_dfs(mdf_prep,
+                                  subgroup_level="Family",
+                                  selected_groups=sorted_phylums[5:1],
+                                  cvd=TRUE)
+# Extract
+mdf_GP <- color_objs_GP$mdf
+cdf_GP <- color_objs_GP$cdf
+
+
+
+# create a custom legend
+GP_legend <-custom_legend(mdf_GP, cdf_GP,
+                          subgroup_level="Family",
+                          legend_key_size=unit(0.4, "cm"),
+                          legend_text_size=10)
+
+# plot
+plot <- plot_microshades(mdf_GP, cdf_GP)
+plot_1 <- plot + scale_y_continuous(labels = scales::percent, expand = expansion(0)) +
+  theme(legend.position = "none")  +
+  theme(axis.text.x = element_text(size= 7),
+        panel.background = element_rect(fill='transparent'), #transparent panel bg
+        plot.background = element_rect(fill='transparent', color=NA), #transparent plot bg
+        panel.grid.major = element_blank(), #remove major gridlines
+        panel.grid.minor = element_blank() #remove minor gridlines
+        ) 
+
+multi <- plot_grid(plot_1, GP_legend,  rel_widths = c(1, .25))
+multi
+ggsave(paste0(params$directory, "taxa-bar-phyum-family-microshades.pdf"),
+        plot=multi, height=10, width=10, 
+        bg="transparent")
+
+```
+
+# Taxonomy Table
+```{r}
+taxonomy.table %>% knitr::kable()
+```

@@ -602,17 +602,19 @@ rule taxa_barplot:
   resources:
     partition="short",
     mem_mb=int(10*1000), # MB, or 10 GB
-    runtime=60 # min
+    runtime=int(2*60) # min
   threads: 1
   conda: "conda_envs/r_env.yaml"
   params:
-    rmd_path=get_taxa_barplot_rmd_path()
-    output_dir=f"{trim_trunc_path}.nonhost.humann",
+    rmd_path=get_taxa_barplot_rmd_path(),
+    bugslist=pj(os.getcwd(), f"{trim_trunc_path}.nonhost.humann",
+                "all_bugs_list.tsv"),
+    output_dir=pj(os.getcwd(), f"{trim_trunc_path}.nonhost.humann"),
     metadata=pj(os.getcwd(), config['METADATA'])
   shell:
     """
     Rscript \
-    -e "rmarkdown::render('{params.rmd_path}', output_dir='{params.output_dir}', params=c(bugslist='{input}', metadata='{params.metadata}'))"
+    -e "rmarkdown::render('{params.rmd_path}', output_dir='{params.output_dir}', params=list(bugslist='{params.bugslist}', metadata='{params.metadata}'))"
     """
 
 
@@ -668,10 +670,10 @@ rule nonpareil_curves:
   conda: "conda_envs/r_env.yaml"
   params:
     rmd_path=get_nonpareil_rmd_path(),
-    output_dir=f"{trim_trunc_path}.nonhost.nonpareil",
+    output_dir=pj(os.getcwd(), f"{trim_trunc_path}.nonhost.nonpareil"),
     metadata=pj(os.getcwd(), config['METADATA'])
   shell:
     """
     Rscript \
-    -e "rmarkdown::render('{params.rmd_path}', output_dir='{params.output_dir}', params=c(npo_path='{params.output_dir}', metadata='{params.metadata}'))"
+    -e "rmarkdown::render('{params.rmd_path}', output_dir='{params.output_dir}', params=list(npo_path='{params.output_dir}', metadata='{params.metadata}'))"
     """

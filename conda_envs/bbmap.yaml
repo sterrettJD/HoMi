@@ -1,0 +1,8 @@
+name: bbmap
+channels:
+  - biobakery
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - bbmap

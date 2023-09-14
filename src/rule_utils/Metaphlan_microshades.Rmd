@@ -1,58 +1,64 @@
 ---
-title: "Analysis"
+title: "Taxa Barplot"
 author: "John Sterrett"
-date: "2023-1-6"
 output: html_document
+params:
+    metadata: "metadata.csv"
+    bugslist: NULL
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-# Note: This  requires microshades, which can be installed using
-# remotes::install_github("KarstensLab/microshades")
-# and speedyseq, which can be installed here
-# remotes::install_github("mikemc/speedyseq")
-
-if (!require(tidyverse)) {
-    install.packages(tidyverse)
+if (!require("tidyverse")) {
+    install.packages("tidyverse", repos="http://cran.us.r-project.org")
 }
 
-if (!require(data.table)) {
-    install.packages(data.table)
+if (!require("data.table")) {
+    install.packages("data.table", repos="http://cran.us.r-project.org")
 }
 
-if (!require(ggplot2)) {
-    install.packages(ggplot2)
+if (!require("ggplot2")) {
+    install.packages("ggplot2", repos="http://cran.us.r-project.org")
 }
 
-if (!require(patchwork)) {
-    install.packages(patchwork)
+if (!require("patchwork")) {
+    install.packages("patchwork", repos="http://cran.us.r-project.org")
 }
 
-if (!require(cowplot)) {
-    install.packages(cowplot)
+if (!require("cowplot")) {
+    install.packages("cowplot", repos="http://cran.us.r-project.org")
 }
 
-if (!require("BiocManager", quietly = TRUE)) {
-    install.packages("BiocManager")
+#if (!requireNamespace("BiocManager", quietly = TRUE)) {
+#    install.packages("BiocManager", repos="http://cran.us.r-project.org")
+#}
+
+if (!require("remotes")) {
+    install.packages("remotes", repos="http://cran.us.r-project.org")
 }
 
-BiocManager::install("phyloseq")
-
-if (!require(microshades)) {
+if (!require("phyloseq")) {
+    remotes::install_github("joey711/phyloseq")
+}
+if (!require("microshades")) {
     remotes::install_github("KarstensLab/microshades")
 }
-if (!require(speedyseq)) {
+if (!require("speedyseq")) {
     remotes::install_github("mikemc/speedyseq")
 }
+
+library("phyloseq")
+library("microshades")
+library("speedyseq")
 
 kable.mod.cols <- c("Estimate", "Std. Error", "deg. freedom", "t value", "p")
 ```
 
 # Load data
-```{r, message=F}
+```{r, message=F, error=T}
 source("metaphlan_to_phyloseq_helper.R")
-bugslist <- fread(params$bugslist) %>% as.data.frame()
+bugslist <- data.table::fread(params$bugslist) %>% as.data.frame()
 rownames(bugslist) <- bugslist$`#clade_name`
 bugslist <- bugslist %>% 
     dplyr::select(-c(`#clade_name`,
@@ -95,7 +101,7 @@ taxonomy.table <- as.data.frame(taxonomy.table)
 ```
 
 # Unclassified Reads
-```{r}
+```{r, error=T}
 sum(bugs %>% sapply(FUN=function(x) grepl(x, "Unassigned")))
 unique(taxonomy.table$Phylum)
 

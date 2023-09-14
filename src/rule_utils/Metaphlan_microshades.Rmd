@@ -285,3 +285,8 @@ ggsave(paste0(params$directory, "taxa-bar-phyum-family-microshades.pdf"),
         bg="transparent")
 
 ```
+
+# Taxonomy Table
+```{r}
+taxonomy.table %>% knitr::kable()
+```

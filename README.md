@@ -18,7 +18,7 @@ An example config file is provided in `tests/example_config.yaml`.
 
 ### Metadata file
 An example metadata file is provided in `tests/example_metadata.csv`.
-Metadata files should contain (at the minimum) a SampleID column, a forward reads filepath column (column name specified in the config file under `fwd_reads_path`), and a reverse reads filepath column (column name specified in the config file under `rev_reads_path`). These filepaths should be relative to the directory from which you are running `HoMi`.
+Metadata files should contain (at the minimum) a Sample column (named `Sample`), a forward reads filepath column (column name specified in the config file under `fwd_reads_path`), and a reverse reads filepath column (column name specified in the config file under `rev_reads_path`). These filepaths should be relative to the directory from which you are running `HoMi`.
 
 ### Conda environment building
 If conda environments have already been built, and you'd like snakemake to not build them, pass the argument `--conda_prebuilt`.
@@ -60,3 +60,4 @@ Sometimes, when snakemake unexpectedly exits (e.g., due to a server connection t
     - User should pass a database in the config file. Currently supported options are `human-t2t-hla` and `human-t2t-hla-argos985`.
     - OR users can pass a filepath to a bowtie2 index without the `.bt` extensions (e.g., `index/example_index`, where files exist named `index/example_index.bt1`, `index/example_index.bt2`, etc.).
 7. Run HUMAnN pipeline to profile microbial reads
+    - Makes microshades taxa barplot from MetaPhlan output

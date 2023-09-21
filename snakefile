@@ -1,7 +1,7 @@
 import pandas as pd
 from os.path import join as pj
 from os.path import split
-from src.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil_rmd_path, get_nonpareil_html_path, get_agg_script_path, get_mphlan_conv_script_path, get_taxa_barplot_rmd_path, get_sam2bam_path, get_func_barplot_rmd_path, get_partition
+from src.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil_rmd_path, get_nonpareil_html_path, get_agg_script_path, get_mphlan_conv_script_path, get_taxa_barplot_rmd_path, get_sam2bam_path, get_func_barplot_rmd_path, get_partition, get_mem
 
 
 
@@ -142,7 +142,7 @@ rule symlink_fastqs:
   threads: 1
   resources:
     partition=get_partition("short", config, "symlink_fastqs"),
-    mem_mb=int(2*1000), # MB, or 2 GB
+    mem_mb=get_mem(int(2*1000), config, "symlink_fastqs"), # MB, or 2 GB
     runtime=int(1*60) # min, or 1 hours
   params:
     metadata=METADATA,
@@ -194,7 +194,7 @@ rule remove_adapters:
     conda: "conda_envs/trimmomatic.yaml"
     resources:
         partition=get_partition("short", config, "remove_adapters"),
-        mem_mb=int(8*1000), # 8 GB
+        mem_mb=get_mem(int(8*1000), config, "remove_adapters"), # 8 GB
         runtime=int(12*60)
     threads: 8
     params:
@@ -233,7 +233,7 @@ rule fastQC_pass1:
   conda: "conda_envs/fastqc.yaml"
   resources:
         partition=get_partition("short", config, "fastQC_pass1"),
-        mem_mb=int(2*1000), # MB, or 2 GB
+        mem_mb=get_mem(int(2*1000), config, "fastQC_pass1"), # MB, or 2 GB
         runtime=int(2*60) # min, or 2 hours
   threads: 1
   params:
@@ -256,7 +256,7 @@ rule multiqc_pass1:
   conda: "conda_envs/fastqc.yaml"
   resources:
         partition=get_partition("short", config, "multiqc_pass1"),
-        mem_mb=int(2*1000), # MB, or 2 GB
+        mem_mb=get_mem(int(2*1000), config, "multiqc_pass1"), # MB, or 2 GB
         runtime=int(0.5*60) # min, or 0.5 hours
   threads: 1
   params:
@@ -277,7 +277,7 @@ rule trim_forward:
   conda: "conda_envs/seqtk.yaml"
   resources:
         partition=get_partition("short", config, "trim_forward"),
-        mem_mb=int(12*1000), # MB, or 20 GB
+        mem_mb=get_mem(int(12*1000), config, "trim_forward"), # MB, or 12 GB
         runtime=int(1*60) # min, or 1 hours
   threads: 1
   params:
@@ -301,7 +301,7 @@ rule trim_reverse:
   conda: "conda_envs/seqtk.yaml"
   resources:
     partition=get_partition("short", config, "trim_reverse"),
-    mem_mb=int(12*1000), # MB, or 12 GB
+    mem_mb=get_mem(int(12*1000), config, "trim_reverse"), # MB, or 12 GB
     runtime=int(1*60) # min, or 1 hours
   threads: 1
   params:
@@ -326,7 +326,7 @@ rule fastQC_pass2:
   conda: "conda_envs/fastqc.yaml"
   resources:
     partition=get_partition("short", config, "fastQC_pass2"),
-    mem_mb=int(2*1000), # MB, or 2 GB
+    mem_mb=get_mem(int(2*1000), config, "fastQC_pass2"), # MB, or 2 GB
     runtime=int(2*60) # min, or 0.5 hours
   threads: 1
   params:
@@ -349,7 +349,7 @@ rule multiqc_pass2:
   conda: "conda_envs/fastqc.yaml"
   resources:
         partition=get_partition("short", config, "multiqc_pass2"),
-        mem_mb=int(2*1000), # MB, or 2 GB
+        mem_mb=get_mem(int(2*1000), config, "multiqc_pass2"), # MB, or 2 GB
         runtime=int(0.5*60) # min, or 0.5 hours
   threads: 1
   params:
@@ -366,7 +366,7 @@ rule download_hostile_db:
              ".rev.1.bt2", ".rev.2.bt2")
   resources:
     partition=get_partition("short", config, "download_hostile_db"),
-    mem_mb=int(4*1000), # MB, or 4 GB,
+    mem_mb=get_mem(int(4*1000), config, "download_hostile_db"), # MB, or 4 GB,
     runtime=int(8*60) # min, or 8 hours (in the case of a bad connection)
   threads: 1
   params:
@@ -407,7 +407,7 @@ rule host_filter:
   conda: "conda_envs/hostile.yaml"
   resources:
     partition=get_partition("short", config, "host_filter"),
-    mem_mb=int(12*1000), # MB, or 12 GB, hostile should max at 4 (under 8 thread example), but playing it safe
+    mem_mb=get_mem(int(12*1000), config, "host_filter"), # MB, or 12 GB, hostile should max at 4 (under 8 thread example), but playing it safe
     runtime=int(20*60) # min, or 20 hours
   threads: 16
   params:
@@ -437,7 +437,7 @@ rule setup_metaphlan:
     directory(config['metaphlan_bowtie_db'])
   resources:
     partition=get_partition("short", config, "setup_metaphlan"),
-    mem_mb= int(32*1000), # MB
+    mem_mb=get_mem(int(32*1000), config, "setup_metaphlan"), # MB
     runtime=int(60*8) # min
   threads: 8
   conda: "conda_envs/humann.yaml"
@@ -457,7 +457,7 @@ rule get_biobakery_chocophlan_db:
     directory(config['chocophlan_db'])
   resources:
     partition=get_partition("short", config, "get_biobakery_chocophlan_db"),
-    mem_mb= int(4*1000), # MB
+    mem_mb=get_mem(int(4*1000), config, "get_biobakery_chocophlan_db"), # MB
     runtime=int(60*4) # min
   threads: 1
   conda: "conda_envs/humann.yaml"
@@ -472,7 +472,7 @@ rule get_biobakery_uniref_db:
     directory(config['uniref_db'])
   resources:
     partition=get_partition("short", config, "get_biobakery_uniref_db"),
-    mem_mb= int(4*1000), # MB
+    mem_mb=get_mem(int(4*1000), config, "get_biobakery_uniref_db"), # MB
     runtime=int(60*4) # min
   threads: 1
   conda: "conda_envs/humann.yaml"
@@ -494,7 +494,7 @@ rule concat_nonhost_reads:
             "{sample}.fq.gz")
   resources:
     partition=get_partition("short", config, "concat_nonhost_reads"),
-    mem_mb= int(8*1000), # MB
+    mem_mb=get_mem(int(8*1000), config, "concat_nonhost_reads"), # MB
     runtime=int(60*4) # min
   threads: 1
   params:
@@ -525,7 +525,7 @@ rule run_humann_nonhost:
                 "{sample}_metaphlan_bugs_list.tsv")
   resources:
     partition=get_partition("short", config, "run_humann_nonhost"),
-    mem_mb=int(64*1000), # MB, or 64 GB
+    mem_mb=get_mem(int(64*1000), config, "run_humann_nonhost"), # MB, or 64 GB
     runtime=int(23.9*60) # min, or 23 hours
   threads: 32
   conda: "conda_envs/humann.yaml"
@@ -577,7 +577,7 @@ rule aggregate_humann_outs_nonhost:
 
   resources:
     partition=get_partition("short", config, "aggregate_humann_outs_nonhost"),
-    mem_mb=int(10*1000), # MB, or 10 GB
+    mem_mb=get_mem(int(10*1000), config, "aggregate_humann_outs_nonhost"), # MB, or 10 GB
     runtime=60 # min
   threads: 1
   conda: "conda_envs/humann.yaml"
@@ -609,7 +609,7 @@ rule taxa_barplot:
                 "Metaphlan_microshades.html")
   resources:
     partition=get_partition("short", config, "taxa_barplot"),
-    mem_mb=int(10*1000), # MB, or 10 GB
+    mem_mb=get_mem(int(10*1000), config, "taxa_barplot"), # MB, or 10 GB
     runtime=int(2*60) # min
   threads: 1
   conda: "conda_envs/r_env.yaml"
@@ -635,7 +635,7 @@ rule func_barplot:
                 "HUMAnN_microshades.html")
   resources:
     partition=get_partition("short", config, "func_barplot"),
-    mem_mb=int(10*1000), # MB, or 10 GB
+    mem_mb=get_mem(int(10*1000), config, "func_barplot"), # MB, or 10 GB
     runtime=int(2*60) # min
   threads: 1
   conda: "conda_envs/r_env.yaml"
@@ -668,7 +668,7 @@ rule nonpareil:
     pj(f"{trim_trunc_path}.nonhost.nonpareil", "{sample}.npa")
   resources:
     partition=get_partition("short", config, "nonpareil"),
-    mem_mb=int(30*1000), # MB
+    mem_mb=get_mem(int(30*1000), config, "nonpareil"), # MB
     runtime=int(60*3) # min
   threads: 16
   conda: "conda_envs/nonpareil.yaml"
@@ -699,7 +699,7 @@ rule nonpareil_curves:
     pj(f"{trim_trunc_path}.nonhost.nonpareil", "nonpareil_curves.html")
   resources:
     partition=get_partition("short", config, "nonpareil_curves"),
-    mem_mb=int(8*1000), # MB
+    mem_mb=get_mem(int(8*1000), config, "nonpareil_curves"), # MB
     runtime=int(60*1) # min
   conda: "conda_envs/r_env.yaml"
   params:
@@ -725,7 +725,7 @@ rule pull_host_genome:
     ANNOTATION=config['host_ref_gtf']
   resources:
     partition=get_partition("short", config, "pull_host_genome"),
-    mem_mb=int(10*1000), # MB, or 10 GB
+    mem_mb=get_mem(int(10*1000), config, "pull_host_genome"), # MB, or 10 GB
     runtime=int(1*60) # min, or 1 hr
   threads: 1
   params:
@@ -755,7 +755,7 @@ rule build_human_genome_index_bbmap:
   conda: "conda_envs/bbmap.yaml"
   resources:
     partition=get_partition("short", config, "build_human_genome_index_bbmap"),
-    mem_mb=int(30*1000), # MB, or 30 GB
+    mem_mb=get_mem(int(30*1000), config, "build_human_genome_index_bbmap"), # MB, or 30 GB
     runtime=int(1.5*60) # min, or 1.5 hrs
   threads: 8
   params:
@@ -780,8 +780,8 @@ rule bbmap_host:
     BAM=pj(f"{trim_trunc_path}.host", "{sample}.bam")
   conda: "conda_envs/bbmap.yaml"
   resources:
-    partition=get_partition("short", config, "build_human_genome_index_bbmap"),
-    mem_mb=int(210*1000), # MB, or 210 GB, can cut to ~100 for 16 threads
+    partition=get_partition("short", config, "bbmap_host"),
+    mem_mb=get_mem(int(210*1000), config, "bbmap_host"), # MB, or 210 GB, can cut to ~100 for 16 threads
     runtime=int(23.9*60) # min, or almost 24 hrs
   threads: 32
   params:
@@ -808,7 +808,7 @@ rule validate_bams:
     conda: "conda_envs/featureCounts.yaml"
     resources:
         partition=get_partition("short", config, "validate_bams"),
-        mem_mb=int(32*1000), # MB, or 32 GB TODO: ASSESS IF CORRECT
+        mem_mb=get_mem(int(32*1000), config, "validate_bams"), # MB, or 32 GB TODO: ASSESS IF CORRECT
         runtime=int(1*60) # min, or 1 hr
     threads: 16
     shell:
@@ -830,7 +830,7 @@ rule generate_feature_counts:
     conda: "conda_envs/featureCounts.yaml"
     resources:
         partition=get_partition("short", config, "generate_feature_counts"),
-        mem_mb=int(8*1000), # MB, or 8 GB
+        mem_mb=get_mem(int(8*1000), config, "generate_feature_counts"), # MB, or 8 GB
         runtime=int(2*60) # min, or 2 hrs
     threads: 16
     shell:

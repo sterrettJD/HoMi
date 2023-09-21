@@ -79,3 +79,15 @@ def get_func_barplot_rmd_path():
         return rmd_path
     else:
         raise FileNotFoundError(f"Functional Barplot Rmd was not found at {rmd_path}.")
+
+def get_sam2bam_path():
+    path_2_script = path.dirname(__file__)
+    sam2bam_path = path.join(path_2_script, "rule_utils", "sam2bam.sh")
+    # remove ".."
+    sam2bam_path = path.normpath(sam2bam_path)
+
+    if path.exists(sam2bam_path):
+        return sam2bam_path
+    else:
+        raise FileNotFoundError(f"Sam2bam script was not found at {sam2bam_path}.")
+

@@ -1,7 +1,16 @@
-library(stringi)
+if(!require("stringi")){
+    install.packages("stringi", repos="http://cran.us.r-project.org")
+}
+if(!require("r2r")){
+    install.packages("r2r", repos="http://cran.us.r-project.org")
+}
+
+
+# These should already be installed 
 library(data.table)
 library(tidyverse)
-library(r2r)
+
+
 
 filter_only_genes <- function(df, with_taxa=F){
     feature.names <- rownames(df)

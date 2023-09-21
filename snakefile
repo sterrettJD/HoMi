@@ -763,8 +763,7 @@ rule build_human_genome_index_bbmap:
   shell:
     """
     mkdir -p {params.ref_dir}
-    bbmap.sh ref={input} path={params.ref_dir} threads={threads} -Xmx30g
-    # Xmx30g specifies max of 30 GB mem
+    bbmap.sh ref={input} path={params.ref_dir} threads={threads} -Xmx{resources.mem_mb}m
     """
 
 # Map to human genome
@@ -795,7 +794,7 @@ rule bbmap_host:
     out={wildcards.sample}.sam \
     trimreaddescriptions=t \
     threads={threads} \
-    -Xmx210g # Xmx210g specifies max of 210 GB mem
+    -Xmx{resources.mem_mb}m
 
     bash {params.sam2bam_path} {wildcards.sample}.sam
     """

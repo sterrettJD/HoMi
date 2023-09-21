@@ -1,0 +1,174 @@
+---
+title: "Functional Analysis"
+author: "HoMi"
+output: html_document
+params:
+    metadata: NULL
+    genetable: NULL
+    directory: NULL
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+if (!require("tidyverse")) {
+    install.packages("tidyverse", repos="http://cran.us.r-project.org")
+}
+
+if (!require("data.table")) {
+    install.packages("data.table", repos="http://cran.us.r-project.org")
+}
+
+if (!require("ggplot2")) {
+    install.packages("ggplot2", repos="http://cran.us.r-project.org")
+}
+
+if (!require("patchwork")) {
+    install.packages("patchwork", repos="http://cran.us.r-project.org")
+}
+
+if (!require("cowplot")) {
+    install.packages("cowplot", repos="http://cran.us.r-project.org")
+}
+
+if (!require("remotes")) {
+    install.packages("remotes", repos="http://cran.us.r-project.org")
+}
+
+if (!require("phyloseq")) {
+    remotes::install_github("joey711/phyloseq")
+}
+if (!require("microshades")) {
+    remotes::install_github("KarstensLab/microshades")
+}
+if (!require("speedyseq")) {
+    remotes::install_github("mikemc/speedyseq")
+}
+
+library("phyloseq")
+library("microshades")
+library("speedyseq")
+
+```
+
+# Load data
+```{r}
+metadata <- fread(params$metadata) %>% as.data.frame()
+rownames(metadata) <- metadata$Sample
+
+source("HUMAnN_to_phyloseq_helper.R")
+gn <- fread(params$genetable)
+rownames(gn) <- gn$`# Gene Family`
+gn$`# Gene Family` <- NULL
+# sanitize the sample IDs
+colnames(gn) <- sapply(colnames(gn), 
+                        FUN=function(x) {gsub(x, 
+                                            pattern="_Abundance-RPKs", 
+                                            replacement="")})
+
+genefams <- filter_only_genes(gn)
+
+unmapped <- genefams[1,]
+rownames(unmapped) <- rownames(genefams)[1]
+print(paste("Average percent of reads unmapped: ", 
+            mean(colSums(unmapped)/colSums(genefams)* 100)))
+summary(colSums(unmapped)/colSums(genefams)* 100)
+hist(colSums(unmapped)/colSums(genefams)* 100)
+
+unmapped.or.ungrouped <- genefams[1:2,]
+rownames(unmapped.or.ungrouped) <- rownames(genefams)[1:2]
+print(paste("Average percent of reads unmapped or ungrouped: ", 
+            mean(colSums(unmapped.or.ungrouped)/colSums(genefams)* 100)))
+
+summary(colSums(unmapped.or.ungrouped)/colSums(genefams)* 100)
+hist(colSums(unmapped.or.ungrouped)/colSums(genefams)* 100)
+
+genefams <- genefams %>% filter(rownames(genefams) %in% c("UNMAPPED", "UNGROUPED")==F)
+# if lots of unmapped and ungrouped, see here https://groups.google.com/g/humann-users/c/4Pz8NritMzw
+
+genes <- rownames(genefams)
+hier.tab <- make_pseq_tax_table_from_genefams(genes)
+
+ecs.pseq <- phyloseq(otu_table=otu_table(genefams, taxa_are_rows=T), 
+                     tax_table=tax_table(hier.tab),
+                     sample_data=sample_data(metadata))
+
+genefams.withtax <- filter_only_genes(gn, with_taxa=T)
+```
+
+# Barplot of Functional profiles {.tabset}
+## Top group: L1 {.tabset}
+### Subgroup: L2
+```{r, warning=F, fig.height=9, fig.width=8}
+make_simple_microshades <- function(pseq, group_level, subgroup_level){
+    # get list of top ta1 to plot
+    l1.tax <- tax_glom(pseq, taxrank=group_level) %>% tax_table()
+    l1.otu <- tax_glom(pseq, taxrank=group_level) %>% otu_table()
+    top.ta1 <- l1.tax[order(rowSums(l1.otu), decreasing=T),] %>% 
+        as.data.frame()
+    top.ta1 <- top.ta1[5:1,group_level]
+    
+    # prep the microshades colors
+    mdf_prep <- prep_mdf(ecs.pseq, subgroup_level=subgroup_level)
+    
+    # create the colors object
+    color_objs_GP <- create_color_dfs(mdf_prep, selected_groups=top.ta1,
+                                      group_level=group_level, subgroup_level=subgroup_level,
+                                      cvd = TRUE)
+    # Extract
+    mdf_GP <- color_objs_GP$mdf
+    cdf_GP <- color_objs_GP$cdf
+    # create a custom legend
+    GP_legend <-custom_legend(mdf_GP, cdf_GP, 
+                              legend_key_size=unit(0.4, "cm"),
+                              legend_text_size=10,
+                              group_level=group_level,
+                              subgroup_level=subgroup_level)
+    
+    # plot
+    plot <- plot_microshades(mdf_GP, cdf_GP)
+    plot_1 <- plot + scale_y_continuous(labels = scales::percent, 
+                                        expand = expansion(0)) +
+      theme(legend.position = "none")  +
+      theme(axis.text.x = element_text(size= 7)) # +
+      # facet_grid(~(factor(Risk_Status, levels=c("Low", "High", "Positive"))), 
+      #          scales = "free_x", space="free_x"
+      #        )
+    
+    multi <- plot_grid(plot_1, GP_legend,  rel_widths = c(1, .4))
+    multi
+}
+
+make_simple_microshades(ecs.pseq, "ta1", "ta2") 
+ggsave(paste0(params$directory, "/L1_L2_microshades_METACYC.pdf"), 
+        height=10, width=10)
+```
+
+### Subgroup: L3
+
+```{r, warning=F, fig.height=9, fig.width=8}
+make_simple_microshades(ecs.pseq, "ta1", "ta3")
+
+```
+
+
+### Subgroup: L4
+```{r, warning=F, fig.height=9, fig.width=8}
+make_simple_microshades(ecs.pseq, "ta1", "ta4")
+
+```
+
+
+## Top group: L2 {.tabset}
+
+### Subgroup: L3
+```{r, warning=F, fig.height=9, fig.width=8}
+make_simple_microshades(ecs.pseq, "ta2", "ta3")
+
+```
+
+### Subgroup: L4
+```{r, warning=F, fig.height=9, fig.width=8}
+make_simple_microshades(ecs.pseq, "ta2", "ta4")
+
+```

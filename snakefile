@@ -648,7 +648,7 @@ rule func_barplot:
   shell:
     """
     Rscript \
-    -e "rmarkdown::render('{params.rmd_path}', output_dir='{params.output_dir}', params=list(genetable='{params.genetable}', metadata='{params.metadata}', directory='{params.output_dir}'))"
+    -e "rmarkdown::render('{params.rmd_path}', output_dir='{params.output_dir}', params=list(genetable='{params.gene_table}', metadata='{params.metadata}', directory='{params.output_dir}'))"
     """
 
 

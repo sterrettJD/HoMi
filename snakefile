@@ -1,6 +1,6 @@
 import pandas as pd
 from os.path import join as pj
-from src.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil_rmd_path, get_nonpareil_html_path, get_agg_script_path, get_mphlan_conv_script_path, get_taxa_barplot_rmd_path
+from src.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil_rmd_path, get_nonpareil_html_path, get_agg_script_path, get_mphlan_conv_script_path, get_taxa_barplot_rmd_path, get_func_barplot_rmd_path
 
 METADATA = pd.read_csv(config['METADATA'])
 SAMPLES = METADATA["Sample"].tolist()
@@ -117,6 +117,7 @@ rule all:
                 "{sample}_metaphlan_bugs_list_v3.tsv"), 
                 sample=SAMPLES),
     pj(f"{trim_trunc_path}.nonhost.humann", "Metaphlan_microshades.html"),
+    pj(f"{trim_trunc_path}.nonhost.humann", "HUMAnN_microshades.html"),
 
     # Nonhost coverage (via nonpareil)
     expand(pj(f"{trim_trunc_path}.nonhost.nonpareil", "{sample}.npl"),
@@ -615,6 +616,32 @@ rule taxa_barplot:
     """
     Rscript \
     -e "rmarkdown::render('{params.rmd_path}', output_dir='{params.output_dir}', params=list(bugslist='{params.bugslist}', metadata='{params.metadata}', directory='{params.output_dir}'))"
+    """
+
+
+rule func_barplot:
+  input:
+    pj(f"{trim_trunc_path}.nonhost.humann", 
+                "all_genefamilies_grouped_named.tsv")
+  output:
+    pj(f"{trim_trunc_path}.nonhost.humann", 
+                "HUMAnN_microshades.html")
+  resources:
+    partition="short",
+    mem_mb=int(10*1000), # MB, or 10 GB
+    runtime=int(2*60) # min
+  threads: 1
+  conda: "conda_envs/r_env.yaml"
+  params:
+    rmd_path=get_func_barplot_rmd_path(),
+    gene_table=pj(os.getcwd(), f"{trim_trunc_path}.nonhost.humann",
+                "all_genefamilies_grouped_named.tsv"),
+    output_dir=pj(os.getcwd(), f"{trim_trunc_path}.nonhost.humann"),
+    metadata=pj(os.getcwd(), config['METADATA'])
+  shell:
+    """
+    Rscript \
+    -e "rmarkdown::render('{params.rmd_path}', output_dir='{params.output_dir}', params=list(genetable='{params.genetable}', metadata='{params.metadata}', directory='{params.output_dir}'))"
     """
 
 

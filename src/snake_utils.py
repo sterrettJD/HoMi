@@ -96,3 +96,9 @@ def get_partition(default, config, rule_name):
     if config_param is not None:
         return config_param
     return default
+
+def get_mem(default, config, rule_name):
+    config_param = config.get(f"{rule_name}_mem_mb")
+    if config_param is not None:
+        return int(config_param)
+    return default

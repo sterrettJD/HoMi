@@ -91,3 +91,8 @@ def get_sam2bam_path():
     else:
         raise FileNotFoundError(f"Sam2bam script was not found at {sam2bam_path}.")
 
+def get_partition(default, config, rule_name):
+    config_param = config.get(f"{rule_name}_partition")
+    if config_param is not None:
+        return config_param
+    return default

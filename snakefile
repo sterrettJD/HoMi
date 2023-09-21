@@ -1,6 +1,7 @@
 import pandas as pd
 from os.path import join as pj
-from src.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil_rmd_path, get_nonpareil_html_path, get_agg_script_path, get_mphlan_conv_script_path, get_taxa_barplot_rmd_path
+from os.path import split
+from src.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil_rmd_path, get_nonpareil_html_path, get_agg_script_path, get_mphlan_conv_script_path, get_taxa_barplot_rmd_path, get_sam2bam_path
 
 METADATA = pd.read_csv(config['METADATA'])
 SAMPLES = METADATA["Sample"].tolist()
@@ -125,7 +126,11 @@ rule all:
             sample=SAMPLES),
     expand(pj(f"{trim_trunc_path}.nonhost.nonpareil", "{sample}.npa"),
             sample=SAMPLES),
-    pj(f"{trim_trunc_path}.nonhost.nonpareil", "nonpareil_curves.html")
+    pj(f"{trim_trunc_path}.nonhost.nonpareil", "nonpareil_curves.html"),
+
+    # Host gene counts
+    pj(f"{trim_trunc_path}.host", "counts.txt"),
+    pj(f"{trim_trunc_path}.host", "counts.txt.summary")
 
 rule symlink_fastqs:
   output:
@@ -677,3 +682,130 @@ rule nonpareil_curves:
     Rscript \
     -e "rmarkdown::render('{params.rmd_path}', output_dir='{params.output_dir}', params=list(npo_path='{params.output_dir}', metadata='{params.metadata}'))"
     """
+
+
+
+##########################
+### Map to Host Genome ###
+
+
+# pull human genome
+rule pull_host_genome:
+  output:
+    GENOME=config['host_ref_fna'], 
+    ANNOTATION=config['host_ref_gtf']
+  resources:
+    partition="short",
+    mem_mb=int(10*1000), # MB, or 10 GB
+    runtime=int(1*60) # min, or 1 hr
+  threads: 1
+  params:
+    ref_dir=split(config['host_ref_fna'])[0]
+  shell:
+    """
+    mkdir -p {params.ref_dir}
+    cd {params.ref_dir}
+
+    # genome
+    wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/seqs_for_alignment_pipelines.ucsc_ids/GCA_000001405.15_GRCh38_full_analysis_set.fna.gz
+    gunzip GCA_000001405.15_GRCh38_full_analysis_set.fna.gz
+    mv GCA_000001405.15_GRCh38_full_analysis_set.fna GRCh38_full_analysis_set.fna
+
+    # annotation
+    wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/seqs_for_alignment_pipelines.ucsc_ids/GCA_000001405.15_GRCh38_full_analysis_set.refseq_annotation.gtf.gz
+    gunzip GCA_000001405.15_GRCh38_full_analysis_set.refseq_annotation.gtf.gz
+    mv GCA_000001405.15_GRCh38_full_analysis_set.refseq_annotation.gtf GRCh38_full_analysis_set.refseq.gtf
+    """
+
+# make bbmap index for human genome
+rule build_human_genome_index_bbmap:
+  input:
+    config['host_ref_fna']
+  output:
+    directory(pj(f"{trim_trunc_path}.host", "ref/"))
+  conda: "conda_envs/bbmap.yaml"
+  resources:
+    partition="short",
+    mem_mb=int(30*1000), # MB, or 30 GB
+    runtime=int(1.5*60) # min, or 1.5 hrs
+  threads: 8
+  params:
+    ref_dir=f"{trim_trunc_path}.host"
+  shell:
+    """
+    mkdir -p {params.ref_dir}
+    bbmap.sh ref={input} path={params.ref_dir} threads={threads} -Xmx30g
+    # Xmx30g specifies max of 30 GB mem
+    """
+
+# Map to human genome
+rule bbmap_host:
+  input:
+      REF=pj(f"{trim_trunc_path}.host", "ref/"),
+      FWD=pj(trim_trunc_path,
+            "{sample}.R1.fq"),
+      REV=pj(trim_trunc_path,
+            "{sample}.R2.fq")
+  output:
+    SAM=pj(f"{trim_trunc_path}.host", "{sample}.sam"),
+    BAM=pj(f"{trim_trunc_path}.host", "{sample}.bam")
+  conda: "conda_envs/bbmap.yaml"
+  resources:
+    partition="short",
+    mem_mb=int(210*1000), # MB, or 210 GB, can cut to ~100 for 16 threads
+    runtime=int(23.9*60) # min, or almost 24 hrs
+  threads: 32
+  params:
+    out_dir=f"{trim_trunc_path}.host",
+    sam2bam_path=get_sam2bam_path()
+  shell:
+    """
+    cd {params.out_dir}
+
+    bbmap.sh in=../{input.FWD} in2=../{input.REV} \
+    out={wildcards.sample}.sam \
+    trimreaddescriptions=t \
+    threads={threads} \
+    -Xmx210g # Xmx210g specifies max of 210 GB mem
+
+    bash {params.sam2bam_path} {wildcards.sample}.sam
+    """
+
+rule validate_bams:
+    input:
+        BAM=pj(f"{trim_trunc_path}.host", "{sample}.bam")
+    output:
+        BAM_VALID=pj(f"{trim_trunc_path}.host", "{sample}_bam_valid.tsv")
+    conda: "conda_envs/featureCounts.yaml"
+    resources:
+        partition="short",
+        mem_mb=int(32*1000), # MB, or 32 GB TODO: ASSESS IF CORRECT
+        runtime=int(1*60) # min, or 1 hr
+    threads: 16
+    shell:
+        """
+        samtools flagstat --threads {threads} {input.BAM} > {output.BAM_VALID}
+        """
+
+# Assess classification of mapped reads
+rule generate_feature_counts:
+    input:
+        ANNOTATION=config['host_ref_gtf'],
+        VALID=expand(pj(f"{trim_trunc_path}.host", "{sample}_bam_valid.tsv"), 
+                     sample=SAMPLES),
+        BAM=expand(pj(f"{trim_trunc_path}.host", "{sample}.bam"), 
+                   sample=SAMPLES)
+    output:
+        COUNTS=pj(f"{trim_trunc_path}.host", "counts.txt"),
+        SUMMARY=pj(f"{trim_trunc_path}.host", "counts.txt.summary")
+    conda: "conda_envs/featureCounts.yaml"
+    resources:
+        partition="short",
+        mem_mb=int(8*1000), # MB, or 8 GB
+        runtime=int(2*60) # min, or 2 hrs
+    threads: 16
+    shell:
+        """
+        featureCounts -T {threads} -p --countReadPairs \
+        -t exon -g gene_id -a {input.ANNOTATION} -o {output.COUNTS} {input.BAM}
+        """

@@ -11,14 +11,6 @@ params:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-pacman::p_load(tidyverse,
-               data.table,
-               ggplot2,
-               phyloseq,
-               patchwork,
-               microshades,
-               cowplot)
-
 if (!require("tidyverse")) {
     install.packages("tidyverse", repos="http://cran.us.r-project.org")
 }

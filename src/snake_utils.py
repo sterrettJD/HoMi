@@ -102,3 +102,9 @@ def get_mem(default, config, rule_name):
     if config_param is not None:
         return int(config_param)
     return default
+
+def get_runtime(default, config, rule_name):
+    config_param = config.get(f"{rule_name}_runtime")
+    if config_param is not None:
+        return int(config_param)
+    return default

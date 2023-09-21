@@ -106,7 +106,7 @@ make_simple_microshades <- function(pseq, group_level, subgroup_level){
     l1.otu <- tax_glom(pseq, taxrank=group_level) %>% otu_table()
     top.ta1 <- l1.tax[order(rowSums(l1.otu), decreasing=T),] %>% 
         as.data.frame()
-    top.ta1 <- top.ta1[1:5,group_level]
+    top.ta1 <- top.ta1[5:1,group_level]
     
     # prep the microshades colors
     mdf_prep <- prep_mdf(ecs.pseq, subgroup_level=subgroup_level)

@@ -700,7 +700,7 @@ rule pull_host_genome:
     runtime=int(1*60) # min, or 1 hr
   threads: 1
   params:
-    ref_dir=split(config['host_ref_fna'])
+    ref_dir=split(config['host_ref_fna'])[0]
   shell:
     """
     mkdir -p {params.ref_dir}

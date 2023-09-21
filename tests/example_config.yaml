@@ -52,3 +52,11 @@ metaphlan_bowtie_db: data/metaphlan_db/
 # If these aren't already downloaded, HoMi will download them
 chocophlan_db: data/humann_dbs/chocophlan
 uniref_db: data/humann_dbs/uniref
+
+
+#################################
+### Host read mapping (BBmap) ###
+# provide the path for the host reference genome
+# if these files do not exist yet, HoMi will by default download the GRCh38 human reference genome
+host_ref_fna: GRCh38/GRCh38_full_analysis_set.fna 
+host_ref_gtf: GRCh38/GRCh38_full_analysis_set.refseq.gtf

@@ -5,6 +5,7 @@ output: html_document
 params:
     metadata: NULL
     genetable: NULL
+    directory: NULL
 ---
 
 ```{r setup, include=FALSE}
@@ -145,7 +146,8 @@ make_simple_microshades <- function(pseq, group_level, subgroup_level){
 }
 
 make_simple_microshades(ecs.pseq, "ta1", "ta2") 
-ggsave("../figures/L1_L2_microshades_METACYC.pdf", height=10, width=10)
+ggsave(paste0(params$directory, "/L1_L2_microshades_METACYC.pdf"), 
+        height=10, width=10)
 ```
 
 ### Subgroup: L3

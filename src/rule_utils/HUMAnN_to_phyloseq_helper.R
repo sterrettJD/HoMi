@@ -9,6 +9,8 @@ if(!require("r2r")){
 # These should already be installed 
 library(data.table)
 library(tidyverse)
+library(stringi)
+library(r2r)
 
 
 

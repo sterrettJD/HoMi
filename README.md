@@ -3,6 +3,8 @@ Host-microbiome dual transcriptome pipeline
 
 ## Installation
 ```
+conda create -n HoMi python
+conda activate HoMi
 git clone git@github.com:sterrettJD/HoMi.git
 cd HoMi
 pip install -e .

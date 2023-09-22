@@ -41,7 +41,7 @@ def make_prebuilt_conda_snakefile(snakepath):
 
     # Maybe just pulling the list of conda envs from that directory could be a better option?
     # But for now, replacing it based on what's in the snakefile seems more direct
-    conda_envs_patterns = findall(r"conda_envs\/[a-z]+.yaml", file)
+    conda_envs_patterns = findall(r"conda_envs\/[a-zA-Z\d]+.yaml", file)
     conda_envs_patterns = set(conda_envs_patterns)
     
     print("Conda environments should be named accordingly:")

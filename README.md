@@ -22,8 +22,11 @@ An example config file is provided in `tests/example_config.yaml`.
 An example metadata file is provided in `tests/example_metadata.csv`.
 Metadata files should contain (at the minimum) a Sample column (named `Sample`), a forward reads filepath column (column name specified in the config file under `fwd_reads_path`), and a reverse reads filepath column (column name specified in the config file under `rev_reads_path`). These filepaths should be relative to the directory from which you are running `HoMi`.
 
+### Using HoMi on a cluster
+If running HoMi on a cluster with SLURM, please setup a [Snakemake SLURM profile](https://github.com/Snakemake-Profiles/slurm). This will handle submitting batch jobs for each sample for each step of the pipeline. Then, pass this the name of this profile to `HoMi.py <config_file> --profile <profile_name>`, no cores need to be passed.
+
 ### Conda environment building
-If conda environments have already been built, and you'd like snakemake to not build them, pass the argument `--conda_prebuilt`.
+If conda environments have already been built, and you'd like snakemake to not build them, pass the argument `--conda_prebuilt`. This is particularly useful if running HoMi on a system with ARM architecture, like a Mac with M1/M2 chip. 
 
 ### Running with example dataset
 ```

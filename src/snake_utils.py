@@ -108,3 +108,10 @@ def get_runtime(default, config, rule_name):
     if config_param is not None:
         return int(config_param)
     return default
+
+
+def get_threads(default, config, rule_name):
+    config_param = config.get(f"{rule_name}_threads")
+    if config_param is not None:
+        return int(config_param)
+    return default

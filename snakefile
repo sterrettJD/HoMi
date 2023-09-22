@@ -527,7 +527,7 @@ rule run_humann_nonhost:
     partition=get_partition("short", config, "run_humann_nonhost"),
     mem_mb=get_mem(int(64*1000), config, "run_humann_nonhost"), # MB, or 64 GB
     runtime=get_runtime(int(23.9*60), config, "run_humann_nonhost") # min, or 23 hours
-  threads: get_threads(1, config, "run_humann_nonhost")
+  threads: get_threads(32, config, "run_humann_nonhost")
   conda: "conda_envs/humann.yaml"
   params:
     dirpath=f"{trim_trunc_path}.nonhost.humann",

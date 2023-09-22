@@ -91,3 +91,27 @@ def get_sam2bam_path():
     else:
         raise FileNotFoundError(f"Sam2bam script was not found at {sam2bam_path}.")
 
+def get_partition(default, config, rule_name):
+    config_param = config.get(f"{rule_name}_partition")
+    if config_param is not None:
+        return config_param
+    return default
+
+def get_mem(default, config, rule_name):
+    config_param = config.get(f"{rule_name}_mem_mb")
+    if config_param is not None:
+        return int(config_param)
+    return default
+
+def get_runtime(default, config, rule_name):
+    config_param = config.get(f"{rule_name}_runtime")
+    if config_param is not None:
+        return int(config_param)
+    return default
+
+
+def get_threads(default, config, rule_name):
+    config_param = config.get(f"{rule_name}_threads")
+    if config_param is not None:
+        return int(config_param)
+    return default

@@ -14,7 +14,7 @@ HoMi.py <config_file> --cores <n_cores> --profile <profile_name>
 ```
 
 ### Config file
-An example config file is provided in `tests/example_config.yaml`. 
+An example config file is provided in `tests/example_config.yaml`. This config file should contain paths to relevant files, like the metadata and databases. It can also be used to alter rule-specific resource requirements (details in example config).
 
 ### Metadata file
 An example metadata file is provided in `tests/example_metadata.csv`.
@@ -32,14 +32,8 @@ python tests/mock_community/create_mock_community.py
 HoMi.py tests/example_config.yaml --cores 1
 ```
 
-#### Unlocking a snakemake directory
+### Unlocking a snakemake directory
 Sometimes, when snakemake unexpectedly exits (e.g., due to a server connection timeout), the directory may be locked. Pass the argument `--unlock` to unlock the directory before running `HoMi.py`.
-
-## Main repository contents
-- `snakefile` contains the bulk of the pipeline
-- `HoMi/` contains `HoMi.py`, a wrapper controlling the behavior of the snakemake pipeline
-- `conda_envs/` contains the conda environments for each rule in the snakemake pipeline
-- `data/` contains relevant data, such as adapter sequences to be removed during trimming.
 
 ## Pipeline steps
 ### Preprocessing
@@ -66,3 +60,9 @@ Sometimes, when snakemake unexpectedly exits (e.g., due to a server connection t
     - BBmap is used to map the reads, and featureCounts is used to generate a read count table
 
 
+
+## Main repository contents
+- `snakefile` contains the bulk of the pipeline
+- `HoMi/` contains `HoMi.py`, a wrapper controlling the behavior of the snakemake pipeline
+- `conda_envs/` contains the conda environments for each rule in the snakemake pipeline
+- `data/` contains relevant data, such as adapter sequences to be removed during trimming.

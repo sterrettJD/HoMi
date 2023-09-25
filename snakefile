@@ -808,7 +808,7 @@ rule validate_bams:
     conda: "conda_envs/featureCounts.yaml"
     resources:
         partition=get_partition("short", config, "validate_bams"),
-        mem_mb=get_mem(int(32*1000), config, "validate_bams"), # MB, or 32 GB TODO: ASSESS IF CORRECT
+        mem_mb=get_mem(int(2*1000), config, "validate_bams"), # MB, or 2 GB
         runtime=get_runtime(int(1*60), config, "validate_bams") # min, or 1 hr
     threads: get_threads(16, config, "validate_bams")
     shell:

@@ -838,3 +838,29 @@ rule generate_feature_counts:
         featureCounts -T {threads} -p --countReadPairs \
         -t exon -g gene_id -a {input.ANNOTATION} -o {output.COUNTS} {input.BAM}
         """
+
+
+# reformat.sh -> get non-mapped
+rule get_unmapped:
+    input:
+        BAM=pj(f"{trim_trunc_path}.host", "{sample}.bam")
+    output:
+        TEMPBAM=temp(pj(f"{trim_trunc_path}.host", "{sample}.temp.unmapped.bam")),
+        OUT=pj(f"{trim_trunc_path}.host.unmapped", "{sample}.nonhuman.fq.gz")
+    conda: "conda_envs/bbmap.yaml"
+    resources:
+        partition="short",
+        mem_mb=int(8*1000), # MB, or 8 GB
+        runtime=int(5*60) # min, or 5 hrs
+    threads: 16
+    shell:
+        """
+        # Pull unmapped reads from BAM
+        reformat.sh in={input.BAM} out={output.TEMPBAM} \
+        unmappedonly primaryonly -Xmx{resources.mem_mb}m threads={threads}
+
+        # reformat unmapped reads into a fastq.gz format
+        reformat.sh in={output.TEMPBAM} \
+        out={output.OUT} \
+        addcolon -Xmx{resources.mem_mb}m threads={threads}
+        """

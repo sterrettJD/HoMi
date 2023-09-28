@@ -652,6 +652,24 @@ rule func_barplot:
     """
 
 
+#####################################
+### Kraken + Bracken for taxonomy ###
+
+rule get_kraken_db:
+  ouput: 
+    pj("data", "kraken2_db")
+  resources:
+    partition=get_partition("short", config, "get_kraken_db"),
+    mem_mb=get_mem(int(250*1000), config, "get_kraken_db"), # MB
+    runtime=get_runtime(int(5*60), config, "get_kraken_db") # min
+  threads: get_threads(32, config, "get_kraken_db")
+  conda: "conda_envs/kraken.yaml"
+  shell:
+  """
+  kraken2-build --standard --db {output} --threads {threads}
+  """
+
+
 
 #################################
 ### Estimate nonhost coverage ###

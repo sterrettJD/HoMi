@@ -133,7 +133,11 @@ rule all:
 
     # Host gene counts
     pj(f"{trim_trunc_path}.host", "counts.txt"),
-    pj(f"{trim_trunc_path}.host", "counts.txt.summary")
+    pj(f"{trim_trunc_path}.host", "counts.txt.summary"),
+
+    # Kraken2 db
+    pj("data", "kraken2_db")
+
 
 rule symlink_fastqs:
   output:

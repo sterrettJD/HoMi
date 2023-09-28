@@ -660,7 +660,7 @@ rule func_barplot:
 ### Kraken + Bracken for taxonomy ###
 
 rule get_kraken_db:
-  ouput: 
+  output: 
     pj("data", "kraken2_db")
   resources:
     partition=get_partition("short", config, "get_kraken_db"),

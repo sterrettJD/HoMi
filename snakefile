@@ -674,6 +674,42 @@ rule get_kraken_db:
   """
 
 
+rule run_kraken:
+  input:
+    FWD=pj(f"{trim_trunc_path}.nonhost",
+            "{sample}.R1.fq.gz"),
+    REV=pj(f"{trim_trunc_path}.nonhost",
+            "{sample}.R2.fq.gz"),
+    DB=pj("data", "kraken2_db")
+  output: 
+    OUTFILE=pj(f"{trim_trunc_path}.nonhost.kraken", 
+              "{sample}.kraken.txt"),
+    REPORT=pj(f"{trim_trunc_path}.nonhost.kraken", 
+              "{sample}.kreport2")
+  resources:
+    partition=get_partition("short", config, "run_kraken"),
+    mem_mb=get_mem(int(180*1000), config, "run_kraken"), # MB maybe 10GB/thread? TODO: CHECK THIS
+    runtime=get_runtime(int(23.9*60), config, "run_kraken") # min 
+  threads: get_threads(16, config, "run_kraken")
+  conda: "conda_envs/kraken.yaml"
+  params:
+    out_dir=f"{trim_trunc_path}.nonhost.kraken"
+  shell:
+    """
+    mkdir -p {params.out_dir}
+
+    kraken2 --gzip-compressed --paired \
+    --db {input.DB} \
+    --threads {threads} \
+    --output {output.OUTFILE} \
+    --report {output.REPORT}
+    --classified-out {params.out_dir}/{wildcards.sample}_classified#.fq \
+    --unclassified-out {params.out_dir}/{wildcards.sample}_unclassified#.fq \
+    {input.FWD} {input.REV}
+
+    """
+
+
 
 #################################
 ### Estimate nonhost coverage ###

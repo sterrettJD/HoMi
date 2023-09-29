@@ -2,7 +2,7 @@ import pandas as pd
 from os.path import join as pj
 from os.path import split
 from src.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil_rmd_path, get_nonpareil_html_path, get_agg_script_path, get_mphlan_conv_script_path, get_taxa_barplot_rmd_path, get_sam2bam_path, get_func_barplot_rmd_path, get_partition, get_mem, get_runtime, get_threads
-
+import subprocess
 
 
 METADATA = pd.read_csv(config['METADATA'])
@@ -864,3 +864,33 @@ rule get_unmapped:
     out={output.OUT} \
     addcolon -Xmx{resources.mem_mb}m threads={threads}
     """
+
+rule count_reads_by_filt:
+  input:
+    HOSTILE=expand(pj(f"{trim_trunc_path}.nonhost", "{sample}.R1.fq.gz"), 
+                    sample=SAMPLES),
+    UNMAPPED=expand(pj(f"{trim_trunc_path}.host.unmapped", "{sample}.nonhuman.fq.gz"),
+                    sample=SAMPLES)
+  output:
+    "read_counts_per_sample_by_filt_method.tsv"
+  resources:
+    partition=get_partition("short", config, "count_reads_by_filt"),
+    mem_mb=get_mem(int(8*1000), config, "count_reads_by_filt"), # MB, or 8 GB
+    runtime=get_runtime(int(5*60), config, "count_reads_by_filt") # min, or 2 hrs
+  threads: get_threads(4, config, "count_reads_by_filt")
+  run:
+    reads = []
+    for file in input.HOSTILE:
+      out = subprocess.run(["zcat", file, "|", "wc", "-l"], capture_output=True)
+      # count lines and divide by 4 bc 4 lines per read
+      reads = reads.append(int(out.stdout)/4)
+
+    for file in input.UNMAPPED:
+      out = subprocess.run(["zcat", file, "|", "wc", "-l"], capture_output=True)
+      reads = reads.append(int(out.stdout)/4)
+    
+    files = input.HOSTILE + input.UNMAPPED
+
+    df = pd.DataFrame({"file": files,
+                       "readcounts": reads})
+    df.to_csv(output, sep="\t")

@@ -132,8 +132,8 @@ rule all:
     pj(f"{trim_trunc_path}.nonhost.nonpareil", "nonpareil_curves.html"),
 
     # Host gene counts
-    pj(f"{trim_trunc_path}.host", "counts.txt"),
-    pj(f"{trim_trunc_path}.host", "counts.txt.summary"),
+#    pj(f"{trim_trunc_path}.host", "counts.txt"),
+#    pj(f"{trim_trunc_path}.host", "counts.txt.summary"),
 
     # Kraken2 db
     pj("data", "kraken2_db")
@@ -660,18 +660,18 @@ rule func_barplot:
 ### Kraken + Bracken for taxonomy ###
 
 rule get_kraken_db:
-  ouput: 
+  output: 
     pj("data", "kraken2_db")
   resources:
     partition=get_partition("short", config, "get_kraken_db"),
     mem_mb=get_mem(int(250*1000), config, "get_kraken_db"), # MB
-    runtime=get_runtime(int(10*60), config, "get_kraken_db") # min # TODO: could scale down?
+    runtime=get_runtime(int(23.9*60), config, "get_kraken_db") # min # TODO: could scale down?
   threads: get_threads(32, config, "get_kraken_db")
   conda: "conda_envs/kraken.yaml"
   shell:
-  """
-  kraken2-build --standard --db {output} --threads {threads}
-  """
+    """
+    kraken2-build --standard --db {output} --threads {threads}
+    """
 
 
 

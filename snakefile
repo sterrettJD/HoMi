@@ -818,49 +818,49 @@ rule validate_bams:
 
 # Assess classification of mapped reads
 rule generate_feature_counts:
-    input:
-        ANNOTATION=config['host_ref_gtf'],
-        VALID=expand(pj(f"{trim_trunc_path}.host", "{sample}_bam_valid.tsv"), 
-                     sample=SAMPLES),
-        BAM=expand(pj(f"{trim_trunc_path}.host", "{sample}.bam"), 
-                   sample=SAMPLES)
-    output:
-        COUNTS=pj(f"{trim_trunc_path}.host", "counts.txt"),
-        SUMMARY=pj(f"{trim_trunc_path}.host", "counts.txt.summary")
-    conda: "conda_envs/featureCounts.yaml"
-    resources:
-        partition=get_partition("short", config, "generate_feature_counts"),
-        mem_mb=get_mem(int(8*1000), config, "generate_feature_counts"), # MB, or 8 GB
-        runtime=get_runtime(int(2*60), config, "generate_feature_counts") # min, or 2 hrs
-    threads: get_threads(16, config, "generate_feature_counts")
-    shell:
-        """
-        featureCounts -T {threads} -p --countReadPairs \
-        -t exon -g gene_id -a {input.ANNOTATION} -o {output.COUNTS} {input.BAM}
-        """
+  input:
+    ANNOTATION=config['host_ref_gtf'],
+    VALID=expand(pj(f"{trim_trunc_path}.host", "{sample}_bam_valid.tsv"), 
+                  sample=SAMPLES),
+    BAM=expand(pj(f"{trim_trunc_path}.host", "{sample}.bam"), 
+                sample=SAMPLES)
+  output:
+    COUNTS=pj(f"{trim_trunc_path}.host", "counts.txt"),
+    SUMMARY=pj(f"{trim_trunc_path}.host", "counts.txt.summary")
+  conda: "conda_envs/featureCounts.yaml"
+  resources:
+    partition=get_partition("short", config, "generate_feature_counts"),
+    mem_mb=get_mem(int(8*1000), config, "generate_feature_counts"), # MB, or 8 GB
+    runtime=get_runtime(int(2*60), config, "generate_feature_counts") # min, or 2 hrs
+  threads: get_threads(16, config, "generate_feature_counts")
+  shell:
+    """
+    featureCounts -T {threads} -p --countReadPairs \
+    -t exon -g gene_id -a {input.ANNOTATION} -o {output.COUNTS} {input.BAM}
+    """
 
 
 # reformat.sh -> get non-mapped
 rule get_unmapped:
-    input:
-        BAM=pj(f"{trim_trunc_path}.host", "{sample}.bam")
-    output:
-        TEMPBAM=temp(pj(f"{trim_trunc_path}.host", "{sample}.temp.unmapped.bam")),
-        OUT=pj(f"{trim_trunc_path}.host.unmapped", "{sample}.nonhuman.fq.gz")
-    conda: "conda_envs/bbmap.yaml"
-    resources:
-        partition="short",
-        mem_mb=int(8*1000), # MB, or 8 GB
-        runtime=int(5*60) # min, or 5 hrs
-    threads: 16
-    shell:
-        """
-        # Pull unmapped reads from BAM
-        reformat.sh in={input.BAM} out={output.TEMPBAM} \
-        unmappedonly primaryonly -Xmx{resources.mem_mb}m threads={threads}
+  input:
+    BAM=pj(f"{trim_trunc_path}.host", "{sample}.bam")
+  output:
+    TEMPBAM=temp(pj(f"{trim_trunc_path}.host", "{sample}.temp.unmapped.bam")),
+    OUT=pj(f"{trim_trunc_path}.host.unmapped", "{sample}.nonhuman.fq.gz")
+  conda: "conda_envs/bbmap.yaml"
+  resources:
+    partition=get_partition("short", config, "get_unmapped"),
+    mem_mb=get_mem(int(8*1000), config, "get_unmapped"), # MB, or 8 GB
+    runtime=get_runtime(int(5*60), config, "get_unmapped") # min, or 2 hrs
+  threads: get_threads(16, config, "get_unmapped")
+  shell:
+    """
+    # Pull unmapped reads from BAM
+    reformat.sh in={input.BAM} out={output.TEMPBAM} \
+    unmappedonly primaryonly -Xmx{resources.mem_mb}m threads={threads}
 
-        # reformat unmapped reads into a fastq.gz format
-        reformat.sh in={output.TEMPBAM} \
-        out={output.OUT} \
-        addcolon -Xmx{resources.mem_mb}m threads={threads}
-        """
+    # reformat unmapped reads into a fastq.gz format
+    reformat.sh in={output.TEMPBAM} \
+    out={output.OUT} \
+    addcolon -Xmx{resources.mem_mb}m threads={threads}
+    """

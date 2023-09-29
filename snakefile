@@ -133,7 +133,10 @@ rule all:
 
     # Host gene counts
     pj(f"{trim_trunc_path}.host", "counts.txt"),
-    pj(f"{trim_trunc_path}.host", "counts.txt.summary")
+    pj(f"{trim_trunc_path}.host", "counts.txt.summary"),
+
+    # comparison of reads based on filtering method
+    "read_counts_per_sample_by_filt_method.tsv"
 
 rule symlink_fastqs:
   output:

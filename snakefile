@@ -886,11 +886,13 @@ rule count_reads_by_filt:
     for file in input.HOSTILE:
       out = subprocess.run(["zcat", file, "|", "wc", "-l"], capture_output=True)
       # count lines and divide by 4 bc 4 lines per read
-      reads = reads.append(int(out.stdout)/4)
+      lines = out.stdout.split("\n")[1].split()[0]
+      reads = reads.append(int(lines)/4)
 
     for file in input.UNMAPPED:
       out = subprocess.run(["zcat", file, "|", "wc", "-l"], capture_output=True)
-      reads = reads.append(int(out.stdout)/4)
+      lines = out.stdout.split("\n")[1].split()[0]
+      reads = reads.append(int(lines)/4)
     
     files = input.HOSTILE + input.UNMAPPED
 

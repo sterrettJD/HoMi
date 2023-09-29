@@ -886,16 +886,16 @@ rule count_reads_by_filt:
     for file in input.HOSTILE:
       out = subprocess.run(["zcat", file, "|", "wc", "-l"], capture_output=True)
       # count lines and divide by 4 bc 4 lines per read
-      lines = out.stdout.split("\n")[1].split()[0]
-      reads = reads.append(int(lines)/4)
+      lines = str(out.stdout, encoding='utf-8').split("\n")[1].split()[0]
+      reads.append(int(lines)/4)
 
     for file in input.UNMAPPED:
       out = subprocess.run(["zcat", file, "|", "wc", "-l"], capture_output=True)
-      lines = out.stdout.split("\n")[1].split()[0]
-      reads = reads.append(int(lines)/4)
+      lines = str(out.stdout, encoding='utf-8').split("\n")[1].split()[0]
+      reads.append(int(lines)/4)
     
     files = input.HOSTILE + input.UNMAPPED
 
     df = pd.DataFrame({"file": files,
                        "readcounts": reads})
-    df.to_csv(output, sep="\t")
+    df.to_csv(output[0], sep="\t")

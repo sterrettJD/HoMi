@@ -667,7 +667,7 @@ rule func_barplot:
 
 rule get_kraken_db:
   output: 
-    pj("data", "kraken2_db")
+    directory(pj("data", "kraken2_db"))
   resources:
     partition=get_partition("short", config, "get_kraken_db"),
     mem_mb=get_mem(int(250*1000), config, "get_kraken_db"), # MB

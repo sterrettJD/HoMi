@@ -136,7 +136,13 @@ rule all:
 #    pj(f"{trim_trunc_path}.host", "counts.txt.summary"),
 
     # Kraken2 db
-    pj("data", "kraken2_db")
+    pj("data", "kraken2_db"),
+    expand(pj(f"{trim_trunc_path}.nonhost.kraken", 
+              "{sample}.kraken.txt"),
+            sample=SAMPLES),
+    expand(pj(f"{trim_trunc_path}.nonhost.kraken", 
+              "{sample}.kreport2"),
+            sample=SAMPLES)
 
 
 rule symlink_fastqs:

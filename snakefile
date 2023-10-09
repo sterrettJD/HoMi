@@ -704,14 +704,7 @@ rule run_kraken:
     """
     mkdir -p {params.out_dir}
 
-    kraken2 --gzip-compressed --paired \
-    --db {input.DB} \
-    --threads {threads} \
-    --output {output.OUTFILE} \
-    --report {output.REPORT}
-    --classified-out {params.out_dir}/{wildcards.sample}_classified#.fq \
-    --unclassified-out {params.out_dir}/{wildcards.sample}_unclassified#.fq \
-    {input.FWD} {input.REV}
+    kraken2 --gzip-compressed --paired --db {input.DB} --threads {threads} --output {output.OUTFILE} --report {output.REPORT} --classified-out {params.out_dir}/{wildcards.sample}_classified#.fq --unclassified-out {params.out_dir}/{wildcards.sample}_unclassified#.fq {input.FWD} {input.REV}
 
     """
 

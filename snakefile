@@ -135,8 +135,6 @@ rule all:
 #    pj(f"{trim_trunc_path}.host", "counts.txt"),
 #    pj(f"{trim_trunc_path}.host", "counts.txt.summary"),
 
-    # Kraken2 db
-    pj("data", "kraken2_db"),
     # Kraken2 out
     expand(pj(f"{trim_trunc_path}.nonhost.kraken", 
               "{sample}.kraken.txt"),
@@ -672,16 +670,23 @@ rule func_barplot:
 
 rule get_kraken_db:
   output: 
-    directory(pj("data", "kraken2_db"))
+    HASH=pj("data", "kraken2_db", "hash.k2d"),
+    OPTS=pj("data", "kraken2_db", "opts.k2d"),
+    SEQ2ID=pj("data", "kraken2_db", "seqid2taxid.map"),
+    TAXO=pj("data", "kraken2_db", "taxo.k2d"),
+    LIB=directory(pj("data", "kraken2_db", "library"))
+    TAX=directory(pj("data", "kraken2_db", "taxonomy"))
   resources:
     partition=get_partition("short", config, "get_kraken_db"),
     mem_mb=get_mem(int(250*1000), config, "get_kraken_db"), # MB
     runtime=get_runtime(int(23.9*60), config, "get_kraken_db") # min # TODO: could scale down?
   threads: get_threads(32, config, "get_kraken_db")
   conda: "conda_envs/kraken.yaml"
+  params:
+    database_dir=pj("data", "kraken2_db")
   shell:
     """
-    kraken2-build --standard --db {output} --threads {threads}
+    kraken2-build --standard --db {params.database_dir} --threads {threads}
     """
 
 
@@ -717,7 +722,7 @@ rule run_kraken:
 
 rule build_bracken:
   input:
-    pj("data", "kraken2_db")
+    pj("data", "kraken2_db", "hash.k2d")
   output:
     pj("data", "kraken2_db", "database150mers.kraken"),
     pj("data", "kraken2_db", "database150mers.kmer_distrib")
@@ -727,15 +732,17 @@ rule build_bracken:
     runtime=get_runtime(int(4*60), config, "build_bracken") # min
   threads: get_threads(32, config, "build_bracken")
   conda: "kraken.yaml"
+  params:
+    database=pj("data", "kraken2_db")
   shell:
     """
-    bracken-build -d {input} -t {threads} -l 150
+    bracken-build -d {params.database} -t {threads} -l 150
     """
 
 
 rule run_bracken:
   input:
-    KRAKEN_DB=pj("data", "kraken2_db"),
+    KRAKEN_HASH=pj("data", "kraken2_db", "hash.k2d"),
     LMERS=pj("data", "kraken2_db", "database150mers.kraken"),
     LMERS_DIST=pj("data", "kraken2_db", "database150mers.kmer_distrib"),
     REPORT=pj(f"{trim_trunc_path}.nonhost.kraken", 

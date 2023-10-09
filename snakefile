@@ -708,6 +708,44 @@ rule run_kraken:
 
     """
 
+rule build_bracken:
+  input:
+    pj("data", "kraken2_db")
+  output:
+    pj("data", "kraken2_db", "database150mers.kraken"),
+    pj("data", "kraken2_db", "database150mers.kmer_distrib")
+  resources:
+    partition=get_partition("short", config, "build_bracken"),
+    mem_mb=get_mem(int(128*1000), config, "build_bracken"), # MB
+    runtime=get_runtime(int(4*60), config, "build_bracken") # min
+  threads: get_threads(32, config, "build_bracken")
+  conda: "kraken.yaml"
+  shell:
+    """
+    bracken-build -d {input} -t {threads} -l 150
+    """
+
+
+rule run_bracken:
+  input:
+    KRAKEN_DB=pj("data", "kraken2_db"),
+    LMERS=pj("data", "kraken2_db", "database150mers.kraken"),
+    LMERS_DIST=pj("data", "kraken2_db", "database150mers.kmer_distrib"),
+    REPORT=pj(f"{trim_trunc_path}.nonhost.kraken", 
+              "{sample}.kreport2")
+  output:
+    REPORT=pj(f"{trim_trunc_path}.nonhost.kraken", 
+              "{sample}.kreport2")
+  resources:
+    partition=get_partition("short", config, "run_bracken"),
+    mem_mb=get_mem(int(32*1000), config, "run_bracken"), # MB
+    runtime=get_runtime(int(4*60), config, "run_bracken") # min
+  threads: get_threads(1, config, "run_bracken")
+  conda: "kraken.yaml"
+  shell:
+    """
+    bracken -d {input.KRAKEN_DB} -i {input.REPORT} -o {output.REPORT} -r 150 -l S -t 10
+    """
 
 
 #################################

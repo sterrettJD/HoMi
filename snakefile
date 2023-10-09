@@ -137,12 +137,17 @@ rule all:
 
     # Kraken2 db
     pj("data", "kraken2_db"),
+    # Kraken2 out
     expand(pj(f"{trim_trunc_path}.nonhost.kraken", 
               "{sample}.kraken.txt"),
             sample=SAMPLES),
     expand(pj(f"{trim_trunc_path}.nonhost.kraken", 
               "{sample}.kreport2"),
-            sample=SAMPLES)
+            sample=SAMPLES),
+    # Bracken out
+    expand(pj(f"{trim_trunc_path}.nonhost.kraken", 
+              "{sample}.bracken"),
+           sample=SAMPLES)
 
 
 rule symlink_fastqs:
@@ -737,7 +742,7 @@ rule run_bracken:
               "{sample}.kreport2")
   output:
     REPORT=pj(f"{trim_trunc_path}.nonhost.kraken", 
-              "{sample}.kreport2")
+              "{sample}.bracken")
   resources:
     partition=get_partition("short", config, "run_bracken"),
     mem_mb=get_mem(int(32*1000), config, "run_bracken"), # MB

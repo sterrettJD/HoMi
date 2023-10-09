@@ -733,6 +733,25 @@ rule build_bracken:
     """
 
 
+rule run_bracken:
+  input:
+    KRAKEN_DB=pj("data", "kraken2_db"),
+    LMERS=pj("data", "kraken2_db", "database150mers.kraken"),
+    LMERS_DIST=pj("data", "kraken2_db", "database150mers.kmer_distrib"),
+    REPORT=pj(f"{trim_trunc_path}.nonhost.kraken", 
+              "{sample}.kreport2")
+  output:
+    REPORT=pj(f"{trim_trunc_path}.nonhost.kraken", 
+              "{sample}.kreport2")
+  resources:
+    partition=get_partition("short", config, "run_bracken"),
+    mem_mb=get_mem(int(32*1000), config, "run_bracken"), # MB
+    runtime=get_runtime(int(4*60), config, "run_bracken") # min
+  threads: get_threads(1, config, "run_bracken")
+  shell:
+    """
+    bracken -d {input.KRAKEN_DB} -i {input.REPORT} -o {output.REPORT} -r 150 -l S -t 10
+    """
 
 
 #################################

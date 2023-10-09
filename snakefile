@@ -748,6 +748,7 @@ rule run_bracken:
     mem_mb=get_mem(int(32*1000), config, "run_bracken"), # MB
     runtime=get_runtime(int(4*60), config, "run_bracken") # min
   threads: get_threads(1, config, "run_bracken")
+  conda: "kraken.yaml"
   shell:
     """
     bracken -d {input.KRAKEN_DB} -i {input.REPORT} -o {output.REPORT} -r 150 -l S -t 10

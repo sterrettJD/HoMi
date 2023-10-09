@@ -686,7 +686,8 @@ rule run_kraken:
             "{sample}.R1.fq.gz"),
     REV=pj(f"{trim_trunc_path}.nonhost",
             "{sample}.R2.fq.gz"),
-    DB=pj("data", "kraken2_db")
+    HASH=pj("data", "kraken2_db", "hash.k2d") # if the full db dir is passed here, kraken will be rerun after bracken building
+                                              # because bracken-build modifies that directory
   output: 
     OUTFILE=pj(f"{trim_trunc_path}.nonhost.kraken", 
               "{sample}.kraken.txt"),
@@ -694,17 +695,18 @@ rule run_kraken:
               "{sample}.kreport2")
   resources:
     partition=get_partition("short", config, "run_kraken"),
-    mem_mb=get_mem(int(180*1000), config, "run_kraken"), # MB maybe 10GB/thread? TODO: CHECK THIS
-    runtime=get_runtime(int(23.9*60), config, "run_kraken") # min 
+    mem_mb=get_mem(int(84*1000), config, "run_kraken"), # MB maybe 10GB/thread? TODO: CHECK THIS
+    runtime=get_runtime(int(2*60), config, "run_kraken") # min 
   threads: get_threads(16, config, "run_kraken")
   conda: "conda_envs/kraken.yaml"
   params:
-    out_dir=f"{trim_trunc_path}.nonhost.kraken"
+    out_dir=f"{trim_trunc_path}.nonhost.kraken",
+    database=pj("data", "kraken2_db")
   shell:
     """
     mkdir -p {params.out_dir}
 
-    kraken2 --gzip-compressed --paired --db {input.DB} --threads {threads} --output {output.OUTFILE} --report {output.REPORT} --classified-out {params.out_dir}/{wildcards.sample}_classified#.fq --unclassified-out {params.out_dir}/{wildcards.sample}_unclassified#.fq {input.FWD} {input.REV}
+    kraken2 --gzip-compressed --paired --db {params.database} --threads {threads} --output {output.OUTFILE} --report {output.REPORT} --classified-out {params.out_dir}/{wildcards.sample}_classified#.fq --unclassified-out {params.out_dir}/{wildcards.sample}_unclassified#.fq {input.FWD} {input.REV}
 
     """
 
@@ -742,9 +744,11 @@ rule run_bracken:
     runtime=get_runtime(int(4*60), config, "run_bracken") # min
   threads: get_threads(1, config, "run_bracken")
   conda: "kraken.yaml"
+  params:
+    database=pj("data", "kraken2_db")
   shell:
     """
-    bracken -d {input.KRAKEN_DB} -i {input.REPORT} -o {output.REPORT} -r 150 -l S -t 10
+    bracken -d {params.database} -i {input.REPORT} -o {output.REPORT} -r 150 -l S -t 10
     """
 
 

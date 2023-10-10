@@ -674,7 +674,7 @@ rule get_kraken_db:
     OPTS=pj("data", "kraken2_db", "opts.k2d"),
     SEQ2ID=pj("data", "kraken2_db", "seqid2taxid.map"),
     TAXO=pj("data", "kraken2_db", "taxo.k2d"),
-    LIB=directory(pj("data", "kraken2_db", "library"))
+    LIB=directory(pj("data", "kraken2_db", "library")),
     TAX=directory(pj("data", "kraken2_db", "taxonomy"))
   resources:
     partition=get_partition("short", config, "get_kraken_db"),
@@ -731,7 +731,7 @@ rule build_bracken:
     mem_mb=get_mem(int(128*1000), config, "build_bracken"), # MB
     runtime=get_runtime(int(4*60), config, "build_bracken") # min
   threads: get_threads(32, config, "build_bracken")
-  conda: "kraken.yaml"
+  conda: "conda_envs/kraken.yaml"
   params:
     database=pj("data", "kraken2_db")
   shell:
@@ -755,7 +755,7 @@ rule run_bracken:
     mem_mb=get_mem(int(32*1000), config, "run_bracken"), # MB
     runtime=get_runtime(int(4*60), config, "run_bracken") # min
   threads: get_threads(1, config, "run_bracken")
-  conda: "kraken.yaml"
+  conda: "conda_envs/kraken.yaml"
   params:
     database=pj("data", "kraken2_db")
   shell:

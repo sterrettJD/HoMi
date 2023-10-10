@@ -146,6 +146,8 @@ rule all:
     expand(pj(f"{trim_trunc_path}.nonhost.kraken", 
               "{sample}.bracken"),
            sample=SAMPLES)
+    # Bracken combined out
+    pj(f"{trim_trunc_path}.nonhost.kraken", "Combined-taxonomy.tsv")
 
 
 rule symlink_fastqs:
@@ -761,6 +763,39 @@ rule run_bracken:
   shell:
     """
     bracken -d {params.database} -i {input.REPORT} -o {output.REPORT} -r 150 -l S -t 10
+    """
+
+
+rule aggregate_bracken:
+  input:
+    expand(pj(f"{trim_trunc_path}.nonhost.kraken", 
+              "{sample}.bracken"),
+           sample=SAMPLES)
+  output:
+    pj(f"{trim_trunc_path}.nonhost.kraken", "Combined-taxonomy.tsv")
+  resources:
+    partition=get_partition("short", config, "aggregate_bracken"),
+    mem_mb=get_mem(int(4*1000), config, "aggregate_bracken"), # MB
+    runtime=get_runtime(int(4*60), config, "aggregate_bracken") # min
+  threads: get_threads(1, config, "aggregate_bracken")
+  conda: "kraken.yaml"
+  params:
+    dirpath=f"{trim_trunc_path}.nonhost.kraken"
+  shell:
+    """
+    cd {params.dirpath}
+    
+    # TODO: should probably put this in its own rule, but this works for now
+    wget ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz
+    tar -xvf taxdump.tar.gz
+
+    ( ls *.bracken ) > bracken-sample-name-map.tsv
+
+    bit-combine-bracken-and-add-lineage -i bracken-sample-name-map.tsv -o Combined-taxonomy.tsv -d .
+
+    rm *.dmp
+    rm readme.txt
+    rm taxdump.tar.gz
     """
 
 

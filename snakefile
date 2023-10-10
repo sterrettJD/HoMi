@@ -145,7 +145,7 @@ rule all:
     # Bracken out
     expand(pj(f"{trim_trunc_path}.nonhost.kraken", 
               "{sample}.bracken"),
-           sample=SAMPLES)
+           sample=SAMPLES),
     # Bracken combined out
     pj(f"{trim_trunc_path}.nonhost.kraken", "Combined-taxonomy.tsv")
 

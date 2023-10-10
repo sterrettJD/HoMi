@@ -778,7 +778,7 @@ rule aggregate_bracken:
     mem_mb=get_mem(int(4*1000), config, "aggregate_bracken"), # MB
     runtime=get_runtime(int(4*60), config, "aggregate_bracken") # min
   threads: get_threads(1, config, "aggregate_bracken")
-  conda: "kraken.yaml"
+  conda: "conda_envs/kraken.yaml"
   params:
     dirpath=f"{trim_trunc_path}.nonhost.kraken"
   shell:

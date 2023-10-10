@@ -7,4 +7,4 @@ channels:
 dependencies:
   - kraken2
   - bracken
-  - bit
+  - bit>=1.8.62

@@ -884,14 +884,13 @@ rule count_reads_by_filt:
   run:
     reads = []
     for file in input.HOSTILE:
-      out = subprocess.run(["zcat {file} | wc -l"], capture_output=True, shell=True)
+      lines = subprocess.run(["zcat {file} | wc -l"], capture_output=False, shell=True)
       # count lines and divide by 4 bc 4 lines per read
-      lines = str(out.stdout, encoding='utf-8').split("\n")[1].split()[0]
       reads.append(int(lines)/4)
 
     for file in input.UNMAPPED:
-      out = subprocess.run(["zcat {file} | wc -l"], capture_output=True, shell=True)
-      lines = str(out.stdout, encoding='utf-8').split("\n")[1].split()[0]
+      out = subprocess.run(["zcat {file} | wc -l"], capture_output=False, shell=True)
+      # count lines and divide by 4 bc 4 lines per read
       reads.append(int(lines)/4)
     
     files = input.HOSTILE + input.UNMAPPED

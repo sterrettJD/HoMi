@@ -133,7 +133,22 @@ rule all:
 
     # Host gene counts
     pj(f"{trim_trunc_path}.host", "counts.txt"),
-    pj(f"{trim_trunc_path}.host", "counts.txt.summary")
+    pj(f"{trim_trunc_path}.host", "counts.txt.summary"),
+
+    # Kraken2 out
+    expand(pj(f"{trim_trunc_path}.nonhost.kraken", 
+              "{sample}.kraken.txt"),
+            sample=SAMPLES),
+    expand(pj(f"{trim_trunc_path}.nonhost.kraken", 
+              "{sample}.kreport2"),
+            sample=SAMPLES),
+    # Bracken out
+    expand(pj(f"{trim_trunc_path}.nonhost.kraken", 
+              "{sample}.bracken"),
+           sample=SAMPLES),
+    # Bracken combined out
+    pj(f"{trim_trunc_path}.nonhost.kraken", "Combined-taxonomy.tsv")
+
 
 rule symlink_fastqs:
   output:
@@ -651,6 +666,137 @@ rule func_barplot:
     -e "rmarkdown::render('{params.rmd_path}', output_dir='{params.output_dir}', params=list(genetable='{params.gene_table}', metadata='{params.metadata}', directory='{params.output_dir}'))"
     """
 
+
+#####################################
+### Kraken + Bracken for taxonomy ###
+
+rule get_kraken_db:
+  output: 
+    HASH=pj("data", "kraken2_db", "hash.k2d"),
+    OPTS=pj("data", "kraken2_db", "opts.k2d"),
+    SEQ2ID=pj("data", "kraken2_db", "seqid2taxid.map"),
+    TAXO=pj("data", "kraken2_db", "taxo.k2d"),
+    LIB=directory(pj("data", "kraken2_db", "library")),
+    TAX=directory(pj("data", "kraken2_db", "taxonomy"))
+  resources:
+    partition=get_partition("short", config, "get_kraken_db"),
+    mem_mb=get_mem(int(250*1000), config, "get_kraken_db"), # MB
+    runtime=get_runtime(int(23.9*60), config, "get_kraken_db") # min # TODO: could scale down?
+  threads: get_threads(32, config, "get_kraken_db")
+  conda: "conda_envs/kraken.yaml"
+  params:
+    database_dir=pj("data", "kraken2_db")
+  shell:
+    """
+    kraken2-build --standard --db {params.database_dir} --threads {threads}
+    """
+
+
+rule run_kraken:
+  input:
+    FWD=pj(f"{trim_trunc_path}.nonhost",
+            "{sample}.R1.fq.gz"),
+    REV=pj(f"{trim_trunc_path}.nonhost",
+            "{sample}.R2.fq.gz"),
+    HASH=pj("data", "kraken2_db", "hash.k2d") # if the full db dir is passed here, kraken will be rerun after bracken building
+                                              # because bracken-build modifies that directory
+  output: 
+    OUTFILE=pj(f"{trim_trunc_path}.nonhost.kraken", 
+              "{sample}.kraken.txt"),
+    REPORT=pj(f"{trim_trunc_path}.nonhost.kraken", 
+              "{sample}.kreport2")
+  resources:
+    partition=get_partition("short", config, "run_kraken"),
+    mem_mb=get_mem(int(84*1000), config, "run_kraken"), # MB maybe 10GB/thread? TODO: CHECK THIS
+    runtime=get_runtime(int(2*60), config, "run_kraken") # min 
+  threads: get_threads(16, config, "run_kraken")
+  conda: "conda_envs/kraken.yaml"
+  params:
+    out_dir=f"{trim_trunc_path}.nonhost.kraken",
+    database=pj("data", "kraken2_db")
+  shell:
+    """
+    mkdir -p {params.out_dir}
+
+    kraken2 --gzip-compressed --paired --db {params.database} --threads {threads} --output {output.OUTFILE} --report {output.REPORT} --classified-out {params.out_dir}/{wildcards.sample}_classified#.fq --unclassified-out {params.out_dir}/{wildcards.sample}_unclassified#.fq {input.FWD} {input.REV}
+
+    """
+
+rule build_bracken:
+  input:
+    pj("data", "kraken2_db", "hash.k2d")
+  output:
+    pj("data", "kraken2_db", "database150mers.kraken"),
+    pj("data", "kraken2_db", "database150mers.kmer_distrib")
+  resources:
+    partition=get_partition("short", config, "build_bracken"),
+    mem_mb=get_mem(int(128*1000), config, "build_bracken"), # MB
+    runtime=get_runtime(int(4*60), config, "build_bracken") # min
+  threads: get_threads(32, config, "build_bracken")
+  conda: "conda_envs/kraken.yaml"
+  params:
+    database=pj("data", "kraken2_db")
+  shell:
+    """
+    bracken-build -d {params.database} -t {threads} -l 150
+    """
+
+
+rule run_bracken:
+  input:
+    KRAKEN_HASH=pj("data", "kraken2_db", "hash.k2d"),
+    LMERS=pj("data", "kraken2_db", "database150mers.kraken"),
+    LMERS_DIST=pj("data", "kraken2_db", "database150mers.kmer_distrib"),
+    REPORT=pj(f"{trim_trunc_path}.nonhost.kraken", 
+              "{sample}.kreport2")
+  output:
+    REPORT=pj(f"{trim_trunc_path}.nonhost.kraken", 
+              "{sample}.bracken")
+  resources:
+    partition=get_partition("short", config, "run_bracken"),
+    mem_mb=get_mem(int(32*1000), config, "run_bracken"), # MB
+    runtime=get_runtime(int(4*60), config, "run_bracken") # min
+  threads: get_threads(1, config, "run_bracken")
+  conda: "conda_envs/kraken.yaml"
+  params:
+    database=pj("data", "kraken2_db")
+  shell:
+    """
+    bracken -d {params.database} -i {input.REPORT} -o {output.REPORT} -r 150 -l S -t 10
+    """
+
+
+rule aggregate_bracken:
+  input:
+    expand(pj(f"{trim_trunc_path}.nonhost.kraken", 
+              "{sample}.bracken"),
+           sample=SAMPLES)
+  output:
+    pj(f"{trim_trunc_path}.nonhost.kraken", "Combined-taxonomy.tsv")
+  resources:
+    partition=get_partition("short", config, "aggregate_bracken"),
+    mem_mb=get_mem(int(4*1000), config, "aggregate_bracken"), # MB
+    runtime=get_runtime(int(4*60), config, "aggregate_bracken") # min
+  threads: get_threads(1, config, "aggregate_bracken")
+  conda: "conda_envs/kraken.yaml"
+  params:
+    dirpath=f"{trim_trunc_path}.nonhost.kraken"
+  shell:
+    """
+    cd {params.dirpath}
+    
+    # TODO: should probably put this in its own rule, but this works for now
+    wget ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz
+    tar -xvf taxdump.tar.gz
+
+    ( ls *.bracken ) > bracken-sample-name-map.tsv
+
+    bit-combine-bracken-and-add-lineage -i bracken-sample-name-map.tsv -o Combined-taxonomy.tsv -d .
+
+    rm *.dmp
+    rm readme.txt
+    rm taxdump.tar.gz
+    """
 
 
 #################################

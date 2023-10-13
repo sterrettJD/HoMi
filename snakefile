@@ -132,8 +132,8 @@ rule all:
     pj(f"{trim_trunc_path}.nonhost.nonpareil", "nonpareil_curves.html"),
 
     # Host gene counts
-#    pj(f"{trim_trunc_path}.host", "counts.txt"),
-#    pj(f"{trim_trunc_path}.host", "counts.txt.summary"),
+    pj(f"{trim_trunc_path}.host", "counts.txt"),
+    pj(f"{trim_trunc_path}.host", "counts.txt.summary"),
 
     # Kraken2 out
     expand(pj(f"{trim_trunc_path}.nonhost.kraken", 

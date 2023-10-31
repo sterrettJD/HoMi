@@ -575,6 +575,7 @@ rule run_humann_nonhost:
 
 rule aggregate_humann_outs_nonhost:
   input:
+    MAPPING_DB=config['utility_mapping_db'],
     PATHABUND=expand(pj(f"{trim_trunc_path}.nonhost.humann",
                 "{sample}", "{sample}_pathabundance.tsv"),
             sample=SAMPLES),

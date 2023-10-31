@@ -498,6 +498,22 @@ rule get_biobakery_uniref_db:
     """
 
 
+rule get_utility_mapping_db:
+  output:
+    directory(config['utility_mapping_db'])
+  resources:
+    partition=get_partition("short", config, "get_utility_mapping_db"),
+    mem_mb=get_mem(int(4*1000), config, "get_utility_mapping_db"), # MB
+    runtime=get_runtime(int(1*60), config, "get_utility_mapping_db") # min
+  threads: get_threads(1, config, "get_utility_mapping_db")
+  conda: "conda_envs/humann.yaml"
+  shell:
+    """
+    mkdir -p {output}
+    humann_databases --download utility_mapping full {output} --update-config yes
+    """
+
+
 rule concat_nonhost_reads:
   input:
     FWD=pj(f"{trim_trunc_path}.nonhost",
@@ -681,7 +697,7 @@ rule taxa_barplot:
     """
 
 
-rule func_barplot:
+rule func_barplot_rxn:
   input:
     GENEFAMS_RXN=pj(f"{trim_trunc_path}.nonhost.humann", 
                     "all_genefamilies_rxn_named.tsv")

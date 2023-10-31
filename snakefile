@@ -579,10 +579,10 @@ rule aggregate_humann_outs_nonhost:
                 "all_pathcoverage.tsv"),
     GENEFAMS=pj(f"{trim_trunc_path}.nonhost.humann", 
                 "all_genefamilies.tsv"),
-    GENEFAMS_GROUPED=pj(f"{trim_trunc_path}.nonhost.humann", 
-                        "all_genefamilies_grouped.tsv"),
-    GENEFAMS_GROUPED_NAMED=pj(f"{trim_trunc_path}.nonhost.humann", 
-                              "all_genefamilies_grouped_named.tsv"),
+    GENEFAMS_GROUPED_RXN=pj(f"{trim_trunc_path}.nonhost.humann", 
+                        "all_genefamilies_rxn.tsv"),
+    GENEFAMS_GROUPED_NAMED_RXN=pj(f"{trim_trunc_path}.nonhost.humann", 
+                              "all_genefamilies_rxn_named.tsv"),
     BUGSLIST=pj(f"{trim_trunc_path}.nonhost.humann", 
                 "all_bugs_list.tsv"),
     V3_NOAGG_BUGS=expand(pj(f"{trim_trunc_path}.nonhost.humann",
@@ -607,8 +607,10 @@ rule aggregate_humann_outs_nonhost:
     humann_join_tables -i {params.dirpath} -o {output.PATHCOV} --file_name pathcoverage.tsv --search-subdirectories
 
     humann_join_tables -i {params.dirpath} -o {output.GENEFAMS} --file_name genefamilies.tsv --search-subdirectories
-    humann_regroup_table -i {output.GENEFAMS} -g uniref90_rxn -o {output.GENEFAMS_GROUPED}
-    humann_rename_table -i {output.GENEFAMS_GROUPED} -n metacyc-rxn -o {output.GENEFAMS_GROUPED_NAMED}
+    humann_regroup_table -i {output.GENEFAMS} -g uniref90_rxn -o {output.GENEFAMS_GROUPED_RXN}
+    humann_rename_table -i {output.GENEFAMS_GROUPED} -n metacyc-rxn -o {output.GENEFAMS_GROUPED_NAMED_RXN}
+
+
 
     python {params.agg_bugslists} -i {params.dirpath} -o {output.BUGSLIST}
 
@@ -643,8 +645,8 @@ rule taxa_barplot:
 
 rule func_barplot:
   input:
-    pj(f"{trim_trunc_path}.nonhost.humann", 
-                "all_genefamilies_grouped_named.tsv")
+    GENEFAMS_RXN=pj(f"{trim_trunc_path}.nonhost.humann", 
+                    "all_genefamilies_rxn_named.tsv")
   output:
     pj(f"{trim_trunc_path}.nonhost.humann", 
                 "HUMAnN_microshades.html")
@@ -656,14 +658,14 @@ rule func_barplot:
   conda: "conda_envs/r_env.yaml"
   params:
     rmd_path=get_func_barplot_rmd_path(),
-    gene_table=pj(os.getcwd(), f"{trim_trunc_path}.nonhost.humann",
-                "all_genefamilies_grouped_named.tsv"),
+    gene_table_rxn=pj(os.getcwd(), f"{trim_trunc_path}.nonhost.humann", 
+                    "all_genefamilies_rxn_named.tsv"),
     output_dir=pj(os.getcwd(), f"{trim_trunc_path}.nonhost.humann"),
     metadata=pj(os.getcwd(), config['METADATA'])
   shell:
     """
     Rscript \
-    -e "rmarkdown::render('{params.rmd_path}', output_dir='{params.output_dir}', params=list(genetable='{params.gene_table}', metadata='{params.metadata}', directory='{params.output_dir}'))"
+    -e "rmarkdown::render('{params.rmd_path}', output_dir='{params.output_dir}', params=list(genetable='{params.gene_table_rxn}', metadata='{params.metadata}', directory='{params.output_dir}'))"
     """
 
 

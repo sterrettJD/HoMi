@@ -583,6 +583,26 @@ rule aggregate_humann_outs_nonhost:
                         "all_genefamilies_rxn.tsv"),
     GENEFAMS_GROUPED_NAMED_RXN=pj(f"{trim_trunc_path}.nonhost.humann", 
                               "all_genefamilies_rxn_named.tsv"),
+    GENEFAMS_GROUPED_KO=pj(f"{trim_trunc_path}.nonhost.humann", 
+                        "all_genefamilies_ko.tsv"),
+    GENEFAMS_GROUPED_NAMED_KO=pj(f"{trim_trunc_path}.nonhost.humann", 
+                              "all_genefamilies_ko_named.tsv"),
+    GENEFAMS_GROUPED_NAMED_KP=pj(f"{trim_trunc_path}.nonhost.humann", 
+                              "all_genefamilies_kp_named.tsv"),
+    GENEFAMS_GROUPED_NAMED_KM=pj(f"{trim_trunc_path}.nonhost.humann", 
+                              "all_genefamilies_km_named.tsv"),
+    GENEFAMS_GROUPED_EN=pj(f"{trim_trunc_path}.nonhost.humann", 
+                        "all_genefamilies_eggnog.tsv"),
+    GENEFAMS_GROUPED_NAMED_EN=pj(f"{trim_trunc_path}.nonhost.humann", 
+                              "all_genefamilies_eggnog_named.tsv"),
+    GENEFAMS_GROUPED_GO=pj(f"{trim_trunc_path}.nonhost.humann", 
+                        "all_genefamilies_go.tsv"),
+    GENEFAMS_GROUPED_NAMED_GO=pj(f"{trim_trunc_path}.nonhost.humann", 
+                              "all_genefamilies_go_named.tsv"),
+    GENEFAMS_GROUPED_PFAM=pj(f"{trim_trunc_path}.nonhost.humann", 
+                        "all_genefamilies_pfam.tsv"),
+    GENEFAMS_GROUPED_NAMED_PFAM=pj(f"{trim_trunc_path}.nonhost.humann", 
+                              "all_genefamilies_pfam_named.tsv"),
     BUGSLIST=pj(f"{trim_trunc_path}.nonhost.humann", 
                 "all_bugs_list.tsv"),
     V3_NOAGG_BUGS=expand(pj(f"{trim_trunc_path}.nonhost.humann",
@@ -607,10 +627,28 @@ rule aggregate_humann_outs_nonhost:
     humann_join_tables -i {params.dirpath} -o {output.PATHCOV} --file_name pathcoverage.tsv --search-subdirectories
 
     humann_join_tables -i {params.dirpath} -o {output.GENEFAMS} --file_name genefamilies.tsv --search-subdirectories
+    
+    # Metacyc RXN renaming
     humann_regroup_table -i {output.GENEFAMS} -g uniref90_rxn -o {output.GENEFAMS_GROUPED_RXN}
-    humann_rename_table -i {output.GENEFAMS_GROUPED} -n metacyc-rxn -o {output.GENEFAMS_GROUPED_NAMED_RXN}
+    humann_rename_table -i {output.GENEFAMS_GROUPED_RXN} -n metacyc-rxn -o {output.GENEFAMS_GROUPED_NAMED_RXN}
 
+    # KO renaming
+    humann_regroup_table -i {output.GENEFAMS} -g uniref90_ko -o {output.GENEFAMS_GROUPED_KO}
+    humann_rename_table -i {output.GENEFAMS_GROUPED_KO} -n kegg-orthology -o {output.GENEFAMS_GROUPED_NAMED_KO}
+    humann_rename_table -i {output.GENEFAMS_GROUPED_KO} -n kegg-pathway -o {output.GENEFAMS_GROUPED_NAMED_KP}
+    humann_rename_table -i {output.GENEFAMS_GROUPED_KO} -n kegg-module -o {output.GENEFAMS_GROUPED_NAMED_KM}
 
+    # EGGNOG renaming
+    humann_regroup_table -i {output.GENEFAMS} -g uniref90_eggnog -o {output.GENEFAMS_GROUPED_EN}
+    humann_rename_table -i {output.GENEFAMS_GROUPED_EN} -n eggnog -o {output.GENEFAMS_GROUPED_NAMED_EN}
+
+    # GO renaming
+    humann_regroup_table -i {output.GENEFAMS} -g uniref90_go -o {output.GENEFAMS_GROUPED_GO}
+    humann_rename_table -i {output.GENEFAMS_GROUPED_GO} -n go -o {output.GENEFAMS_GROUPED_NAMED_GO}
+
+    # PFAM renaming
+    humann_regroup_table -i {output.GENEFAMS} -g uniref90_pfam -o {output.GENEFAMS_GROUPED_PFAM}
+    humann_rename_table -i {output.GENEFAMS_GROUPED_PFAM} -n pfam -o {output.GENEFAMS_GROUPED_NAMED_PFAM}
 
     python {params.agg_bugslists} -i {params.dirpath} -o {output.BUGSLIST}
 

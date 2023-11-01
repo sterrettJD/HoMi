@@ -610,8 +610,6 @@ rule aggregate_humann_outs_nonhost:
                               "all_genefamilies_km_named.tsv"),
     GENEFAMS_GROUPED_EN=pj(f"{trim_trunc_path}.nonhost.humann", 
                         "all_genefamilies_eggnog.tsv"),
-    GENEFAMS_GROUPED_NAMED_EN=pj(f"{trim_trunc_path}.nonhost.humann", 
-                              "all_genefamilies_eggnog_named.tsv"),
     GENEFAMS_GROUPED_GO=pj(f"{trim_trunc_path}.nonhost.humann", 
                         "all_genefamilies_go.tsv"),
     GENEFAMS_GROUPED_NAMED_GO=pj(f"{trim_trunc_path}.nonhost.humann", 
@@ -657,7 +655,6 @@ rule aggregate_humann_outs_nonhost:
 
     # EGGNOG renaming
     humann_regroup_table -i {output.GENEFAMS} -g uniref90_eggnog -o {output.GENEFAMS_GROUPED_EN}
-    humann_rename_table -i {output.GENEFAMS_GROUPED_EN} -n eggnog -o {output.GENEFAMS_GROUPED_NAMED_EN}
 
     # GO renaming
     humann_regroup_table -i {output.GENEFAMS} -g uniref90_go -o {output.GENEFAMS_GROUPED_GO}

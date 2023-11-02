@@ -746,7 +746,7 @@ rule calc_gut_metabolic_modules:
   shell:
     """
     Rscript \
-    -e "rmarkdown::render('{params.rmd_path}', output_dir='{params.output_dir}', params=list(input_file='{params.gene_table_ko}', output_file='{params.gmm_output}', directory='{params.output_dir}'))"
+    -e "rmarkdown::render('{params.rmd_path}', output_dir='{params.output_dir}', params=list(input_file='{params.gene_table_ko}', output_file='{params.gmm_output}'))"
     """
 
 

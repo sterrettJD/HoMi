@@ -1,7 +1,7 @@
 import pandas as pd
 from os.path import join as pj
 from os.path import split
-from src.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil_rmd_path, get_nonpareil_html_path, get_agg_script_path, get_mphlan_conv_script_path, get_taxa_barplot_rmd_path, get_sam2bam_path, get_func_barplot_rmd_path, get_partition, get_mem, get_runtime, get_threads
+from src.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil_rmd_path, get_nonpareil_html_path, get_agg_script_path, get_mphlan_conv_script_path, get_taxa_barplot_rmd_path, get_sam2bam_path, get_func_barplot_rmd_path, get_partition, get_mem, get_runtime, get_threads, get_gmm_rmd_path
 
 
 
@@ -703,10 +703,10 @@ rule func_barplot_rxn:
     pj(f"{trim_trunc_path}.nonhost.humann", 
                 "HUMAnN_microshades.html")
   resources:
-    partition=get_partition("short", config, "func_barplot"),
-    mem_mb=get_mem(int(10*1000), config, "func_barplot"), # MB, or 10 GB
-    runtime=get_runtime(int(2*60), config, "func_barplot") # min
-  threads: get_threads(1, config, "func_barplot")
+    partition=get_partition("short", config, "func_barplot_rxn"),
+    mem_mb=get_mem(int(10*1000), config, "func_barplot_rxn"), # MB, or 10 GB
+    runtime=get_runtime(int(2*60), config, "func_barplot_rxn") # min
+  threads: get_threads(1, config, "func_barplot_rxn")
   conda: "conda_envs/r_env.yaml"
   params:
     rmd_path=get_func_barplot_rmd_path(),
@@ -719,6 +719,36 @@ rule func_barplot_rxn:
     Rscript \
     -e "rmarkdown::render('{params.rmd_path}', output_dir='{params.output_dir}', params=list(genetable='{params.gene_table_rxn}', metadata='{params.metadata}', directory='{params.output_dir}'))"
     """
+
+
+rule calc_gut_metabolic_modules:
+  input:
+    GENEFAMS_KO=pj(f"{trim_trunc_path}.nonhost.humann", 
+                    "all_genefamilies_ko_named.tsv")
+  output:
+    HTML=pj(f"{trim_trunc_path}.nonhost.humann", 
+                "Gut_metabolic_modules.html"),
+    GMM_TABLE=pj(f"{trim_trunc_path}.nonhost.humann", 
+                "Gut_metabolic_modules.csv")
+  resources:
+    partition=get_partition("short", config, "calc_gut_metabolic_modules"),
+    mem_mb=get_mem(int(8*1000), config, "calc_gut_metabolic_modules"), # MB, or 8 GB
+    runtime=get_runtime(int(2*60), config, "calc_gut_metabolic_modules") # min
+  threads: get_threads(1, config, "calc_gut_metabolic_modules")
+  conda: "conda_envs/r_env.yaml"
+  params:
+    rmd_path=get_gmm_rmd_path(),
+    gene_table_ko=pj(os.getcwd(), f"{trim_trunc_path}.nonhost.humann", 
+                    "all_genefamilies_ko_named.tsv"),
+    gmm_output=pj(os.getcwd(), f"{trim_trunc_path}.nonhost.humann", 
+                    "Gut_metabolic_modules.csv"),
+    output_dir=pj(os.getcwd(), f"{trim_trunc_path}.nonhost.humann")
+  shell:
+    """
+    Rscript \
+    -e "rmarkdown::render('{params.rmd_path}', output_dir='{params.output_dir}', params=list(input_file='{params.gene_table_ko}', output_file='{params.gmm_output}', directory='{params.output_dir}'))"
+    """
+
 
 
 #####################################

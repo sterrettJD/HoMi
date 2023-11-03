@@ -115,3 +115,9 @@ def get_threads(default, config, rule_name):
     if config_param is not None:
         return int(config_param)
     return default
+
+
+def get_host_mapping_samples(metadata, sample_column="Sample"):
+    if "map_host" in metadata.columns:
+        return metadata.loc[metadata["map_host"]==False, sample_column].to_list()
+    return metadata["Sample"].to_list()

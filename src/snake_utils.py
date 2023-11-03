@@ -79,6 +79,17 @@ def get_func_barplot_rmd_path():
         return rmd_path
     else:
         raise FileNotFoundError(f"Functional Barplot Rmd was not found at {rmd_path}.")
+    
+def get_gmm_rmd_path():
+    path_2_script = path.dirname(__file__)
+    rmd_path = path.join(path_2_script, "rule_utils", "Gut_metabolic_modules.Rmd")
+    # remove ".."
+    rmd_path = path.normpath(rmd_path)
+
+    if path.exists(rmd_path):
+        return rmd_path
+    else:
+        raise FileNotFoundError(f"Gut metabolic modules Rmd was not found at {rmd_path}.")
 
 def get_sam2bam_path():
     path_2_script = path.dirname(__file__)

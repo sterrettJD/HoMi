@@ -1,0 +1,149 @@
+---
+title: "Gut-Metabolic-Modules"
+author: "John Sterrett"
+date: "`r Sys.Date()`"
+output: html_document
+
+params:
+    GMM_filepath: "GMMs.v1.07.txt"
+    delete_GMM_file: TRUE
+    input_file: NULL
+    output_file: NULL
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+if (!require("tidyverse")) {
+    install.packages("tidyverse", repos="http://cran.us.r-project.org")
+}
+
+if (!require("data.table")) {
+    install.packages("data.table", repos="http://cran.us.r-project.org")
+}
+
+```
+
+# Check params
+```{r, echo=F}
+if(is.null(params$input_file)){
+    stop("PLEASE PROVIDE AN INPUT KO TABLE.")
+}
+
+if(is.null(params$output_file)){
+    stop("PLEASE PROVIDE AN OUTPUT FILEPATH.")
+}
+```
+
+# Load data
+```{r}
+ko <- data.table::fread(params$input_file,
+                        data.table=F)
+rownames(ko) <- ko$`# Gene Family`
+ko$`# Gene Family` <- NULL
+ko <- ko %>% mutate_all(as.numeric)
+colnames(ko) <- colnames(ko) %>% 
+    gsub(pattern="_Abundance-RPKs", replacement="")
+
+ko.tax.rows <- rownames(ko) %>% grepl(pattern="\\|")
+ko.notax <- ko[!ko.tax.rows,]
+ko.tax <- ko[ko.tax.rows,]
+
+```
+
+
+# Pull Gut Metabolic Modules
+```{r}
+add_K_line_to_matrix <- function(GMM.matrix, line, mod.name, mod.number){
+    split.line <- str_split(line, "[,\t]")[[1]]
+    new.GMM.matrix <- GMM.matrix
+    
+    for(entry in split.line){
+        new.GMM.matrix <- rbind(new.GMM.matrix, c(entry, mod.name, mod.number))
+    }
+    return(new.GMM.matrix)
+    
+}
+
+
+get_GMM_matrix <- function(filepath){
+    GMM.fileconts <- readLines(filepath)
+    
+    GMM.matrix <- matrix(data=c("KEGG","Module","Module ID"), nrow=1, ncol=3)
+    for(i in 1:length(GMM.fileconts)){
+        line <- GMM.fileconts[i]
+        # if new module, get its name and number
+        if(grepl("^MF\\d{4}", line)){
+            split.line <- str_split(line, "\t")[[1]]
+            mod.number <- split.line[1]
+            mod.name <- split.line[2]
+        }
+        # If KO line, add that info to the matrix
+        else if(grepl("^K\\d{5}", line)){
+            GMM.matrix <- add_K_line_to_matrix(GMM.matrix, line, mod.name, mod.number)
+        }
+    }
+    
+    # tidy
+    colnames(GMM.matrix) <- GMM.matrix[1,]
+    GMM.matrix <- GMM.matrix[2:nrow(GMM.matrix),]
+    GMM.matrix <- as.data.frame(GMM.matrix)
+    
+    GMM.matrix <- GMM.matrix[!is.na(GMM.matrix$KEGG),]
+    GMM.matrix <- GMM.matrix[GMM.matrix$KEGG!="",]
+    
+    return(GMM.matrix)
+}
+
+if(!file.exists(params$GMM_filepath)){
+    download.file("https://raw.githubusercontent.com/raeslab/GMMs/master/GMMs.v1.07.txt", 
+              params$GMM_filepath)    
+}
+
+GMM.matrix <- get_GMM_matrix("GMMs.v1.07.txt")
+
+if(params$delete_GMM_file){
+    file.remove(params$GMM_filepath)
+}
+
+```
+
+
+# Get GMM sums for each sample
+## Convert to Relative Abundance 
+```{r}
+ko.notax.rel <- t(t(ko.notax)/colSums(ko.notax)) %>% as.data.frame()
+```
+
+## Parse just the KOs
+```{r}
+ko.ids <- rownames(ko.notax) %>% 
+    str_split(":") %>% 
+    lapply(FUN=function(x){x[1]}) %>%
+    unlist()
+```
+
+## Merge the dataframes
+```{r}
+ko.notax.rel.GMM <- ko.notax.rel
+ko.notax.rel.GMM$ko_ids <- ko.ids
+summed.GMM.rels <- merge(ko.notax.rel.GMM, GMM.matrix, 
+                         by.x="ko_ids", by.y="KEGG", all=T) %>%
+    group_by(Module) %>%
+    summarise(across(where(is.numeric), function(x){sum(x, na.rm=T)})) %>%
+    as.data.frame()
+
+summed.GMM.rels[is.na(summed.GMM.rels$Module), "Module"] <- "NA"
+rownames(summed.GMM.rels) <- summed.GMM.rels$Module
+summed.GMM.rels$Module <- NULL
+
+write.csv(summed.GMM.rels, file=params$output_file)
+```
+
+# What's there?
+```{r}
+mean.GMM.rels <- rowMeans(summed.GMM.rels) * 100
+mean.GMM.rels[order(mean.GMM.rels, decreasing=T)] %>% 
+    head(20) %>% 
+    knitr::kable()
+```

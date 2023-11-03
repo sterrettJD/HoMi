@@ -119,5 +119,5 @@ def get_threads(default, config, rule_name):
 
 def get_host_mapping_samples(metadata, sample_column="Sample"):
     if "map_host" in metadata.columns:
-        return metadata.loc[metadata["map_host"]==False, sample_column].to_list()
+        return metadata.loc[metadata["map_host"]==True, sample_column].to_list()
     return metadata["Sample"].to_list()

@@ -38,7 +38,7 @@ def clean_humann_temps(config, samples):
         os.remove(diamond_unaligned)
 
         remaining = os.listdir()
-        other_temps = [x.startswith("tmp") for x in remaining]
+        other_temps = [x for x in remaining if x.startswith("tmp")]
 
         for dir in other_temps:
             print(f"Removing temporary directory {dir}")
@@ -50,7 +50,7 @@ def main():
     config = read_config(args.config)
     samples = read_sample_list(args.metadata)
 
-    if args.humann is not None:
+    if args.humann != False:
         clean_humann_temps(config, samples)
 
 

@@ -5,6 +5,7 @@ from src.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil
 
 
 
+
 METADATA = pd.read_csv(config['METADATA'])
 SAMPLES = METADATA["Sample"].tolist()
 HOST_MAP_SAMPLES = get_host_mapping_samples(METADATA, sample_column="Sample")
@@ -148,7 +149,8 @@ rule all:
               "{sample}.bracken"),
            sample=SAMPLES),
     # Bracken combined out
-    pj(f"{trim_trunc_path}.nonhost.kraken", "Combined-taxonomy.tsv")
+    pj(f"{trim_trunc_path}.nonhost.kraken", "Combined-taxonomy.tsv"),
+    pj(f"{trim_trunc_path}.nonhost.humann", "Gut_metabolic_modules.csv")
 
 
 rule symlink_fastqs:
@@ -499,6 +501,22 @@ rule get_biobakery_uniref_db:
     """
 
 
+rule get_utility_mapping_db:
+  output:
+    directory(config['utility_mapping_db'])
+  resources:
+    partition=get_partition("short", config, "get_utility_mapping_db"),
+    mem_mb=get_mem(int(4*1000), config, "get_utility_mapping_db"), # MB
+    runtime=get_runtime(int(1*60), config, "get_utility_mapping_db") # min
+  threads: get_threads(1, config, "get_utility_mapping_db")
+  conda: "conda_envs/humann.yaml"
+  shell:
+    """
+    mkdir -p {output}
+    humann_databases --download utility_mapping full {output} --update-config yes
+    """
+
+
 rule concat_nonhost_reads:
   input:
     FWD=pj(f"{trim_trunc_path}.nonhost",
@@ -560,6 +578,7 @@ rule run_humann_nonhost:
 
 rule aggregate_humann_outs_nonhost:
   input:
+    MAPPING_DB=config['utility_mapping_db'],
     PATHABUND=expand(pj(f"{trim_trunc_path}.nonhost.humann",
                 "{sample}", "{sample}_pathabundance.tsv"),
             sample=SAMPLES),
@@ -580,10 +599,28 @@ rule aggregate_humann_outs_nonhost:
                 "all_pathcoverage.tsv"),
     GENEFAMS=pj(f"{trim_trunc_path}.nonhost.humann", 
                 "all_genefamilies.tsv"),
-    GENEFAMS_GROUPED=pj(f"{trim_trunc_path}.nonhost.humann", 
-                        "all_genefamilies_grouped.tsv"),
-    GENEFAMS_GROUPED_NAMED=pj(f"{trim_trunc_path}.nonhost.humann", 
-                              "all_genefamilies_grouped_named.tsv"),
+    GENEFAMS_GROUPED_RXN=pj(f"{trim_trunc_path}.nonhost.humann", 
+                        "all_genefamilies_rxn.tsv"),
+    GENEFAMS_GROUPED_NAMED_RXN=pj(f"{trim_trunc_path}.nonhost.humann", 
+                              "all_genefamilies_rxn_named.tsv"),
+    GENEFAMS_GROUPED_KO=pj(f"{trim_trunc_path}.nonhost.humann", 
+                        "all_genefamilies_ko.tsv"),
+    GENEFAMS_GROUPED_NAMED_KO=pj(f"{trim_trunc_path}.nonhost.humann", 
+                              "all_genefamilies_ko_named.tsv"),
+    GENEFAMS_GROUPED_NAMED_KP=pj(f"{trim_trunc_path}.nonhost.humann", 
+                              "all_genefamilies_kp_named.tsv"),
+    GENEFAMS_GROUPED_NAMED_KM=pj(f"{trim_trunc_path}.nonhost.humann", 
+                              "all_genefamilies_km_named.tsv"),
+    GENEFAMS_GROUPED_EN=pj(f"{trim_trunc_path}.nonhost.humann", 
+                        "all_genefamilies_eggnog.tsv"),
+    GENEFAMS_GROUPED_GO=pj(f"{trim_trunc_path}.nonhost.humann", 
+                        "all_genefamilies_go.tsv"),
+    GENEFAMS_GROUPED_NAMED_GO=pj(f"{trim_trunc_path}.nonhost.humann", 
+                              "all_genefamilies_go_named.tsv"),
+    GENEFAMS_GROUPED_PFAM=pj(f"{trim_trunc_path}.nonhost.humann", 
+                        "all_genefamilies_pfam.tsv"),
+    GENEFAMS_GROUPED_NAMED_PFAM=pj(f"{trim_trunc_path}.nonhost.humann", 
+                              "all_genefamilies_pfam_named.tsv"),
     BUGSLIST=pj(f"{trim_trunc_path}.nonhost.humann", 
                 "all_bugs_list.tsv"),
     V3_NOAGG_BUGS=expand(pj(f"{trim_trunc_path}.nonhost.humann",
@@ -608,8 +645,27 @@ rule aggregate_humann_outs_nonhost:
     humann_join_tables -i {params.dirpath} -o {output.PATHCOV} --file_name pathcoverage.tsv --search-subdirectories
 
     humann_join_tables -i {params.dirpath} -o {output.GENEFAMS} --file_name genefamilies.tsv --search-subdirectories
-    humann_regroup_table -i {output.GENEFAMS} -g uniref90_rxn -o {output.GENEFAMS_GROUPED}
-    humann_rename_table -i {output.GENEFAMS_GROUPED} -n metacyc-rxn -o {output.GENEFAMS_GROUPED_NAMED}
+    
+    # Metacyc RXN renaming
+    humann_regroup_table -i {output.GENEFAMS} -g uniref90_rxn -o {output.GENEFAMS_GROUPED_RXN}
+    humann_rename_table -i {output.GENEFAMS_GROUPED_RXN} -n metacyc-rxn -o {output.GENEFAMS_GROUPED_NAMED_RXN}
+
+    # KO renaming
+    humann_regroup_table -i {output.GENEFAMS} -g uniref90_ko -o {output.GENEFAMS_GROUPED_KO}
+    humann_rename_table -i {output.GENEFAMS_GROUPED_KO} -n kegg-orthology -o {output.GENEFAMS_GROUPED_NAMED_KO}
+    humann_rename_table -i {output.GENEFAMS_GROUPED_KO} -n kegg-pathway -o {output.GENEFAMS_GROUPED_NAMED_KP}
+    humann_rename_table -i {output.GENEFAMS_GROUPED_KO} -n kegg-module -o {output.GENEFAMS_GROUPED_NAMED_KM}
+
+    # EGGNOG renaming
+    humann_regroup_table -i {output.GENEFAMS} -g uniref90_eggnog -o {output.GENEFAMS_GROUPED_EN}
+
+    # GO renaming
+    humann_regroup_table -i {output.GENEFAMS} -g uniref90_go -o {output.GENEFAMS_GROUPED_GO}
+    humann_rename_table -i {output.GENEFAMS_GROUPED_GO} -n go -o {output.GENEFAMS_GROUPED_NAMED_GO}
+
+    # PFAM renaming
+    humann_regroup_table -i {output.GENEFAMS} -g uniref90_pfam -o {output.GENEFAMS_GROUPED_PFAM}
+    humann_rename_table -i {output.GENEFAMS_GROUPED_PFAM} -n pfam -o {output.GENEFAMS_GROUPED_NAMED_PFAM}
 
     python {params.agg_bugslists} -i {params.dirpath} -o {output.BUGSLIST}
 
@@ -642,30 +698,60 @@ rule taxa_barplot:
     """
 
 
-rule func_barplot:
+rule func_barplot_rxn:
   input:
-    pj(f"{trim_trunc_path}.nonhost.humann", 
-                "all_genefamilies_grouped_named.tsv")
+    GENEFAMS_RXN=pj(f"{trim_trunc_path}.nonhost.humann", 
+                    "all_genefamilies_rxn_named.tsv")
   output:
     pj(f"{trim_trunc_path}.nonhost.humann", 
                 "HUMAnN_microshades.html")
   resources:
-    partition=get_partition("short", config, "func_barplot"),
-    mem_mb=get_mem(int(10*1000), config, "func_barplot"), # MB, or 10 GB
-    runtime=get_runtime(int(2*60), config, "func_barplot") # min
-  threads: get_threads(1, config, "func_barplot")
+    partition=get_partition("short", config, "func_barplot_rxn"),
+    mem_mb=get_mem(int(10*1000), config, "func_barplot_rxn"), # MB, or 10 GB
+    runtime=get_runtime(int(2*60), config, "func_barplot_rxn") # min
+  threads: get_threads(1, config, "func_barplot_rxn")
   conda: "conda_envs/r_env.yaml"
   params:
     rmd_path=get_func_barplot_rmd_path(),
-    gene_table=pj(os.getcwd(), f"{trim_trunc_path}.nonhost.humann",
-                "all_genefamilies_grouped_named.tsv"),
+    gene_table_rxn=pj(os.getcwd(), f"{trim_trunc_path}.nonhost.humann", 
+                    "all_genefamilies_rxn_named.tsv"),
     output_dir=pj(os.getcwd(), f"{trim_trunc_path}.nonhost.humann"),
     metadata=pj(os.getcwd(), config['METADATA'])
   shell:
     """
     Rscript \
-    -e "rmarkdown::render('{params.rmd_path}', output_dir='{params.output_dir}', params=list(genetable='{params.gene_table}', metadata='{params.metadata}', directory='{params.output_dir}'))"
+    -e "rmarkdown::render('{params.rmd_path}', output_dir='{params.output_dir}', params=list(genetable='{params.gene_table_rxn}', metadata='{params.metadata}', directory='{params.output_dir}'))"
     """
+
+
+rule calc_gut_metabolic_modules:
+  input:
+    GENEFAMS_KO=pj(f"{trim_trunc_path}.nonhost.humann", 
+                    "all_genefamilies_ko_named.tsv")
+  output:
+    HTML=pj(f"{trim_trunc_path}.nonhost.humann", 
+                "Gut_metabolic_modules.html"),
+    GMM_TABLE=pj(f"{trim_trunc_path}.nonhost.humann", 
+                "Gut_metabolic_modules.csv")
+  resources:
+    partition=get_partition("short", config, "calc_gut_metabolic_modules"),
+    mem_mb=get_mem(int(8*1000), config, "calc_gut_metabolic_modules"), # MB, or 8 GB
+    runtime=get_runtime(int(2*60), config, "calc_gut_metabolic_modules") # min
+  threads: get_threads(1, config, "calc_gut_metabolic_modules")
+  conda: "conda_envs/r_env.yaml"
+  params:
+    rmd_path=get_gmm_rmd_path(),
+    gene_table_ko=pj(os.getcwd(), f"{trim_trunc_path}.nonhost.humann", 
+                    "all_genefamilies_ko_named.tsv"),
+    gmm_output=pj(os.getcwd(), f"{trim_trunc_path}.nonhost.humann", 
+                    "Gut_metabolic_modules.csv"),
+    output_dir=pj(os.getcwd(), f"{trim_trunc_path}.nonhost.humann")
+  shell:
+    """
+    Rscript \
+    -e "rmarkdown::render('{params.rmd_path}', output_dir='{params.output_dir}', params=list(input_file='{params.gene_table_ko}', output_file='{params.gmm_output}'))"
+    """
+
 
 
 #####################################

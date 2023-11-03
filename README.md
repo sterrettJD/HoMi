@@ -69,6 +69,15 @@ Sometimes, when snakemake unexpectedly exits (e.g., due to a server connection t
     - BBmap is used to map the reads, and featureCounts is used to generate a read count table
 
 
+## Using this pipeline for microbe-only samples 
+To use this pipeline for metagenomics/metatranscriptomics, you can add an (optional) column in the metadata, titled `map_host`. If `map_host` doesn't exist in your metadata, the entire pipeline (including mapping to the host genome) will be performed for all samples. If `map_host` exists, it should only contain boolean values (True/False), and the host genome will only be mapped for samples where `map_host` is True. This will still run host decontamination before microbial taxonomic/functional profiling.
+
+Example:
+```
+Sample,map_host 
+sample_nohost,True 
+sample_withhost,False
+```
 
 ## Main repository contents
 - `snakefile` contains the bulk of the pipeline

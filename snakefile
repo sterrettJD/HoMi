@@ -1,12 +1,14 @@
 import pandas as pd
 from os.path import join as pj
 from os.path import split
-from src.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil_rmd_path, get_nonpareil_html_path, get_agg_script_path, get_mphlan_conv_script_path, get_taxa_barplot_rmd_path, get_sam2bam_path, get_func_barplot_rmd_path, get_partition, get_mem, get_runtime, get_threads, get_gmm_rmd_path
+from src.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil_rmd_path, get_nonpareil_html_path, get_agg_script_path, get_mphlan_conv_script_path, get_taxa_barplot_rmd_path, get_sam2bam_path, get_func_barplot_rmd_path, get_partition, get_mem, get_runtime, get_threads, get_host_mapping_samples
+
 
 
 
 METADATA = pd.read_csv(config['METADATA'])
 SAMPLES = METADATA["Sample"].tolist()
+HOST_MAP_SAMPLES = get_host_mapping_samples(METADATA, sample_column="Sample")
 RAW_FWD_READS = METADATA[config['fwd_reads_path']]
 RAW_REV_READS = METADATA[config['rev_reads_path']]
 
@@ -1052,9 +1054,9 @@ rule generate_feature_counts:
     input:
         ANNOTATION=config['host_ref_gtf'],
         VALID=expand(pj(f"{trim_trunc_path}.host", "{sample}_bam_valid.tsv"), 
-                     sample=SAMPLES),
+                     sample=HOST_MAP_SAMPLES),
         BAM=expand(pj(f"{trim_trunc_path}.host", "{sample}.bam"), 
-                   sample=SAMPLES)
+                   sample=HOST_MAP_SAMPLES)
     output:
         COUNTS=pj(f"{trim_trunc_path}.host", "counts.txt"),
         SUMMARY=pj(f"{trim_trunc_path}.host", "counts.txt.summary")

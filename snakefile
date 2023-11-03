@@ -147,7 +147,8 @@ rule all:
               "{sample}.bracken"),
            sample=SAMPLES),
     # Bracken combined out
-    pj(f"{trim_trunc_path}.nonhost.kraken", "Combined-taxonomy.tsv")
+    pj(f"{trim_trunc_path}.nonhost.kraken", "Combined-taxonomy.tsv"),
+    pj(f"{trim_trunc_path}.nonhost.humann", "Gut_metabolic_modules.csv")
 
 
 rule symlink_fastqs:

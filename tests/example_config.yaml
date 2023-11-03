@@ -52,6 +52,7 @@ metaphlan_bowtie_db: data/metaphlan_db/
 # If these aren't already downloaded, HoMi will download them
 chocophlan_db: data/humann_dbs/chocophlan
 uniref_db: data/humann_dbs/uniref
+utility_mapping_db: data/humann_dbs/utility_mapping 
 
 
 #################################
@@ -73,3 +74,5 @@ host_ref_gtf: GRCh38/GRCh38_full_analysis_set.refseq.gtf
 # rule_name_threads: 8 
 bbmap_host_partition: long
 bbmap_host_runtime: 2160 # 36 hours
+bbmap_host_threads: 48
+bbmap_host_mem_mb: 250000

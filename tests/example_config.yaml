@@ -65,7 +65,8 @@ host_ref_gtf: GRCh38/GRCh38_full_analysis_set.refseq.gtf
 
 ################################
 ### Resources ###
-# Rules will use the default resources, unless you provide other resources here
+# Rules will use the default resources outlined for them in the snakefile, 
+# unless you provide other resource specifications here.
 # these should be formatted as <rule_name>_<resource>
 # examples:
 # rule_name_partition: new_partition
@@ -76,3 +77,15 @@ bbmap_host_partition: long
 bbmap_host_runtime: 2160 # 36 hours
 bbmap_host_threads: 48
 bbmap_host_mem_mb: 250000
+
+################################
+### Partition ###
+# This is an optional resource parameter to map partitions named: 
+# "short" --> default_short_partition_name
+# "long" --> default_long_partition_name
+# If nothing is here, nothing will be done
+# For example, Alpine users at CU Boulder/Anschutz CSU using the amilan partition for most rules can pass
+# default_short_partition_name: amilan
+
+default_short_partition_name: short
+default_long_partition_name: long

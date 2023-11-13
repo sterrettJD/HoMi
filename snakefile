@@ -31,25 +31,6 @@ rule all:
     expand(pj(PROJ,
               "{sample}.R2.fq.gz"),
            sample=SAMPLES),
-    
-    # Adapter and quality-based trimming (trimmomatic)
-    # Also removal of short reads
-    expand(pj(f"{PROJ}.noadpt",
-              "{sample}",
-              "{sample}.trimmed.R1.fq"), # forward paired
-           sample=SAMPLES),
-    expand(pj(f"{PROJ}.noadpt",
-              "{sample}",
-              "{sample}.trimmed_1U"),    # forward unpaired (discard)
-           sample=SAMPLES),
-    expand(pj(f"{PROJ}.noadpt",
-              "{sample}",
-              "{sample}.trimmed.R2.fq"), # reverse unpaired
-          sample=SAMPLES),
-    expand(pj(f"{PROJ}.noadpt",
-              "{sample}",
-              "{sample}.trimmed_2U"),     # reverse unpaired (discard)
-          sample=SAMPLES),
 
     # first pass fastQC
     expand(pj(f"{PROJ}.noadpt.fastqc",
@@ -60,14 +41,6 @@ rule all:
     pj(f"{PROJ}.noadpt.fastqc",
         "multiqc_report"),
 
-    # Made by SeqTK
-    expand(pj(trim_trunc_path,
-              "{sample}.R1.fq"),
-           sample=SAMPLES),
-    expand(pj(trim_trunc_path,
-              "{sample}.R2.fq"),
-           sample=SAMPLES),
-
     # second pass fastQC
     expand(pj(f"{trim_trunc_path}.fastqc",
               "{sample}.{read}_fastqc.zip"),
@@ -76,11 +49,6 @@ rule all:
     # second pass multiQC
     pj(f"{trim_trunc_path}.fastqc",
         "multiqc_report"),
-
-    # hostile index
-    multiext(HOSTILE_DB_PATH,
-             ".1.bt2", ".2.bt2", ".3.bt2", ".4.bt2",
-             ".rev.1.bt2", ".rev.2.bt2"),
 
     # nonhost reads
     expand(pj(f"{trim_trunc_path}.nonhost",

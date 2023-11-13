@@ -81,6 +81,9 @@ sample_withhost,False
 
 ## Main repository contents
 - `snakefile` contains the bulk of the pipeline
-- `HoMi/` contains `HoMi.py`, a wrapper controlling the behavior of the snakemake pipeline
+- `src/` contains `HoMi.py`, a wrapper controlling the behavior of the snakemake pipeline
 - `conda_envs/` contains the conda environments for each rule in the snakemake pipeline
 - `data/` contains relevant data, such as adapter sequences to be removed during trimming.
+
+### Auxiliary files
+- `src/HoMi_cleanup.py` contains a script that can be used to clean up unecessary intermediate files, if you decide you don't want them. Current functionality deletes temporary files from failed HUMAnN runs and HUMANnN `.bam` files across all samples provided in the metadata.

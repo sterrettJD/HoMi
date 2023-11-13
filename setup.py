@@ -9,7 +9,7 @@ setup(
       version=__version__,
       setup_requires=['pytest-runner'],
       tests_require=['pytest'],
-      install_requires=['snakemake', 'pandas', 'biopython', 'numpy'],
+      install_requires=['snakemake', 'pandas', 'biopython', 'numpy', 'argparse'],
       scripts=['src/HoMi.py', 'src/snake_utils.py', 'src/HoMi_cleanup.py'],
       packages=find_packages(),
       description="Pipeline for analysis of host-microbiome dual transcriptome data",

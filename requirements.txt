@@ -1,0 +1,4 @@
+snakemake
+pandas
+biopython
+pytest

@@ -32,19 +32,20 @@ def clean_humann_temps(config, samples):
     for i, sample in enumerate(samples):
         diamond_aligned = os.path.join(temp_dirs[i], f"{sample}_diamond_aligned.tsv")
         diamond_unaligned = os.path.join(temp_dirs[i], f"{sample}_diamond_unaligned.fa")
-        if os.path.exists(os.remove(diamond_aligned)):
+        if os.path.exists(diamond_aligned):
             print(f"Removing old file {diamond_aligned}")
             os.remove(diamond_aligned)
-        if os.path.exists(os.remove(diamond_unaligned)):
+        if os.path.exists(diamond_unaligned):
             print(f"Removing old file {diamond_unaligned}")
             os.remove(diamond_unaligned)
 
-        remaining = os.listdir()
+        remaining = os.listdir(temp_dirs[i])
         other_temps = [x for x in remaining if x.startswith("tmp")]
 
         for dir in other_temps:
-            print(f"Removing temporary directory {dir}")
-            rmtree(dir)
+            full_dir = os.path.join(temp_dirs[i], dir)
+            print(f"Removing temporary directory {full_dir}")
+            rmtree(full_dir)
 
     
 def main():

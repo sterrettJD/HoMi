@@ -37,3 +37,9 @@ def test_get_slurm_extra_ruleparam():
 def test_get_slurm_extra_defaultparam():
     config = {"default_slurm_extra": "qos=long"}
     assert su.get_slurm_extra(config, "test_rule") == "qos=long"
+
+
+def test_get_slurm_extra_priority():
+    config = {"test_rule_slurm_extra": "qos=short", # this should be prioritized over the default
+              "default_slurm_extra": "qos=long"}
+    assert su.get_slurm_extra(config, "test_rule") == "qos=short"

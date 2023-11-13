@@ -149,6 +149,18 @@ def get_threads(default, config, rule_name):
     return default
 
 
+def get_slurm_extra(config, rule_name):
+    config_param = config.get(f"{rule_name}_slurm_extra")
+    if config_param is not None:
+        return config_param
+    
+    config_diff_default = config.get(f"default_slurm_extra")
+    if config_diff_default is not None:
+        return config_diff_default
+    
+    return ""
+
+
 def get_host_mapping_samples(metadata, sample_column="Sample"):
     if "map_host" in metadata.columns:
         if metadata["map_host"].dtype != "bool":

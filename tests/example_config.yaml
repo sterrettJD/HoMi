@@ -89,3 +89,17 @@ bbmap_host_mem_mb: 250000
 
 default_short_partition_name: short
 default_long_partition_name: long
+
+################################
+### Slurm Extras ###
+# For cluster use, users may want to pass slurm extra parameters
+# This can be done using default_slurm_extra, which will serve as a default for all steps
+# or by using <rule_name>_slurm_extra, which provides rule-specific slurm extra parameters.
+# Rule-specific parameters are prioritized over default params.
+# These parameters should be a space-separated list, formatted as
+# <slurm_long_name>=<parameter> <slurm_long_name_2>=<parameter_2>
+# examples:
+# default_slurm_extra: email=sample_email@colorado.edu
+# bbmap_host_slurm_extra: qos=long email=sample_email@colorado.edu
+# All rules would receive the email param, 
+# and the bbmap host rule would also receive the qos param

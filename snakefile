@@ -6,14 +6,14 @@ from src.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil
 
 
 
-METADATA = pd.read_csv(config['METADATA'])
+METADATA = pd.read_csv(config['METADATA'].strip())
 SAMPLES = METADATA["Sample"].tolist()
 HOST_MAP_SAMPLES = get_host_mapping_samples(METADATA, sample_column="Sample")
 RAW_FWD_READS = METADATA[config['fwd_reads_path']]
 RAW_REV_READS = METADATA[config['rev_reads_path']]
 
 READS = ["R1", "R2"]
-PROJ = config['PROJ']
+PROJ = config['PROJ'].strip()
 
 HOSTILE_DB_NAME = config['hostile_db']
 HOSTILE_DB_DWNLD_PATH = config['loc_for_hostile_db_download']

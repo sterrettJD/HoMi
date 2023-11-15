@@ -7,6 +7,7 @@ __version__ = version
 setup(
       name="HoMi",
       version=__version__,
+      python_requires='<3.12.0', # snakemake f-strings break in 3.12 (as of Nov 15, 2023)
       setup_requires=['pytest-runner'],
       tests_require=['pytest'],
       install_requires=['snakemake', 'pandas', 'biopython', 'numpy', 'argparse', 'pyyaml'],

@@ -47,9 +47,9 @@ def test_get_slurm_extra_priority():
 
 def test_get_kraken_db_default():
     config = dict()
-    assert su.get_kraken_db(default="data_location", config=config) == "data_location"
+    assert su.get_kraken_db_loc(default="data_location", config=config) == "data_location"
 
 
 def test_get_kraken_db_nondefault():
     config = {"kraken_db": "NEW_location"}
-    assert su.get_kraken_db(default="data_location", config=config) == "NEW_location"
+    assert su.get_kraken_db_loc(default="data_location", config=config) == "NEW_location"

@@ -55,6 +55,11 @@ uniref_db: data/humann_dbs/uniref
 utility_mapping_db: data/humann_dbs/utility_mapping 
 
 
+########################
+### Kraken + Bracken ###
+kraken_db: data/kraken2_db
+
+
 #################################
 ### Host read mapping (BBmap) ###
 # provide the path for the host reference genome

@@ -747,12 +747,12 @@ rule calc_gut_metabolic_modules:
 
 rule get_kraken_db:
   output: 
-    HASH=pj("data", "kraken2_db", "hash.k2d"),
-    OPTS=pj("data", "kraken2_db", "opts.k2d"),
-    SEQ2ID=pj("data", "kraken2_db", "seqid2taxid.map"),
-    TAXO=pj("data", "kraken2_db", "taxo.k2d"),
-    LIB=directory(pj("data", "kraken2_db", "library")),
-    TAX=directory(pj("data", "kraken2_db", "taxonomy"))
+    HASH=pj(get_kraken_db_loc(default=pj("data", "kraken2_db"), config=config), "hash.k2d"),
+    OPTS=pj(get_kraken_db_loc(default=pj("data", "kraken2_db"), config=config), "opts.k2d"),
+    SEQ2ID=pj(get_kraken_db_loc(default=pj("data", "kraken2_db"), config=config), "seqid2taxid.map"),
+    TAXO=pj(get_kraken_db_loc(default=pj("data", "kraken2_db"), config=config), "taxo.k2d"),
+    LIB=directory(pj(get_kraken_db_loc(default=pj("data", "kraken2_db"), config=config), "library")),
+    TAX=directory(pj(get_kraken_db_loc(default=pj("data", "kraken2_db"), config=config), "taxonomy"))
   resources:
     partition=get_partition("short", config, "get_kraken_db"),
     mem_mb=get_mem(int(96*1000), config, "get_kraken_db"), # MB

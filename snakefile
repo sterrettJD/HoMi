@@ -745,14 +745,16 @@ rule calc_gut_metabolic_modules:
 #####################################
 ### Kraken + Bracken for taxonomy ###
 
+kraken_db_loc = get_kraken_db_loc(default=pj("data", "kraken2_db"), config=config)
+
 rule get_kraken_db:
   output: 
-    HASH=pj(get_kraken_db_loc(default=pj("data", "kraken2_db"), config=config), "hash.k2d"),
-    OPTS=pj(get_kraken_db_loc(default=pj("data", "kraken2_db"), config=config), "opts.k2d"),
-    SEQ2ID=pj(get_kraken_db_loc(default=pj("data", "kraken2_db"), config=config), "seqid2taxid.map"),
-    TAXO=pj(get_kraken_db_loc(default=pj("data", "kraken2_db"), config=config), "taxo.k2d"),
-    LIB=directory(pj(get_kraken_db_loc(default=pj("data", "kraken2_db"), config=config), "library")),
-    TAX=directory(pj(get_kraken_db_loc(default=pj("data", "kraken2_db"), config=config), "taxonomy"))
+    HASH=pj(kraken_db_loc, "hash.k2d"),
+    OPTS=pj(kraken_db_loc, "opts.k2d"),
+    SEQ2ID=pj(kraken_db_loc, "seqid2taxid.map"),
+    TAXO=pj(kraken_db_loc, "taxo.k2d"),
+    LIB=directory(pj(kraken_db_loc, "library")),
+    TAX=directory(pj(kraken_db_loc, "taxonomy"))
   resources:
     partition=get_partition("short", config, "get_kraken_db"),
     mem_mb=get_mem(int(96*1000), config, "get_kraken_db"), # MB
@@ -761,7 +763,7 @@ rule get_kraken_db:
   threads: get_threads(32, config, "get_kraken_db")
   conda: "conda_envs/kraken.yaml"
   params:
-    database_dir=get_kraken_db_loc(default=pj("data", "kraken2_db"), config=config)
+    database_dir=kraken_db_loc
   shell:
     """
     kraken2-build --standard --db {params.database_dir} --threads {threads}
@@ -774,7 +776,7 @@ rule run_kraken:
             "{sample}.R1.fq.gz"),
     REV=pj(f"{trim_trunc_path}.nonhost",
             "{sample}.R2.fq.gz"),
-    HASH=pj(get_kraken_db_loc(default=pj("data", "kraken2_db"), config=config), "hash.k2d") # if the full db dir is passed here, kraken will be rerun after bracken building
+    HASH=pj(kraken_db_loc, "hash.k2d") # if the full db dir is passed here, kraken will be rerun after bracken building
                                               # because bracken-build modifies that directory
   output: 
     OUTFILE=pj(f"{trim_trunc_path}.nonhost.kraken", 
@@ -790,7 +792,7 @@ rule run_kraken:
   conda: "conda_envs/kraken.yaml"
   params:
     out_dir=f"{trim_trunc_path}.nonhost.kraken",
-    database=get_kraken_db_loc(default=pj("data", "kraken2_db"), config=config)
+    database=kraken_db_loc
   shell:
     """
     mkdir -p {params.out_dir}
@@ -801,10 +803,10 @@ rule run_kraken:
 
 rule build_bracken:
   input:
-    pj(get_kraken_db_loc(default=pj("data", "kraken2_db"), config=config), "hash.k2d")
+    pj(kraken_db_loc, "hash.k2d")
   output:
-    pj(get_kraken_db_loc(default=pj("data", "kraken2_db"), config=config), "database150mers.kraken"),
-    pj(get_kraken_db_loc(default=pj("data", "kraken2_db"), config=config), "database150mers.kmer_distrib")
+    pj(kraken_db_loc, "database150mers.kraken"),
+    pj(kraken_db_loc, "database150mers.kmer_distrib")
   resources:
     partition=get_partition("short", config, "build_bracken"),
     mem_mb=get_mem(int(128*1000), config, "build_bracken"), # MB
@@ -813,7 +815,7 @@ rule build_bracken:
   threads: get_threads(32, config, "build_bracken")
   conda: "conda_envs/kraken.yaml"
   params:
-    database=get_kraken_db_loc(default=pj("data", "kraken2_db"), config=config)
+    database=kraken_db_loc
   shell:
     """
     bracken-build -d {params.database} -t {threads} -l 150
@@ -822,9 +824,9 @@ rule build_bracken:
 
 rule run_bracken:
   input:
-    KRAKEN_HASH=pj(get_kraken_db_loc(default=pj("data", "kraken2_db"), config=config), "hash.k2d"),
-    LMERS=pj(get_kraken_db_loc(default=pj("data", "kraken2_db"), config=config), "database150mers.kraken"),
-    LMERS_DIST=pj(get_kraken_db_loc(default=pj("data", "kraken2_db"), config=config), "database150mers.kmer_distrib"),
+    KRAKEN_HASH=pj(kraken_db_loc, "hash.k2d"),
+    LMERS=pj(kraken_db_loc, "database150mers.kraken"),
+    LMERS_DIST=pj(kraken_db_loc, "database150mers.kmer_distrib"),
     REPORT=pj(f"{trim_trunc_path}.nonhost.kraken", 
               "{sample}.kreport2")
   output:
@@ -838,7 +840,7 @@ rule run_bracken:
   threads: get_threads(1, config, "run_bracken")
   conda: "conda_envs/kraken.yaml"
   params:
-    database=get_kraken_db_loc(default=pj("data", "kraken2_db"), config=config)
+    database=kraken_db_loc
   shell:
     """
     bracken -d {params.database} -i {input.REPORT} -o {output.REPORT} -r 150 -l S -t 10

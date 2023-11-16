@@ -1,7 +1,7 @@
 import pandas as pd
 from os.path import join as pj
 from os.path import split
-from src.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil_rmd_path, get_nonpareil_html_path, get_agg_script_path, get_mphlan_conv_script_path, get_taxa_barplot_rmd_path, get_sam2bam_path, get_func_barplot_rmd_path, get_partition, get_mem, get_runtime, get_threads, get_host_mapping_samples, get_slurm_extra, get_gmm_rmd_path
+from src.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil_rmd_path, get_nonpareil_html_path, get_agg_script_path, get_mphlan_conv_script_path, get_taxa_barplot_rmd_path, get_sam2bam_path, get_func_barplot_rmd_path, get_partition, get_mem, get_runtime, get_threads, get_host_mapping_samples, get_slurm_extra, get_gmm_rmd_path, get_kraken_db
 
 
 
@@ -761,7 +761,7 @@ rule get_kraken_db:
   threads: get_threads(32, config, "get_kraken_db")
   conda: "conda_envs/kraken.yaml"
   params:
-    database_dir=pj("data", "kraken2_db")
+    database_dir=get_kraken_db(default=pj("data", "kraken2_db"), config)
   shell:
     """
     kraken2-build --standard --db {params.database_dir} --threads {threads}
@@ -774,7 +774,7 @@ rule run_kraken:
             "{sample}.R1.fq.gz"),
     REV=pj(f"{trim_trunc_path}.nonhost",
             "{sample}.R2.fq.gz"),
-    HASH=pj("data", "kraken2_db", "hash.k2d") # if the full db dir is passed here, kraken will be rerun after bracken building
+    HASH=pj(get_kraken_db(default=pj("data", "kraken2_db"), config), "hash.k2d") # if the full db dir is passed here, kraken will be rerun after bracken building
                                               # because bracken-build modifies that directory
   output: 
     OUTFILE=pj(f"{trim_trunc_path}.nonhost.kraken", 
@@ -790,7 +790,7 @@ rule run_kraken:
   conda: "conda_envs/kraken.yaml"
   params:
     out_dir=f"{trim_trunc_path}.nonhost.kraken",
-    database=pj("data", "kraken2_db")
+    database=get_kraken_db(default=pj("data", "kraken2_db"), config)
   shell:
     """
     mkdir -p {params.out_dir}
@@ -801,10 +801,10 @@ rule run_kraken:
 
 rule build_bracken:
   input:
-    pj("data", "kraken2_db", "hash.k2d")
+    pj(get_kraken_db(default=pj("data", "kraken2_db"), config), "hash.k2d")
   output:
-    pj("data", "kraken2_db", "database150mers.kraken"),
-    pj("data", "kraken2_db", "database150mers.kmer_distrib")
+    pj(get_kraken_db(default=pj("data", "kraken2_db"), config), "database150mers.kraken"),
+    pj(get_kraken_db(default=pj("data", "kraken2_db"), config), "database150mers.kmer_distrib")
   resources:
     partition=get_partition("short", config, "build_bracken"),
     mem_mb=get_mem(int(128*1000), config, "build_bracken"), # MB
@@ -813,7 +813,7 @@ rule build_bracken:
   threads: get_threads(32, config, "build_bracken")
   conda: "conda_envs/kraken.yaml"
   params:
-    database=pj("data", "kraken2_db")
+    database=get_kraken_db(default=pj("data", "kraken2_db"), config)
   shell:
     """
     bracken-build -d {params.database} -t {threads} -l 150
@@ -822,9 +822,9 @@ rule build_bracken:
 
 rule run_bracken:
   input:
-    KRAKEN_HASH=pj("data", "kraken2_db", "hash.k2d"),
-    LMERS=pj("data", "kraken2_db", "database150mers.kraken"),
-    LMERS_DIST=pj("data", "kraken2_db", "database150mers.kmer_distrib"),
+    KRAKEN_HASH=pj(get_kraken_db(default=pj("data", "kraken2_db"), config), "hash.k2d"),
+    LMERS=pj(get_kraken_db(default=pj("data", "kraken2_db"), config), "database150mers.kraken"),
+    LMERS_DIST=pj(get_kraken_db(default=pj("data", "kraken2_db"), config), "database150mers.kmer_distrib"),
     REPORT=pj(f"{trim_trunc_path}.nonhost.kraken", 
               "{sample}.kreport2")
   output:
@@ -838,7 +838,7 @@ rule run_bracken:
   threads: get_threads(1, config, "run_bracken")
   conda: "conda_envs/kraken.yaml"
   params:
-    database=pj("data", "kraken2_db")
+    database=get_kraken_db(default=pj("data", "kraken2_db"), config)
   shell:
     """
     bracken -d {params.database} -i {input.REPORT} -o {output.REPORT} -r 150 -l S -t 10

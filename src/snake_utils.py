@@ -168,3 +168,10 @@ def get_host_mapping_samples(metadata, sample_column="Sample"):
                              "There cannot be anything in this column other than True/False.")
         return metadata.loc[metadata["map_host"]==True, sample_column].to_list()
     return metadata["Sample"].to_list()
+
+
+def get_kraken_db_loc(default, config):
+    loc = config.get("kraken_db")
+    if loc is not None:
+        return loc
+    return default

@@ -1,7 +1,7 @@
 import pandas as pd
 from os.path import join as pj
 from os.path import split
-from src.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil_rmd_path, get_nonpareil_html_path, get_agg_script_path, get_mphlan_conv_script_path, get_taxa_barplot_rmd_path, get_sam2bam_path, get_func_barplot_rmd_path, get_partition, get_mem, get_runtime, get_threads, get_host_mapping_samples, get_slurm_extra, get_gmm_rmd_path, get_kraken_db
+from src.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil_rmd_path, get_nonpareil_html_path, get_agg_script_path, get_mphlan_conv_script_path, get_taxa_barplot_rmd_path, get_sam2bam_path, get_func_barplot_rmd_path, get_partition, get_mem, get_runtime, get_threads, get_host_mapping_samples, get_slurm_extra, get_gmm_rmd_path, get_kraken_db_loc
 
 
 
@@ -761,7 +761,7 @@ rule get_kraken_db:
   threads: get_threads(32, config, "get_kraken_db")
   conda: "conda_envs/kraken.yaml"
   params:
-    database_dir=get_kraken_db(default=pj("data", "kraken2_db"), config)
+    database_dir=get_kraken_db_loc(default=pj("data", "kraken2_db"), config=config)
   shell:
     """
     kraken2-build --standard --db {params.database_dir} --threads {threads}
@@ -774,7 +774,7 @@ rule run_kraken:
             "{sample}.R1.fq.gz"),
     REV=pj(f"{trim_trunc_path}.nonhost",
             "{sample}.R2.fq.gz"),
-    HASH=pj(get_kraken_db(default=pj("data", "kraken2_db"), config), "hash.k2d") # if the full db dir is passed here, kraken will be rerun after bracken building
+    HASH=pj(get_kraken_db_loc(default=pj("data", "kraken2_db"), config=config), "hash.k2d") # if the full db dir is passed here, kraken will be rerun after bracken building
                                               # because bracken-build modifies that directory
   output: 
     OUTFILE=pj(f"{trim_trunc_path}.nonhost.kraken", 
@@ -790,7 +790,7 @@ rule run_kraken:
   conda: "conda_envs/kraken.yaml"
   params:
     out_dir=f"{trim_trunc_path}.nonhost.kraken",
-    database=get_kraken_db(default=pj("data", "kraken2_db"), config)
+    database=get_kraken_db_loc(default=pj("data", "kraken2_db"), config=config)
   shell:
     """
     mkdir -p {params.out_dir}

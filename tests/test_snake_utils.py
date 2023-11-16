@@ -43,3 +43,13 @@ def test_get_slurm_extra_priority():
     config = {"test_rule_slurm_extra": "qos=short", # this should be prioritized over the default
               "default_slurm_extra": "qos=long"}
     assert su.get_slurm_extra(config, "test_rule") == "qos=short"
+
+
+def test_get_kraken_db_default():
+    config = dict()
+    assert su.get_kraken_db(default="data_location", config=config) == "data_location"
+
+
+def test_get_kraken_db_nondefault():
+    config = {"kraken_db": "NEW_location"}
+    assert su.get_kraken_db(default="data_location", config=config) == "NEW_location"

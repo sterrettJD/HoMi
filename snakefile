@@ -755,8 +755,8 @@ rule get_kraken_db:
     TAX=directory(pj("data", "kraken2_db", "taxonomy"))
   resources:
     partition=get_partition("short", config, "get_kraken_db"),
-    mem_mb=get_mem(int(250*1000), config, "get_kraken_db"), # MB
-    runtime=get_runtime(int(23.9*60), config, "get_kraken_db"), # min # TODO: could scale down?
+    mem_mb=get_mem(int(96*1000), config, "get_kraken_db"), # MB
+    runtime=get_runtime(int(23*60), config, "get_kraken_db"), # min # TODO: could scale down?
     slurm=get_slurm_extra(config, "get_kraken_db")
   threads: get_threads(32, config, "get_kraken_db")
   conda: "conda_envs/kraken.yaml"

@@ -832,8 +832,8 @@ rule run_bracken:
               "{sample}.bracken")
   resources:
     partition=get_partition("short", config, "run_bracken"),
-    mem_mb=get_mem(int(32*1000), config, "run_bracken"), # MB
-    runtime=get_runtime(int(4*60), config, "run_bracken"), # min
+    mem_mb=get_mem(int(8*1000), config, "run_bracken"), # MB
+    runtime=get_runtime(int(2*60), config, "run_bracken"), # min
     slurm=get_slurm_extra(config, "run_bracken")
   threads: get_threads(1, config, "run_bracken")
   conda: "conda_envs/kraken.yaml"

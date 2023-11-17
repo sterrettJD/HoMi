@@ -149,6 +149,27 @@ def get_threads(default, config, rule_name):
     return default
 
 
+def get_cores(default, config, rule_name):
+    if config.get("hyperthreaded") is None:
+        # THIS IMPLEMENTATION DOES NOT SUPPORT NON-CLUSTER USE
+        # TODO: pass whether HoMi will be using a cluster profile
+        raise ValueError("Please provide whether the cluster is hyperthreaded ")
+    
+    # If it is hyperthreaded, specifically look for the number of cores
+    if config.get("hyperthreaded"):    
+        if config.get(f"{rule_name}_cores") is None:
+            return default
+        else:
+            return int(config.get(f"{rule_name}_cores"))
+    
+    # If it is NOT hyperthreaded, num cores becomes the number of threads
+    elif not config.get("hyperthreaded"):
+        if config.get(f"{rule_name}_threads") is None:
+            return default
+        else:
+            return int(config.get(f"{rule_name}_threads"))
+    
+
 def get_slurm_extra(config, rule_name):
     config_param = config.get(f"{rule_name}_slurm_extra")
     if config_param is not None:

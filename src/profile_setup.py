@@ -107,5 +107,6 @@ def main():
     if args.cluster_type=="slurm-nosmt":
         convert_slurm_profile_tasks(output_dir=args.output_dir)
 
+
 if __name__=="__main__":
     main()

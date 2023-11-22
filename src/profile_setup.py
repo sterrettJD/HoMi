@@ -55,7 +55,6 @@ def check_profile_named_slurm(output_dir):
                              """)
 
 
-
 def check_use_conda_slurm(output_dir):
     config_path = os.path.join(output_dir, "slurm", "config.yaml")
 

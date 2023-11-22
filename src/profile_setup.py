@@ -26,6 +26,36 @@ def get_cookiecutter_slurm_profile(output_dir):
     cookiecutter("gh:Snakemake-Profiles/slurm", output_dir=output_dir)
 
 
+def check_profile_named_slurm(output_dir):
+    alleged_profile_dir= os.path.join(output_dir, "slurm")
+    if not os.path.isdir(alleged_profile_dir):
+        raise ValueError("""
+                         The profile's name has not been set to slurm.
+                         Please make sure the profile is named slurm
+                         when following the prompts for profile setup.
+                         """)
+
+    files_should_be_present = ["config.yaml",
+                               "CookieCutter.py",
+                               "slurm_utils.py",
+                               "slurm-jobscript.sh",
+                               "slurm-sidecar.py",
+                               "slurm-status.py",
+                               "slurm-submit.py"]
+    contents_of_profile_dir = os.listdir(alleged_profile_dir)
+    
+    files_there = [file in contents_of_profile_dir 
+                   for file in files_should_be_present]
+    for i, file in enumerate(files_there):
+        if not file:
+            raise ValueError(f"""
+                             The slurm profile doesn't seem to have all necessary files.
+                             {files_should_be_present[i]} is missing.
+                             Something may have gone wrong, please check this directory.
+                             """)
+
+
+
 def check_use_conda_slurm(output_dir):
     config_path = os.path.join(output_dir, "slurm", "config.yaml")
 
@@ -66,9 +96,14 @@ def main():
     args = get_args()
     print(f"Creating cluster profile in directory {args.output_dir}/slurm")
 
+    # Download the profile, requires some user input
     get_cookiecutter_slurm_profile(output_dir=args.output_dir)
+
+    # Check that parameters that need to be set a certain way are set that way
+    check_profile_named_slurm(output_dir=args.output_dir)
     check_use_conda_slurm(output_dir=args.output_dir)
 
+    # Setup for cluster that doesn't have hyperthreading enabled
     if args.cluster_type=="slurm-nosmt":
         convert_slurm_profile_tasks(output_dir=args.output_dir)
 

@@ -104,7 +104,7 @@ each rule does, and for developers to find what is, and isn't yet supported.
 """
 )
 
-    for rule in sorted(all_rules_doc.keys()):
+    for rule in all_rules_doc.keys():
         docstring = all_rules_doc[rule]
 
         final_md += f"#### {rule}\n\n"

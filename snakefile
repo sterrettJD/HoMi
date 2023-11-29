@@ -23,6 +23,9 @@ HOSTILE_DB_PATH = hostile_db_to_path(HOSTILE_DB_NAME,
 trim_trunc_path = f"{config['PROJ']}.f{config['trim_fwd']}.{config['trunc_fwd']}.r{config['trim_rev']}.{config['trunc_rev']}"
 
 rule all:
+  """
+  This contains most files needed for endpoints to be reached.
+  """
   input: 
     # Symlinked files
     expand(pj(PROJ,
@@ -122,6 +125,9 @@ rule all:
 
 
 rule symlink_fastqs:
+  """
+  Creates a symbolic link to the fastq files, so files can easily be accessed.
+  """
   output:
     FWD=pj(PROJ,"{sample}.R1.fq.gz"),
     REV=pj(PROJ,"{sample}.R2.fq.gz")
@@ -167,49 +173,57 @@ rule symlink_fastqs:
 
 
 rule remove_adapters:
-    input:
-        FORWARD=pj(PROJ,
-                  "{sample}.R1.fq.gz"),
-        REVERSE=pj(PROJ,
-                  "{sample}.R2.fq.gz")
-    output:
-        pj(f"{PROJ}.noadpt", "{sample}", "{sample}.trimmed.R1.fq"), # forward paired
-        pj(f"{PROJ}.noadpt", "{sample}", "{sample}.trimmed_1U"),    # forward unpaired (discard)
-        pj(f"{PROJ}.noadpt", "{sample}", "{sample}.trimmed.R2.fq"), # reverse unpaired
-        pj(f"{PROJ}.noadpt", "{sample}", "{sample}.trimmed_2U")     # reverse unpaired (discard)
+  """
+  Trims common sequencing adapters (using adapters found in `data/adapters.fa`) from the fastq reads.
+  Also performs quality-based trimming at the start and end of reads, and reads shorter than `minlen`
+  after quality-based trimming are removed entirely.
+  """
+  input:
+    FORWARD=pj(PROJ,
+              "{sample}.R1.fq.gz"),
+    REVERSE=pj(PROJ,
+              "{sample}.R2.fq.gz")
+  output:
+    pj(f"{PROJ}.noadpt", "{sample}", "{sample}.trimmed.R1.fq"), # forward paired
+    pj(f"{PROJ}.noadpt", "{sample}", "{sample}.trimmed_1U"),    # forward unpaired (discard)
+    pj(f"{PROJ}.noadpt", "{sample}", "{sample}.trimmed.R2.fq"), # reverse unpaired
+    pj(f"{PROJ}.noadpt", "{sample}", "{sample}.trimmed_2U")     # reverse unpaired (discard)
 
-    conda: "conda_envs/trimmomatic.yaml"
-    resources:
-        partition=get_partition("short", config, "remove_adapters"),
-        mem_mb=get_mem(int(8*1000), config, "remove_adapters"), # 8 GB
-        runtime=get_runtime(int(12*60), config, "remove_adapters"),
-        slurm=get_slurm_extra(config, "remove_adapters")
-    threads: get_threads(8, config, "remove_adapters")
-    params:
-      proj=PROJ,
-      adpt=get_adapters_path(),
-      minlen=config['min_readlen'],
-      leading=config['readstart_qual_min'],
-      trailing=config['readend_qual_min']
-    shell:
-        """
-        mkdir -p {params.proj}.noadpt/{wildcards.sample}
-        trimmomatic PE -threads 8 \
-            -trimlog {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimlog \
-            -summary {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.summary \
-            -validatePairs {input.FORWARD} {input.REVERSE} \
-            -baseout {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed \
-            ILLUMINACLIP:{params.adpt}:2:30:10 SLIDINGWINDOW:4:20 LEADING:{params.leading} TRAILING:{params.trailing} MINLEN:{params.minlen} \
-            -phred33
-        
-        mv {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed_1P {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed.R1.fq
-        mv {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed_2P {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed.R2.fq
+  conda: "conda_envs/trimmomatic.yaml"
+  resources:
+    partition=get_partition("short", config, "remove_adapters"),
+    mem_mb=get_mem(int(8*1000), config, "remove_adapters"), # 8 GB
+    runtime=get_runtime(int(12*60), config, "remove_adapters"),
+    slurm=get_slurm_extra(config, "remove_adapters")
+  threads: get_threads(8, config, "remove_adapters")
+  params:
+    proj=PROJ,
+    adpt=get_adapters_path(),
+    minlen=config['min_readlen'],
+    leading=config['readstart_qual_min'],
+    trailing=config['readend_qual_min']
+  shell:
+    """
+    mkdir -p {params.proj}.noadpt/{wildcards.sample}
+    trimmomatic PE -threads 8 \
+        -trimlog {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimlog \
+        -summary {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.summary \
+        -validatePairs {input.FORWARD} {input.REVERSE} \
+        -baseout {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed \
+        ILLUMINACLIP:{params.adpt}:2:30:10 SLIDINGWINDOW:4:20 LEADING:{params.leading} TRAILING:{params.trailing} MINLEN:{params.minlen} \
+        -phred33
+    
+    mv {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed_1P {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed.R1.fq
+    mv {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed_2P {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed.R2.fq
 
-        echo "completed adapter trimming of {wildcards.sample}"
-        """
+    echo "completed adapter trimming of {wildcards.sample}"
+    """
 
 
 rule fastQC_pass1:
+  """
+  Runs FastQC to check the quality of reads in each sample.
+  """
   input:
     pj(f"{PROJ}.noadpt", 
         "{sample}",
@@ -235,6 +249,9 @@ rule fastQC_pass1:
 
 
 rule multiqc_pass1:
+  """
+  Runs MultiQC to aggregate FastQC reports into one HTML file.
+  """
   input:
     expand(pj(f"{PROJ}.noadpt.fastqc",
               "{sample}.trimmed.{read}_fastqc.zip"),
@@ -258,6 +275,10 @@ rule multiqc_pass1:
 
 
 rule trim_forward:
+  """
+  This is a secondary trimming step using SeqTK to trim/truncate 
+  any set number of base pairs from the start/end of each forward read.
+  """
   input:
     pj(f"{PROJ}.noadpt","{sample}","{sample}.trimmed.R1.fq")
   output:
@@ -283,6 +304,10 @@ rule trim_forward:
 
 
 rule trim_reverse:
+  """
+  This is a secondary trimming step using SeqTK to trim/truncate 
+  any set number of base pairs from the start/end of each reverse read.
+  """
   input:
     pj(f"{PROJ}.noadpt","{sample}","{sample}.trimmed.R2.fq")
   output:
@@ -308,6 +333,9 @@ rule trim_reverse:
 
 
 rule fastQC_pass2:
+  """
+  Runs FastQC to check the quality of reads in each sample.
+  """
   input:
     pj(trim_trunc_path,
        "{sample}.{read}.fq")
@@ -332,6 +360,9 @@ rule fastQC_pass2:
 
 
 rule multiqc_pass2:
+  """
+  Runs MultiQC to aggregate FastQC reports into one HTML file.
+  """
   input:
     expand(pj(f"{trim_trunc_path}.fastqc",
               "{sample}.{read}_fastqc.zip"),
@@ -341,10 +372,10 @@ rule multiqc_pass2:
                   "multiqc_report"))
   conda: "conda_envs/fastqc.yaml"
   resources:
-        partition=get_partition("short", config, "multiqc_pass2"),
-        mem_mb=get_mem(int(2*1000), config, "multiqc_pass2"), # MB, or 2 GB
-        runtime=get_runtime(int(0.5*60), config, "multiqc_pass2"), # min, or 0.5 hours
-        slurm=get_slurm_extra(config, "multiqc_pass2")
+    partition=get_partition("short", config, "multiqc_pass2"),
+    mem_mb=get_mem(int(2*1000), config, "multiqc_pass2"), # MB, or 2 GB
+    runtime=get_runtime(int(0.5*60), config, "multiqc_pass2"), # min, or 0.5 hours
+    slurm=get_slurm_extra(config, "multiqc_pass2")
   threads: get_threads(1, config, "multiqc_pass2")
   params:
     trim_trunc_path=trim_trunc_path
@@ -353,7 +384,11 @@ rule multiqc_pass2:
     multiqc {params.trim_trunc_path}.fastqc -o {params.trim_trunc_path}.fastqc/multiqc_report
     """
 
+
 rule download_hostile_db:
+  """
+  This rule downloads the host index to be used for Hostile's host read filtering.
+  """
   output:
     multiext(HOSTILE_DB_PATH,
              ".1.bt2", ".2.bt2", ".3.bt2", ".4.bt2",
@@ -386,6 +421,9 @@ rule download_hostile_db:
 
 
 rule host_filter:
+  """
+  This removes host reads using the tool Hostile.
+  """
   input:
     INDEX=multiext(HOSTILE_DB_PATH,
              ".1.bt2", ".2.bt2", ".3.bt2", ".4.bt2",
@@ -429,6 +467,9 @@ rule host_filter:
 ############# RUN BIOBAKERY HUMANN PIPELINE ON NONHOST READS #############
 
 rule setup_metaphlan:
+  """
+  This rule installs the metaphlan database.
+  """
   output:
     directory(config['metaphlan_bowtie_db'])
   resources:
@@ -441,15 +482,19 @@ rule setup_metaphlan:
   shell:
     """
     mkdir -p {output}
-    # metaphlan --install --bowtie2db  --nproc {threads} {output}
-    cd {output}
-    wget http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/bowtie2_indexes/mpa_vOct22_CHOCOPhlAnSGB_202212_bt2.tar
-    tar -xvf mpa_vOct22_CHOCOPhlAnSGB_202212_bt2.tar
-    rm mpa_vOct22_CHOCOPhlAnSGB_202212_bt2.tar
+    metaphlan --install --bowtie2db --nproc {threads} {output}
+    # Option to do it manually if --install doesn't seem to work
+    # cd {output}
+    # wget http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/bowtie2_indexes/mpa_vOct22_CHOCOPhlAnSGB_202212_bt2.tar
+    # tar -xvf mpa_vOct22_CHOCOPhlAnSGB_202212_bt2.tar
+    # rm mpa_vOct22_CHOCOPhlAnSGB_202212_bt2.tar
     """
 
 
 rule get_biobakery_chocophlan_db:
+  """
+  This rule installs the ChocoPhlAn database used for HUMAnN.
+  """
   output:
     directory(config['chocophlan_db'])
   resources:
@@ -465,7 +510,11 @@ rule get_biobakery_chocophlan_db:
     humann_databases --download chocophlan full {output} --update-config yes
     """
 
+
 rule get_biobakery_uniref_db:
+  """
+  This rule installs the UniRef database used for HUMAnN.
+  """
   output:
     directory(config['uniref_db'])
   resources:
@@ -483,6 +532,11 @@ rule get_biobakery_uniref_db:
 
 
 rule get_utility_mapping_db:
+  """
+  This rule installs the utility mapping database used for HUMAnN.
+  This database is used to group/rename UniRef protein families to other
+  versions, such as Enzyme Commission numbers, KEGG Orthologies, etc.
+  """
   output:
     directory(config['utility_mapping_db'])
   resources:
@@ -500,6 +554,9 @@ rule get_utility_mapping_db:
 
 
 rule concat_nonhost_reads:
+  """
+  This rule installs concatenates forward and reverse reads into the same file for HUMAnN.
+  """
   input:
     FWD=pj(f"{trim_trunc_path}.nonhost",
             "{sample}.R1.fq.gz"),
@@ -524,6 +581,9 @@ rule concat_nonhost_reads:
 
 
 rule run_humann_nonhost:
+  """
+  This rule runs the HUMAnN pipeline, including MetaPhlAn.
+  """
   input:
     METAPHLAN_DB=config['metaphlan_bowtie_db'],
     CHOCO_DB=config['chocophlan_db'],
@@ -561,6 +621,11 @@ rule run_humann_nonhost:
 
 
 rule aggregate_humann_outs_nonhost:
+  """
+  This rule aggregates the HUMAnN and MetaPhlAn outputs across all samples into tsv files with all samples.
+  It also groups protein families and renames them based on Metacyc RXNs, KOs, KEGG Modules, KEGG Pathways, 
+  GO terms, EGGNOG, and PFAMs.
+  """
   input:
     MAPPING_DB=config['utility_mapping_db'],
     PATHABUND=expand(pj(f"{trim_trunc_path}.nonhost.humann",
@@ -657,7 +722,11 @@ rule aggregate_humann_outs_nonhost:
     python {params.mphlan_conv} -i {params.dirpath} 
     """
 
+
 rule taxa_barplot:
+  """
+  This rule runs a .Rmd file that creates microshaded taxa barplots using MetaPhlan taxonomic profiles. 
+  """
   input:
     pj(f"{trim_trunc_path}.nonhost.humann", 
                 "all_bugs_list.tsv")
@@ -685,6 +754,12 @@ rule taxa_barplot:
 
 
 rule func_barplot_rxn:
+  """
+  This rule runs a .Rmd file that creates microshaded functional profile barplots 
+  using HUMAnN functional profiles. Specifically, it uses Enzyme Commission numbers from 
+  the Metacyc RXN number grouped protein families to show the hierarchical breakdown of
+  enzyme classes in your sample.
+  """
   input:
     GENEFAMS_RXN=pj(f"{trim_trunc_path}.nonhost.humann", 
                     "all_genefamilies_rxn_named.tsv")
@@ -712,6 +787,11 @@ rule func_barplot_rxn:
 
 
 rule calc_gut_metabolic_modules:
+  """
+  This rule runs a .Rmd file that groups the KOs from HUMAnN into gut metabolic modules 
+  with biologically relevant functions. Abundances are summed within modules and then
+  written to a .csv file. 
+  """
   input:
     GENEFAMS_KO=pj(f"{trim_trunc_path}.nonhost.humann", 
                     "all_genefamilies_ko_named.tsv")
@@ -748,6 +828,9 @@ rule calc_gut_metabolic_modules:
 kraken_db_loc = get_kraken_db_loc(default=pj("data", "kraken2_db"), config=config)
 
 rule get_kraken_db:
+  """
+  This rule downloads and builds the Kraken2 database for taxonomic classification.
+  """
   output: 
     HASH=pj(kraken_db_loc, "hash.k2d"),
     OPTS=pj(kraken_db_loc, "opts.k2d"),
@@ -758,7 +841,7 @@ rule get_kraken_db:
   resources:
     partition=get_partition("short", config, "get_kraken_db"),
     mem_mb=get_mem(int(96*1000), config, "get_kraken_db"), # MB
-    runtime=get_runtime(int(23*60), config, "get_kraken_db"), # min # TODO: could scale down?
+    runtime=get_runtime(int(23*60), config, "get_kraken_db"), # min 
     slurm=get_slurm_extra(config, "get_kraken_db")
   threads: get_threads(32, config, "get_kraken_db")
   conda: "conda_envs/kraken.yaml"
@@ -771,6 +854,9 @@ rule get_kraken_db:
 
 
 rule run_kraken:
+  """
+  This rule runs Kraken2 for each sample.
+  """
   input:
     FWD=pj(f"{trim_trunc_path}.nonhost",
             "{sample}.R1.fq.gz"),
@@ -785,7 +871,7 @@ rule run_kraken:
               "{sample}.kreport2")
   resources:
     partition=get_partition("short", config, "run_kraken"),
-    mem_mb=get_mem(int(84*1000), config, "run_kraken"), # MB maybe 10GB/thread? TODO: CHECK THIS
+    mem_mb=get_mem(int(84*1000), config, "run_kraken"), # MB 
     runtime=get_runtime(int(2*60), config, "run_kraken"), # min 
     slurm=get_slurm_extra(config, "run_kraken")
   threads: get_threads(16, config, "run_kraken")
@@ -802,6 +888,9 @@ rule run_kraken:
     """
 
 rule build_bracken:
+  """
+  This rule downloads and builds the Bracken database for taxonomic abundance estimation.
+  """
   input:
     pj(kraken_db_loc, "hash.k2d")
   output:
@@ -823,6 +912,9 @@ rule build_bracken:
 
 
 rule run_bracken:
+  """
+  This rule runs Bracken to estimate taxonomic abundance for each sample.
+  """
   input:
     KRAKEN_HASH=pj(kraken_db_loc, "hash.k2d"),
     LMERS=pj(kraken_db_loc, "database150mers.kraken"),
@@ -848,6 +940,9 @@ rule run_bracken:
 
 
 rule aggregate_bracken:
+  """
+  This rule aggregates Bracken outputs across samples.
+  """
   input:
     expand(pj(f"{trim_trunc_path}.nonhost.kraken", 
               "{sample}.bracken"),
@@ -885,6 +980,9 @@ rule aggregate_bracken:
 ### Estimate nonhost coverage ###
 
 rule nonpareil:
+  """
+  This rule estimates coverage of the nonhost reads based on kmer redundancy.
+  """
   input:
     # Only with forward reads for now. 
     # Could also run separately with reverse, but not sure there's much reason to do so.
@@ -921,6 +1019,9 @@ rule nonpareil:
 
 
 rule nonpareil_curves:
+  """
+  This rule runs a .Rmd file to visualize coverage of the nonhost fraction across samples.
+  """
   input:
     expand(pj(f"{trim_trunc_path}.nonhost.nonpareil", "{sample}.npo"),
           sample=SAMPLES)
@@ -951,6 +1052,9 @@ rule nonpareil_curves:
 
 # pull human genome
 rule pull_host_genome:
+  """
+  This rule downloads the human GRCh38 reference genome and annotation.
+  """
   output:
     GENOME=config['host_ref_fna'], 
     ANNOTATION=config['host_ref_gtf']
@@ -978,8 +1082,12 @@ rule pull_host_genome:
     mv GCA_000001405.15_GRCh38_full_analysis_set.refseq_annotation.gtf GRCh38_full_analysis_set.refseq.gtf
     """
 
+
 # make bbmap index for human genome
 rule build_human_genome_index_bbmap:
+  """
+  This rule builds a Bbmap index for the host genome.
+  """
   input:
     config['host_ref_fna']
   output:
@@ -999,8 +1107,12 @@ rule build_human_genome_index_bbmap:
     bbmap.sh ref={input} path={params.ref_dir} threads={threads} -Xmx{resources.mem_mb}m
     """
 
+
 # Map to human genome
 rule bbmap_host:
+  """
+  This rule maps reads to the host genome using Bbmap and compresses SAM files to BAM files.
+  """
   input:
       REF=pj(f"{trim_trunc_path}.host", "ref/"),
       FWD=pj(trim_trunc_path,
@@ -1034,42 +1146,50 @@ rule bbmap_host:
     """
 
 rule validate_bams:
-    input:
-        BAM=pj(f"{trim_trunc_path}.host", "{sample}.bam")
-    output:
-        BAM_VALID=pj(f"{trim_trunc_path}.host", "{sample}_bam_valid.tsv")
-    conda: "conda_envs/featureCounts.yaml"
-    resources:
-        partition=get_partition("short", config, "validate_bams"),
-        mem_mb=get_mem(int(2*1000), config, "validate_bams"), # MB, or 2 GB
-        runtime=get_runtime(int(1*60), config, "validate_bams"), # min, or 1 hr
-        slurm=get_slurm_extra(config, "validate_bams")
-    threads: get_threads(16, config, "validate_bams")
-    shell:
-        """
-        samtools flagstat --threads {threads} {input.BAM} > {output.BAM_VALID}
-        """
+  """
+  This rule checks if BAM files are valid. 
+  It doesn't stop the pipeline if they aren't but you can check these files manually.
+  """
+  input:
+    BAM=pj(f"{trim_trunc_path}.host", "{sample}.bam")
+  output:
+    BAM_VALID=pj(f"{trim_trunc_path}.host", "{sample}_bam_valid.tsv")
+  conda: "conda_envs/featureCounts.yaml"
+  resources:
+    partition=get_partition("short", config, "validate_bams"),
+    mem_mb=get_mem(int(2*1000), config, "validate_bams"), # MB, or 2 GB
+    runtime=get_runtime(int(1*60), config, "validate_bams"), # min, or 1 hr
+    slurm=get_slurm_extra(config, "validate_bams")
+  threads: get_threads(16, config, "validate_bams")
+  shell:
+    """
+    samtools flagstat --threads {threads} {input.BAM} > {output.BAM_VALID}
+    """
+
 
 # Assess classification of mapped reads
 rule generate_feature_counts:
-    input:
-        ANNOTATION=config['host_ref_gtf'],
-        VALID=expand(pj(f"{trim_trunc_path}.host", "{sample}_bam_valid.tsv"), 
-                     sample=HOST_MAP_SAMPLES),
-        BAM=expand(pj(f"{trim_trunc_path}.host", "{sample}.bam"), 
-                   sample=HOST_MAP_SAMPLES)
-    output:
-        COUNTS=pj(f"{trim_trunc_path}.host", "counts.txt"),
-        SUMMARY=pj(f"{trim_trunc_path}.host", "counts.txt.summary")
-    conda: "conda_envs/featureCounts.yaml"
-    resources:
-        partition=get_partition("short", config, "generate_feature_counts"),
-        mem_mb=get_mem(int(8*1000), config, "generate_feature_counts"), # MB, or 8 GB
-        runtime=get_runtime(int(2*60), config, "generate_feature_counts"), # min, or 2 hrs
-        slurm=get_slurm_extra(config, "generate_feature_counts")
-    threads: get_threads(16, config, "generate_feature_counts")
-    shell:
-        """
-        featureCounts -T {threads} -p --countReadPairs \
-        -t exon -g gene_id -a {input.ANNOTATION} -o {output.COUNTS} {input.BAM}
-        """
+  """
+  This rule uses featureCounts to count host transcripts.
+  """
+  input:
+    ANNOTATION=config['host_ref_gtf'],
+    VALID=expand(pj(f"{trim_trunc_path}.host", "{sample}_bam_valid.tsv"), 
+                  sample=HOST_MAP_SAMPLES),
+    BAM=expand(pj(f"{trim_trunc_path}.host", "{sample}.bam"), 
+                sample=HOST_MAP_SAMPLES)
+  output:
+    COUNTS=pj(f"{trim_trunc_path}.host", "counts.txt"),
+    SUMMARY=pj(f"{trim_trunc_path}.host", "counts.txt.summary")
+  conda: "conda_envs/featureCounts.yaml"
+  resources:
+    partition=get_partition("short", config, "generate_feature_counts"),
+    mem_mb=get_mem(int(8*1000), config, "generate_feature_counts"), # MB, or 8 GB
+    runtime=get_runtime(int(2*60), config, "generate_feature_counts"), # min, or 2 hrs
+    slurm=get_slurm_extra(config, "generate_feature_counts")
+  threads: get_threads(16, config, "generate_feature_counts")
+  shell:
+    """
+    featureCounts -T {threads} -p --countReadPairs \
+    -t exon -g gene_id -a {input.ANNOTATION} -o {output.COUNTS} {input.BAM}
+    """

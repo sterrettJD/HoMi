@@ -23,9 +23,9 @@ HOSTILE_DB_PATH = hostile_db_to_path(HOSTILE_DB_NAME,
 trim_trunc_path = f"{config['PROJ']}.f{config['trim_fwd']}.{config['trunc_fwd']}.r{config['trim_rev']}.{config['trunc_rev']}"
 
 rule all:
-"""
-This contains most files needed for endpoints to be reached.
-"""
+  """
+  This contains most files needed for endpoints to be reached.
+  """
   input: 
     # Symlinked files
     expand(pj(PROJ,
@@ -173,6 +173,11 @@ rule symlink_fastqs:
 
 
 rule remove_adapters:
+  """
+  Trims common sequencing adapters (using adapters found in `data/adapters.fa`) from the fastq reads.
+  Also performs quality-based trimming at the start and end of reads, and reads shorter than `minlen`
+  after quality-based trimming are removed entirely.
+  """
     input:
         FORWARD=pj(PROJ,
                   "{sample}.R1.fq.gz"),
@@ -216,6 +221,9 @@ rule remove_adapters:
 
 
 rule fastQC_pass1:
+  """
+  Runs FastQC to check the quality of reads in each sample.
+  """
   input:
     pj(f"{PROJ}.noadpt", 
         "{sample}",
@@ -241,6 +249,9 @@ rule fastQC_pass1:
 
 
 rule multiqc_pass1:
+  """
+  Runs MultiQC to aggregate FastQC reports into one HTML file.
+  """
   input:
     expand(pj(f"{PROJ}.noadpt.fastqc",
               "{sample}.trimmed.{read}_fastqc.zip"),
@@ -264,6 +275,10 @@ rule multiqc_pass1:
 
 
 rule trim_forward:
+  """
+  This is a secondary trimming step using SeqTK to trim/truncate 
+  any set number of base pairs from the start/end of each forward read.
+  """
   input:
     pj(f"{PROJ}.noadpt","{sample}","{sample}.trimmed.R1.fq")
   output:
@@ -289,6 +304,10 @@ rule trim_forward:
 
 
 rule trim_reverse:
+  """
+  This is a secondary trimming step using SeqTK to trim/truncate 
+  any set number of base pairs from the start/end of each reverse read.
+  """
   input:
     pj(f"{PROJ}.noadpt","{sample}","{sample}.trimmed.R2.fq")
   output:
@@ -314,6 +333,9 @@ rule trim_reverse:
 
 
 rule fastQC_pass2:
+  """
+  Runs FastQC to check the quality of reads in each sample.
+  """
   input:
     pj(trim_trunc_path,
        "{sample}.{read}.fq")
@@ -338,6 +360,9 @@ rule fastQC_pass2:
 
 
 rule multiqc_pass2:
+  """
+  Runs MultiQC to aggregate FastQC reports into one HTML file.
+  """
   input:
     expand(pj(f"{trim_trunc_path}.fastqc",
               "{sample}.{read}_fastqc.zip"),
@@ -360,6 +385,9 @@ rule multiqc_pass2:
     """
 
 rule download_hostile_db:
+  """
+  This rule downloads the host index to be used for Hostile's host read filtering.
+  """
   output:
     multiext(HOSTILE_DB_PATH,
              ".1.bt2", ".2.bt2", ".3.bt2", ".4.bt2",
@@ -392,6 +420,9 @@ rule download_hostile_db:
 
 
 rule host_filter:
+  """
+  This removes host reads using the tool Hostile.
+  """
   input:
     INDEX=multiext(HOSTILE_DB_PATH,
              ".1.bt2", ".2.bt2", ".3.bt2", ".4.bt2",

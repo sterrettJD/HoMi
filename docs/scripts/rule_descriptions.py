@@ -94,7 +94,7 @@ def main():
 
     final_md = (  # noqa
 """
-# Per rule explanation
+# Rule descriptions
 
 This is an automatically generated list of all supported rules, their docstrings, command, and virtual environment. At \
 the start of each workflow run a list is printed of which rules will be run. And while the workflow is running it \

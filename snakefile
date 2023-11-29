@@ -178,46 +178,46 @@ rule remove_adapters:
   Also performs quality-based trimming at the start and end of reads, and reads shorter than `minlen`
   after quality-based trimming are removed entirely.
   """
-    input:
-        FORWARD=pj(PROJ,
-                  "{sample}.R1.fq.gz"),
-        REVERSE=pj(PROJ,
-                  "{sample}.R2.fq.gz")
-    output:
-        pj(f"{PROJ}.noadpt", "{sample}", "{sample}.trimmed.R1.fq"), # forward paired
-        pj(f"{PROJ}.noadpt", "{sample}", "{sample}.trimmed_1U"),    # forward unpaired (discard)
-        pj(f"{PROJ}.noadpt", "{sample}", "{sample}.trimmed.R2.fq"), # reverse unpaired
-        pj(f"{PROJ}.noadpt", "{sample}", "{sample}.trimmed_2U")     # reverse unpaired (discard)
+  input:
+    FORWARD=pj(PROJ,
+              "{sample}.R1.fq.gz"),
+    REVERSE=pj(PROJ,
+              "{sample}.R2.fq.gz")
+  output:
+    pj(f"{PROJ}.noadpt", "{sample}", "{sample}.trimmed.R1.fq"), # forward paired
+    pj(f"{PROJ}.noadpt", "{sample}", "{sample}.trimmed_1U"),    # forward unpaired (discard)
+    pj(f"{PROJ}.noadpt", "{sample}", "{sample}.trimmed.R2.fq"), # reverse unpaired
+    pj(f"{PROJ}.noadpt", "{sample}", "{sample}.trimmed_2U")     # reverse unpaired (discard)
 
-    conda: "conda_envs/trimmomatic.yaml"
-    resources:
-        partition=get_partition("short", config, "remove_adapters"),
-        mem_mb=get_mem(int(8*1000), config, "remove_adapters"), # 8 GB
-        runtime=get_runtime(int(12*60), config, "remove_adapters"),
-        slurm=get_slurm_extra(config, "remove_adapters")
-    threads: get_threads(8, config, "remove_adapters")
-    params:
-      proj=PROJ,
-      adpt=get_adapters_path(),
-      minlen=config['min_readlen'],
-      leading=config['readstart_qual_min'],
-      trailing=config['readend_qual_min']
-    shell:
-        """
-        mkdir -p {params.proj}.noadpt/{wildcards.sample}
-        trimmomatic PE -threads 8 \
-            -trimlog {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimlog \
-            -summary {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.summary \
-            -validatePairs {input.FORWARD} {input.REVERSE} \
-            -baseout {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed \
-            ILLUMINACLIP:{params.adpt}:2:30:10 SLIDINGWINDOW:4:20 LEADING:{params.leading} TRAILING:{params.trailing} MINLEN:{params.minlen} \
-            -phred33
-        
-        mv {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed_1P {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed.R1.fq
-        mv {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed_2P {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed.R2.fq
+  conda: "conda_envs/trimmomatic.yaml"
+  resources:
+    partition=get_partition("short", config, "remove_adapters"),
+    mem_mb=get_mem(int(8*1000), config, "remove_adapters"), # 8 GB
+    runtime=get_runtime(int(12*60), config, "remove_adapters"),
+    slurm=get_slurm_extra(config, "remove_adapters")
+  threads: get_threads(8, config, "remove_adapters")
+  params:
+    proj=PROJ,
+    adpt=get_adapters_path(),
+    minlen=config['min_readlen'],
+    leading=config['readstart_qual_min'],
+    trailing=config['readend_qual_min']
+  shell:
+    """
+    mkdir -p {params.proj}.noadpt/{wildcards.sample}
+    trimmomatic PE -threads 8 \
+        -trimlog {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimlog \
+        -summary {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.summary \
+        -validatePairs {input.FORWARD} {input.REVERSE} \
+        -baseout {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed \
+        ILLUMINACLIP:{params.adpt}:2:30:10 SLIDINGWINDOW:4:20 LEADING:{params.leading} TRAILING:{params.trailing} MINLEN:{params.minlen} \
+        -phred33
+    
+    mv {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed_1P {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed.R1.fq
+    mv {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed_2P {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed.R2.fq
 
-        echo "completed adapter trimming of {wildcards.sample}"
-        """
+    echo "completed adapter trimming of {wildcards.sample}"
+    """
 
 
 rule fastQC_pass1:
@@ -372,10 +372,10 @@ rule multiqc_pass2:
                   "multiqc_report"))
   conda: "conda_envs/fastqc.yaml"
   resources:
-        partition=get_partition("short", config, "multiqc_pass2"),
-        mem_mb=get_mem(int(2*1000), config, "multiqc_pass2"), # MB, or 2 GB
-        runtime=get_runtime(int(0.5*60), config, "multiqc_pass2"), # min, or 0.5 hours
-        slurm=get_slurm_extra(config, "multiqc_pass2")
+    partition=get_partition("short", config, "multiqc_pass2"),
+    mem_mb=get_mem(int(2*1000), config, "multiqc_pass2"), # MB, or 2 GB
+    runtime=get_runtime(int(0.5*60), config, "multiqc_pass2"), # min, or 0.5 hours
+    slurm=get_slurm_extra(config, "multiqc_pass2")
   threads: get_threads(1, config, "multiqc_pass2")
   params:
     trim_trunc_path=trim_trunc_path
@@ -383,6 +383,7 @@ rule multiqc_pass2:
     """
     multiqc {params.trim_trunc_path}.fastqc -o {params.trim_trunc_path}.fastqc/multiqc_report
     """
+
 
 rule download_hostile_db:
   """
@@ -508,6 +509,7 @@ rule get_biobakery_chocophlan_db:
     mkdir -p {output}
     humann_databases --download chocophlan full {output} --update-config yes
     """
+
 
 rule get_biobakery_uniref_db:
   """
@@ -719,6 +721,7 @@ rule aggregate_humann_outs_nonhost:
 
     python {params.mphlan_conv} -i {params.dirpath} 
     """
+
 
 rule taxa_barplot:
   """
@@ -1079,6 +1082,7 @@ rule pull_host_genome:
     mv GCA_000001405.15_GRCh38_full_analysis_set.refseq_annotation.gtf GRCh38_full_analysis_set.refseq.gtf
     """
 
+
 # make bbmap index for human genome
 rule build_human_genome_index_bbmap:
   """
@@ -1102,6 +1106,7 @@ rule build_human_genome_index_bbmap:
     mkdir -p {params.ref_dir}
     bbmap.sh ref={input} path={params.ref_dir} threads={threads} -Xmx{resources.mem_mb}m
     """
+
 
 # Map to human genome
 rule bbmap_host:
@@ -1145,21 +1150,22 @@ rule validate_bams:
   This rule checks if BAM files are valid. 
   It doesn't stop the pipeline if they aren't but you can check these files manually.
   """
-    input:
-        BAM=pj(f"{trim_trunc_path}.host", "{sample}.bam")
-    output:
-        BAM_VALID=pj(f"{trim_trunc_path}.host", "{sample}_bam_valid.tsv")
-    conda: "conda_envs/featureCounts.yaml"
-    resources:
-        partition=get_partition("short", config, "validate_bams"),
-        mem_mb=get_mem(int(2*1000), config, "validate_bams"), # MB, or 2 GB
-        runtime=get_runtime(int(1*60), config, "validate_bams"), # min, or 1 hr
-        slurm=get_slurm_extra(config, "validate_bams")
-    threads: get_threads(16, config, "validate_bams")
-    shell:
-        """
-        samtools flagstat --threads {threads} {input.BAM} > {output.BAM_VALID}
-        """
+  input:
+    BAM=pj(f"{trim_trunc_path}.host", "{sample}.bam")
+  output:
+    BAM_VALID=pj(f"{trim_trunc_path}.host", "{sample}_bam_valid.tsv")
+  conda: "conda_envs/featureCounts.yaml"
+  resources:
+    partition=get_partition("short", config, "validate_bams"),
+    mem_mb=get_mem(int(2*1000), config, "validate_bams"), # MB, or 2 GB
+    runtime=get_runtime(int(1*60), config, "validate_bams"), # min, or 1 hr
+    slurm=get_slurm_extra(config, "validate_bams")
+  threads: get_threads(16, config, "validate_bams")
+  shell:
+    """
+    samtools flagstat --threads {threads} {input.BAM} > {output.BAM_VALID}
+    """
+
 
 # Assess classification of mapped reads
 rule generate_feature_counts:

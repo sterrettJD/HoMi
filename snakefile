@@ -466,6 +466,9 @@ rule host_filter:
 ############# RUN BIOBAKERY HUMANN PIPELINE ON NONHOST READS #############
 
 rule setup_metaphlan:
+  """
+  This rule installs the metaphlan database.
+  """
   output:
     directory(config['metaphlan_bowtie_db'])
   resources:
@@ -478,15 +481,19 @@ rule setup_metaphlan:
   shell:
     """
     mkdir -p {output}
-    # metaphlan --install --bowtie2db  --nproc {threads} {output}
-    cd {output}
-    wget http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/bowtie2_indexes/mpa_vOct22_CHOCOPhlAnSGB_202212_bt2.tar
-    tar -xvf mpa_vOct22_CHOCOPhlAnSGB_202212_bt2.tar
-    rm mpa_vOct22_CHOCOPhlAnSGB_202212_bt2.tar
+    metaphlan --install --bowtie2db --nproc {threads} {output}
+    # Option to do it manually if --install doesn't seem to work
+    # cd {output}
+    # wget http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/bowtie2_indexes/mpa_vOct22_CHOCOPhlAnSGB_202212_bt2.tar
+    # tar -xvf mpa_vOct22_CHOCOPhlAnSGB_202212_bt2.tar
+    # rm mpa_vOct22_CHOCOPhlAnSGB_202212_bt2.tar
     """
 
 
 rule get_biobakery_chocophlan_db:
+  """
+  This rule installs the ChocoPhlAn database used for HUMAnN.
+  """
   output:
     directory(config['chocophlan_db'])
   resources:
@@ -503,6 +510,9 @@ rule get_biobakery_chocophlan_db:
     """
 
 rule get_biobakery_uniref_db:
+  """
+  This rule installs the UniRef database used for HUMAnN.
+  """
   output:
     directory(config['uniref_db'])
   resources:
@@ -520,6 +530,11 @@ rule get_biobakery_uniref_db:
 
 
 rule get_utility_mapping_db:
+  """
+  This rule installs the utility mapping database used for HUMAnN.
+  This database is used to group/rename UniRef protein families to other
+  versions, such as Enzyme Commission numbers, KEGG Orthologies, etc.
+  """
   output:
     directory(config['utility_mapping_db'])
   resources:
@@ -537,6 +552,9 @@ rule get_utility_mapping_db:
 
 
 rule concat_nonhost_reads:
+  """
+  This rule installs concatenates forward and reverse reads into the same file for HUMAnN.
+  """
   input:
     FWD=pj(f"{trim_trunc_path}.nonhost",
             "{sample}.R1.fq.gz"),
@@ -561,6 +579,9 @@ rule concat_nonhost_reads:
 
 
 rule run_humann_nonhost:
+  """
+  This rule runs the HUMAnN pipeline, including MetaPhlAn.
+  """
   input:
     METAPHLAN_DB=config['metaphlan_bowtie_db'],
     CHOCO_DB=config['chocophlan_db'],
@@ -598,6 +619,11 @@ rule run_humann_nonhost:
 
 
 rule aggregate_humann_outs_nonhost:
+  """
+  This rule aggregates the HUMAnN and MetaPhlAn outputs across all samples into tsv files with all samples.
+  It also groups protein families and renames them based on Metacyc RXNs, KOs, KEGG Modules, KEGG Pathways, 
+  GO terms, EGGNOG, and PFAMs.
+  """
   input:
     MAPPING_DB=config['utility_mapping_db'],
     PATHABUND=expand(pj(f"{trim_trunc_path}.nonhost.humann",
@@ -695,6 +721,9 @@ rule aggregate_humann_outs_nonhost:
     """
 
 rule taxa_barplot:
+  """
+  This rule runs a .Rmd file that creates microshaded taxa barplots using MetaPhlan taxonomic profiles. 
+  """
   input:
     pj(f"{trim_trunc_path}.nonhost.humann", 
                 "all_bugs_list.tsv")
@@ -722,6 +751,12 @@ rule taxa_barplot:
 
 
 rule func_barplot_rxn:
+  """
+  This rule runs a .Rmd file that creates microshaded functional profile barplots 
+  using HUMAnN functional profiles. Specifically, it uses Enzyme Commission numbers from 
+  the Metacyc RXN number grouped protein families to show the hierarchical breakdown of
+  enzyme classes in your sample.
+  """
   input:
     GENEFAMS_RXN=pj(f"{trim_trunc_path}.nonhost.humann", 
                     "all_genefamilies_rxn_named.tsv")
@@ -749,6 +784,11 @@ rule func_barplot_rxn:
 
 
 rule calc_gut_metabolic_modules:
+  """
+  This rule runs a .Rmd file that groups the KOs from HUMAnN into gut metabolic modules 
+  with biologically relevant functions. Abundances are summed within modules and then
+  written to a .csv file. 
+  """
   input:
     GENEFAMS_KO=pj(f"{trim_trunc_path}.nonhost.humann", 
                     "all_genefamilies_ko_named.tsv")

@@ -23,6 +23,9 @@ HOSTILE_DB_PATH = hostile_db_to_path(HOSTILE_DB_NAME,
 trim_trunc_path = f"{config['PROJ']}.f{config['trim_fwd']}.{config['trunc_fwd']}.r{config['trim_rev']}.{config['trunc_rev']}"
 
 rule all:
+"""
+This contains most files needed for endpoints to be reached.
+"""
   input: 
     # Symlinked files
     expand(pj(PROJ,
@@ -122,6 +125,9 @@ rule all:
 
 
 rule symlink_fastqs:
+  """
+  Creates a symbolic link to the fastq files, so files can easily be accessed.
+  """
   output:
     FWD=pj(PROJ,"{sample}.R1.fq.gz"),
     REV=pj(PROJ,"{sample}.R2.fq.gz")
@@ -758,7 +764,7 @@ rule get_kraken_db:
   resources:
     partition=get_partition("short", config, "get_kraken_db"),
     mem_mb=get_mem(int(96*1000), config, "get_kraken_db"), # MB
-    runtime=get_runtime(int(23*60), config, "get_kraken_db"), # min # TODO: could scale down?
+    runtime=get_runtime(int(23*60), config, "get_kraken_db"), # min 
     slurm=get_slurm_extra(config, "get_kraken_db")
   threads: get_threads(32, config, "get_kraken_db")
   conda: "conda_envs/kraken.yaml"
@@ -785,7 +791,7 @@ rule run_kraken:
               "{sample}.kreport2")
   resources:
     partition=get_partition("short", config, "run_kraken"),
-    mem_mb=get_mem(int(84*1000), config, "run_kraken"), # MB maybe 10GB/thread? TODO: CHECK THIS
+    mem_mb=get_mem(int(84*1000), config, "run_kraken"), # MB 
     runtime=get_runtime(int(2*60), config, "run_kraken"), # min 
     slurm=get_slurm_extra(config, "run_kraken")
   threads: get_threads(16, config, "run_kraken")

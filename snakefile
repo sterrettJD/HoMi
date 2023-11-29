@@ -825,6 +825,9 @@ rule calc_gut_metabolic_modules:
 kraken_db_loc = get_kraken_db_loc(default=pj("data", "kraken2_db"), config=config)
 
 rule get_kraken_db:
+  """
+  This rule downloads and builds the Kraken2 database for taxonomic classification.
+  """
   output: 
     HASH=pj(kraken_db_loc, "hash.k2d"),
     OPTS=pj(kraken_db_loc, "opts.k2d"),
@@ -848,6 +851,9 @@ rule get_kraken_db:
 
 
 rule run_kraken:
+  """
+  This rule runs Kraken2 for each sample.
+  """
   input:
     FWD=pj(f"{trim_trunc_path}.nonhost",
             "{sample}.R1.fq.gz"),
@@ -879,6 +885,9 @@ rule run_kraken:
     """
 
 rule build_bracken:
+  """
+  This rule downloads and builds the Bracken database for taxonomic abundance estimation.
+  """
   input:
     pj(kraken_db_loc, "hash.k2d")
   output:
@@ -900,6 +909,9 @@ rule build_bracken:
 
 
 rule run_bracken:
+  """
+  This rule runs Bracken to estimate taxonomic abundance for each sample.
+  """
   input:
     KRAKEN_HASH=pj(kraken_db_loc, "hash.k2d"),
     LMERS=pj(kraken_db_loc, "database150mers.kraken"),
@@ -925,6 +937,9 @@ rule run_bracken:
 
 
 rule aggregate_bracken:
+  """
+  This rule aggregates Bracken outputs across samples.
+  """
   input:
     expand(pj(f"{trim_trunc_path}.nonhost.kraken", 
               "{sample}.bracken"),
@@ -962,6 +977,9 @@ rule aggregate_bracken:
 ### Estimate nonhost coverage ###
 
 rule nonpareil:
+  """
+  This rule estimates coverage of the nonhost reads based on kmer redundancy.
+  """
   input:
     # Only with forward reads for now. 
     # Could also run separately with reverse, but not sure there's much reason to do so.
@@ -998,6 +1016,9 @@ rule nonpareil:
 
 
 rule nonpareil_curves:
+  """
+  This rule runs a .Rmd file to visualize coverage of the nonhost fraction across samples.
+  """
   input:
     expand(pj(f"{trim_trunc_path}.nonhost.nonpareil", "{sample}.npo"),
           sample=SAMPLES)
@@ -1028,6 +1049,9 @@ rule nonpareil_curves:
 
 # pull human genome
 rule pull_host_genome:
+  """
+  This rule downloads the human GRCh38 reference genome and annotation.
+  """
   output:
     GENOME=config['host_ref_fna'], 
     ANNOTATION=config['host_ref_gtf']
@@ -1057,6 +1081,9 @@ rule pull_host_genome:
 
 # make bbmap index for human genome
 rule build_human_genome_index_bbmap:
+  """
+  This rule builds a Bbmap index for the host genome.
+  """
   input:
     config['host_ref_fna']
   output:
@@ -1078,6 +1105,9 @@ rule build_human_genome_index_bbmap:
 
 # Map to human genome
 rule bbmap_host:
+  """
+  This rule maps reads to the host genome using Bbmap and compresses SAM files to BAM files.
+  """
   input:
       REF=pj(f"{trim_trunc_path}.host", "ref/"),
       FWD=pj(trim_trunc_path,
@@ -1111,6 +1141,10 @@ rule bbmap_host:
     """
 
 rule validate_bams:
+  """
+  This rule checks if BAM files are valid. 
+  It doesn't stop the pipeline if they aren't but you can check these files manually.
+  """
     input:
         BAM=pj(f"{trim_trunc_path}.host", "{sample}.bam")
     output:
@@ -1129,24 +1163,27 @@ rule validate_bams:
 
 # Assess classification of mapped reads
 rule generate_feature_counts:
-    input:
-        ANNOTATION=config['host_ref_gtf'],
-        VALID=expand(pj(f"{trim_trunc_path}.host", "{sample}_bam_valid.tsv"), 
-                     sample=HOST_MAP_SAMPLES),
-        BAM=expand(pj(f"{trim_trunc_path}.host", "{sample}.bam"), 
-                   sample=HOST_MAP_SAMPLES)
-    output:
-        COUNTS=pj(f"{trim_trunc_path}.host", "counts.txt"),
-        SUMMARY=pj(f"{trim_trunc_path}.host", "counts.txt.summary")
-    conda: "conda_envs/featureCounts.yaml"
-    resources:
-        partition=get_partition("short", config, "generate_feature_counts"),
-        mem_mb=get_mem(int(8*1000), config, "generate_feature_counts"), # MB, or 8 GB
-        runtime=get_runtime(int(2*60), config, "generate_feature_counts"), # min, or 2 hrs
-        slurm=get_slurm_extra(config, "generate_feature_counts")
-    threads: get_threads(16, config, "generate_feature_counts")
-    shell:
-        """
-        featureCounts -T {threads} -p --countReadPairs \
-        -t exon -g gene_id -a {input.ANNOTATION} -o {output.COUNTS} {input.BAM}
-        """
+  """
+  This rule uses featureCounts to count host transcripts.
+  """
+  input:
+    ANNOTATION=config['host_ref_gtf'],
+    VALID=expand(pj(f"{trim_trunc_path}.host", "{sample}_bam_valid.tsv"), 
+                  sample=HOST_MAP_SAMPLES),
+    BAM=expand(pj(f"{trim_trunc_path}.host", "{sample}.bam"), 
+                sample=HOST_MAP_SAMPLES)
+  output:
+    COUNTS=pj(f"{trim_trunc_path}.host", "counts.txt"),
+    SUMMARY=pj(f"{trim_trunc_path}.host", "counts.txt.summary")
+  conda: "conda_envs/featureCounts.yaml"
+  resources:
+    partition=get_partition("short", config, "generate_feature_counts"),
+    mem_mb=get_mem(int(8*1000), config, "generate_feature_counts"), # MB, or 8 GB
+    runtime=get_runtime(int(2*60), config, "generate_feature_counts"), # min, or 2 hrs
+    slurm=get_slurm_extra(config, "generate_feature_counts")
+  threads: get_threads(16, config, "generate_feature_counts")
+  shell:
+    """
+    featureCounts -T {threads} -p --countReadPairs \
+    -t exon -g gene_id -a {input.ANNOTATION} -o {output.COUNTS} {input.BAM}
+    """

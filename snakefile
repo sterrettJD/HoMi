@@ -27,54 +27,15 @@ rule all:
   This contains most files needed for endpoints to be reached.
   """
   input: 
-    # Symlinked files
-    expand(pj(PROJ,
-              "{sample}.R1.fq.gz"),
-           sample=SAMPLES),
-    expand(pj(PROJ,
-              "{sample}.R2.fq.gz"),
-           sample=SAMPLES),
-
-    # first pass fastQC
-    expand(pj(f"{PROJ}.noadpt.fastqc",
-              "{sample}.trimmed.{read}_fastqc.zip"),
-           sample=SAMPLES, read=READS),
-
     # first pass multiQC
     pj(f"{PROJ}.noadpt.fastqc",
         "multiqc_report"),
-
-    # second pass fastQC
-    expand(pj(f"{trim_trunc_path}.fastqc",
-              "{sample}.{read}_fastqc.zip"),
-           sample=SAMPLES, read=READS),
 
     # second pass multiQC
     pj(f"{trim_trunc_path}.fastqc",
         "multiqc_report"),
 
-    # nonhost reads
-    expand(pj(f"{trim_trunc_path}.nonhost",
-            "{sample}.R1.fq.gz"),
-          sample=SAMPLES),
-    expand(pj(f"{trim_trunc_path}.nonhost",
-            "{sample}.R2.fq.gz"),
-          sample=SAMPLES),
-
     # HUMAnN pipeline
-    expand(pj(f"{trim_trunc_path}.nonhost.humann",
-                "{sample}", "{sample}_pathabundance.tsv"),
-            sample=SAMPLES),
-    expand(pj(f"{trim_trunc_path}.nonhost.humann",
-                "{sample}", "{sample}_pathcoverage.tsv"),
-            sample=SAMPLES),
-    expand(pj(f"{trim_trunc_path}.nonhost.humann",
-                "{sample}", "{sample}_genefamilies.tsv"),
-            sample=SAMPLES),
-    expand(pj(f"{trim_trunc_path}.nonhost.humann",
-                "{sample}", "{sample}_humann_temp", 
-                "{sample}_metaphlan_bugs_list.tsv"),
-            sample=SAMPLES),
     
     pj(f"{trim_trunc_path}.nonhost.humann", 
                 "all_pathabundance.tsv"),
@@ -96,29 +57,12 @@ rule all:
     pj(f"{trim_trunc_path}.nonhost.humann", "HUMAnN_microshades.html"),
 
     # Nonhost coverage (via nonpareil)
-    expand(pj(f"{trim_trunc_path}.nonhost.nonpareil", "{sample}.npl"),
-            sample=SAMPLES),
-    expand(pj(f"{trim_trunc_path}.nonhost.nonpareil", "{sample}.npo"),
-            sample=SAMPLES),
-    expand(pj(f"{trim_trunc_path}.nonhost.nonpareil", "{sample}.npa"),
-            sample=SAMPLES),
     pj(f"{trim_trunc_path}.nonhost.nonpareil", "nonpareil_curves.html"),
 
     # Host gene counts
     pj(f"{trim_trunc_path}.host", "counts.txt"),
     pj(f"{trim_trunc_path}.host", "counts.txt.summary"),
 
-    # Kraken2 out
-    expand(pj(f"{trim_trunc_path}.nonhost.kraken", 
-              "{sample}.kraken.txt"),
-            sample=SAMPLES),
-    expand(pj(f"{trim_trunc_path}.nonhost.kraken", 
-              "{sample}.kreport2"),
-            sample=SAMPLES),
-    # Bracken out
-    expand(pj(f"{trim_trunc_path}.nonhost.kraken", 
-              "{sample}.bracken"),
-           sample=SAMPLES),
     # Bracken combined out
     pj(f"{trim_trunc_path}.nonhost.kraken", "Combined-taxonomy.tsv"),
     pj(f"{trim_trunc_path}.nonhost.humann", "Gut_metabolic_modules.csv")

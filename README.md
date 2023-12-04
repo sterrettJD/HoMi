@@ -1,6 +1,9 @@
 # HoMi
 Host-microbiome dual transcriptome pipeline
 
+![Readthedocs](https://readthedocs.org/projects/homi-pipeline/badge/)
+![Build](https://github.com/sterrettJD/HoMi/actions/workflows/pytest.yaml/badge.svg)
+
 ## Installation
 ```
 conda create -n HoMi python

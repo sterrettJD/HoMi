@@ -44,14 +44,7 @@ jobs:
       with:
         name: dag
         path: dag.svg
-
-  deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-
+    
     - name: Make figures directory
       run: mkdir -p figures
     

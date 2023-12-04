@@ -38,3 +38,9 @@ jobs:
 
     - name: Make SVG
       run: dot dag.dot -Tsvg > dag.svg
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: dag
+        path: dag.svg

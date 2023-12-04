@@ -68,6 +68,9 @@ Sometimes, when snakemake unexpectedly exits (e.g., due to a server connection t
     - HoMi will by default download the GRCh38 human reference genome, but you can provide an alternative genome (fna + gtf) if it's already downloaded
     - BBmap is used to map the reads, and featureCounts is used to generate a read count table
 
+### DAG
+![DAG](https://github.com/sterrettJD/HoMi/actions/workflows/dag.yaml/dag.svg)
+
 
 ## Using this pipeline for microbe-only samples 
 To use this pipeline for metagenomics/metatranscriptomics, you can add an (optional) column in the metadata, titled `map_host`. If `map_host` doesn't exist in your metadata, the entire pipeline (including mapping to the host genome) will be performed for all samples. If `map_host` exists, it should only contain boolean values (True/False), and the host genome will only be mapped for samples where `map_host` is True. This will still run host decontamination before microbial taxonomic/functional profiling.

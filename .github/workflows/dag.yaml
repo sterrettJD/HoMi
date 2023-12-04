@@ -48,4 +48,4 @@ jobs:
         commit_message: upload DAG from workflow
         commit_options: '--no-verify --signoff'
         file_pattern: 'figures/dag.svg'
-        skip_dirty_check: true  
+        skip_dirty_check: false  

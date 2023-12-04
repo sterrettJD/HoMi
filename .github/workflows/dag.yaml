@@ -1,0 +1,43 @@
+# This workflow builds the HoMi snakefile DAG and colors 
+name: DAG
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11"]
+  test:
+    name: Test on node ${{ matrix.node-version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Graphviz
+      uses: ts-graphviz/setup-graphviz@v1
+
+    - name: Display Python version
+      run: python -c "import sys; print(sys.version)"
+      
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install snakemake
+    
+    - name: Build DAG
+      run: snakemake --configfile tests/example_config.yaml --dag > dag.dot
+
+    - name: Make SVG
+      run: dot dag.dot -Tsvg > dag.svg

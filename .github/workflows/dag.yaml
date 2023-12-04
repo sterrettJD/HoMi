@@ -35,21 +35,17 @@ jobs:
     
     - name: Build DAG
       run: snakemake --configfile tests/example_config.yaml --dag > dag.dot
-
-    - name: Make SVG
-      run: dot dag.dot -Tsvg > dag.svg
-
-    - name: Upload artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: dag
-        path: dag.svg
     
     - name: Make figures directory
       run: mkdir -p figures
-    
-    - name: Download artifact
-      uses: actions/download-artifact@v2
+
+    - name: Make SVG
+      run: dot dag.dot -Tsvg > figures/dag.svg
+
+    - name: add figure to repo
+      uses: stefanzweifel/git-auto-commit-action@v5
       with:
-        name: dag
-        path: figures/
+        commit_message: upload DAG from workflow
+        commit_options: '--no-verify --signoff'
+        file_pattern: 'figures/dag.svg'
+        skip_dirty_check: true  

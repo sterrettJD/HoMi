@@ -16,12 +16,9 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.11"]
-  test:
-    name: Test on node ${{ matrix.node-version }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
+
+    name: DAG
+
     steps:
     - uses: actions/checkout@v3
     

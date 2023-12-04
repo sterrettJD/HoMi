@@ -72,7 +72,7 @@ Sometimes, when snakemake unexpectedly exits (e.g., due to a server connection t
     - BBmap is used to map the reads, and featureCounts is used to generate a read count table
 
 ### DAG
-![DAG](https://github.com/sterrettJD/HoMi/actions/workflows/dag.yaml/dag.svg)
+![DAG](figures/dag.svg)
 
 
 ## Using this pipeline for microbe-only samples 

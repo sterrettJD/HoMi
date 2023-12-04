@@ -4,8 +4,12 @@ name: DAG
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - 'snakefile'
   pull_request:
     branches: [ "main" ]
+    paths:
+      - 'snakefile'
 
 permissions:
   contents: write

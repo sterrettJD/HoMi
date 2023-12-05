@@ -119,7 +119,7 @@ def main():
         snakepath = make_prebuilt_conda_snakefile(snakepath)
 
     if args.unlock == True:
-        completed_unlock = unlock_snakemake_directory()
+        completed_unlock = unlock_snakemake_directory(snakepath, args)
     
     command = construct_snakemake_command(snakepath, args)
     completed_process = subprocess.run(command)

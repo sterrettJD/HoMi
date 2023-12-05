@@ -149,7 +149,7 @@ rule remove_adapters:
   shell:
     """
     mkdir -p {params.proj}.noadpt/{wildcards.sample}
-    trimmomatic PE -threads 8 \
+    trimmomatic PE -threads {threads} \
         -trimlog {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimlog \
         -summary {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.summary \
         -validatePairs {input.FORWARD} {input.REVERSE} \

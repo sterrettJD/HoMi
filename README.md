@@ -31,6 +31,9 @@ If running HoMi on a cluster with SLURM, please setup a [Snakemake SLURM profile
 ### Conda environment building
 If conda environments have already been built, and you'd like snakemake to not build them, pass the argument `--conda_prebuilt`. This is particularly useful if running HoMi on a system with ARM architecture, like a Mac with M1/M2 chip. 
 
+### Working directory
+The working directory for HoMi can be set using the `--workdir` flag. This will set the "home base" for any relative filepaths within HoMi or your config, but it will not affect the filepath of the config or profile provided to HoMi.
+
 ### Running with example dataset
 ```
 # Create the mock community (too big for github)

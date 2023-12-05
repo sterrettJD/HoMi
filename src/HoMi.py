@@ -6,21 +6,31 @@ from re import findall
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("config", help="path config file for pipeline (yaml)")
+    parser.add_argument("config", 
+                        help="path to YAML-formatted config file for pipeline")
     parser.add_argument("-p", "--profile", 
-                        help="path to a snakemake profile, such as a profile to submit jobs to SLURM",
+                        help="Path to a snakemake profile, such as a profile to submit jobs to SLURM",
                         default=None)
-    parser.add_argument("-c", "--cores", help="Number of cores for snakemake to use",
-                        type=int, default=None)
+    parser.add_argument("-c", "--cores", 
+                        help="Number of cores for snakemake to use",
+                        type=int, 
+                        default=None)
     parser.add_argument("--conda_prebuilt", 
                         action="store_true",
-                        help="All conda environments have been prebuilt, snakemake should not build them")
-    parser.add_argument("--unlock", action="store_true",
+                        help="Pass this if all conda environments have been prebuilt, \
+                              and snakemake should not build them")
+    parser.add_argument("--unlock", 
+                        action="store_true",
                         help="Pass this to unlock a snakemake directory before running the pipeline.\
                               This is useful if the pipeline failed and you need to rerun it.")
+    parser.add_argument("--workdir",
+                        help="Directory in which the work should be performed. \
+                              Any relative filepaths used in HoMi will start here.",
+                        default=None)
     parser.add_argument("--snakemake_extra",
                         help="Extra parameters to pass snakemake",
                         default=None)
+
     return parser.parse_args()
 
 
@@ -76,6 +86,10 @@ def construct_snakemake_command(snakepath, args):
     if args.cores is not None:
         command.append("--cores")
         command.append(str(args.cores))
+    
+    if args.workdir is not None:
+        command.append("--directory")
+        command.append(args.workdir)
     
     if args.snakemake_extra is not None:
         command.extend(args.snakemake_extra.split())

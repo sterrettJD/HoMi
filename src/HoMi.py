@@ -97,6 +97,19 @@ def construct_snakemake_command(snakepath, args):
     return command
 
 
+def unlock_snakemake_directory(snakepath, args):
+    command = ["snakemake", 
+                "-s", snakepath,
+                "--configfile", args.config,
+                "--unlock"]
+    
+    if args.workdir is not None:
+        command.append("--directory")
+        command.append(args.workdir)
+
+    return subprocess.run(command)
+    
+
 def main():
     args = get_args()
 
@@ -106,10 +119,7 @@ def main():
         snakepath = make_prebuilt_conda_snakefile(snakepath)
 
     if args.unlock == True:
-        subprocess.run(["snakemake", 
-                        "-s", snakepath,
-                        "--configfile", args.config,
-                        "--unlock"])
+        completed_unlock = unlock_snakemake_directory()
     
     command = construct_snakemake_command(snakepath, args)
     completed_process = subprocess.run(command)

@@ -18,11 +18,6 @@ def get_args():
 
 
 def get_cookiecutter_slurm_profile(output_dir):
-    print("Provide the following inputs to setup your cluster profile.\n")
-    print("All default options can be used, EXCEPT:")
-    print("****You MUST answer `True` to `use_conda`.****")
-    print("****Please leave `profile_name` as `slurm`.**** \n") 
-
     cookiecutter("gh:Snakemake-Profiles/slurm", output_dir=output_dir, no_input=True)
 
 
@@ -60,16 +55,21 @@ def write_new_config(filepath, new_contents):
         file.write(new_contents)
 
 
-def set_use_conda_true(output_dir):
-    config_path = os.path.join(output_dir, "slurm", "config.yaml")
+def set_use_conda_true(config_contents):
+    return config_contents.replace("use-conda: \"False\"", 
+                                   "use-conda: \"True\"")
     
+
+def update_HoMi_reqs_in_config(output_dir):
+    config_path = os.path.join(output_dir, "slurm", "config.yaml")
     with open(config_path, 'r') as file:
         content = file.read()
 
-    new = content.replace("use-conda: \"False\"", 
-                          "use-conda: \"True\"")
-    
-    write_new_config(config_path, new)
+    new_contents = set_use_conda_true(content)
+
+
+    write_new_config(config_path, new_contents)
+
 
 
 def check_use_conda_slurm(output_dir):
@@ -117,7 +117,7 @@ def main():
 
     # Check that parameters that need to be set a certain way are set that way
     check_profile_named_slurm(output_dir=args.output_dir)
-    set_use_conda_true(output_dir=args.output_dir)
+    update_HoMi_reqs_in_config(output_dir=args.output_dir)
     check_use_conda_slurm(output_dir=args.output_dir)
 
     # Setup for cluster that doesn't have hyperthreading enabled

@@ -60,16 +60,20 @@ def set_use_conda_true(config_contents):
                                    "use-conda: \"True\"")
     
 
+def set_print_shell_true(config_contents):
+    return config_contents.replace("printshellcmds: \"False\"", 
+                                   "printshellcmds: \"True\"")
+
+
 def update_HoMi_reqs_in_config(output_dir):
     config_path = os.path.join(output_dir, "slurm", "config.yaml")
     with open(config_path, 'r') as file:
         content = file.read()
 
-    new_contents = set_use_conda_true(content)
+    with_conda = set_use_conda_true(content)
+    with_conda_and_shell = set_print_shell_true(with_conda)
 
-
-    write_new_config(config_path, new_contents)
-
+    write_new_config(config_path, with_conda_and_shell)
 
 
 def check_use_conda_slurm(output_dir):

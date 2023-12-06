@@ -23,7 +23,7 @@ def get_cookiecutter_slurm_profile(output_dir):
     print("****You MUST answer `True` to `use_conda`.****")
     print("****Please leave `profile_name` as `slurm`.**** \n") 
 
-    cookiecutter("gh:Snakemake-Profiles/slurm", output_dir=output_dir)
+    cookiecutter("gh:Snakemake-Profiles/slurm", output_dir=output_dir, no_input=True)
 
 
 def check_profile_named_slurm(output_dir):

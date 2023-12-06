@@ -55,6 +55,23 @@ def check_profile_named_slurm(output_dir):
                              """)
 
 
+def write_new_config(filepath, new_contents):
+    with open(filepath, 'w') as file:
+        file.write(new_contents)
+
+
+def set_use_conda_true(output_dir):
+    config_path = os.path.join(output_dir, "slurm", "config.yaml")
+    
+    with open(config_path, 'r') as file:
+        content = file.read()
+
+    new = content.replace("use-conda: \"False\"", 
+                          "use-conda: \"True\"")
+    
+    write_new_config(config_path, new)
+
+
 def check_use_conda_slurm(output_dir):
     config_path = os.path.join(output_dir, "slurm", "config.yaml")
 
@@ -100,6 +117,7 @@ def main():
 
     # Check that parameters that need to be set a certain way are set that way
     check_profile_named_slurm(output_dir=args.output_dir)
+    set_use_conda_true(output_dir=args.output_dir)
     check_use_conda_slurm(output_dir=args.output_dir)
 
     # Setup for cluster that doesn't have hyperthreading enabled

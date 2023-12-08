@@ -54,7 +54,6 @@ def read_counts2tpm(read_counts, gene_lengths):
     :param read_counts: a dataFrame contains the result coming from featureCounts
     :param gene_lengths: a list containing gene lengths (in the same order as read_counts)
     :return: TPM
-    modified from https://gist.github.com/slowkow/c6ab0348747f86e2748b?permalink_comment_id=3051443#gistcomment-3051443
     """
 
     rate = read_counts.div(gene_lengths, axis=0)

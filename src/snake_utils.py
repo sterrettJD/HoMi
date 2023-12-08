@@ -175,3 +175,14 @@ def get_kraken_db_loc(default, config):
     if loc is not None:
         return loc
     return default
+
+def get_tpm_converter_path():
+    path_2_script = path.dirname(__file__)
+    converter = path.join(path_2_script, "rule_utils", "counts_to_tpm.py")
+    # remove ".."
+    converter = path.normpath(converter)
+
+    if path.exists(converter):
+        return converter
+    else:
+        raise FileNotFoundError(f"TPM conversion script was not found at {converter}.")

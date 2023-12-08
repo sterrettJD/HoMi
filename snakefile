@@ -1,7 +1,7 @@
 import pandas as pd
 from os.path import join as pj
 from os.path import split
-from src.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil_rmd_path, get_nonpareil_html_path, get_agg_script_path, get_mphlan_conv_script_path, get_taxa_barplot_rmd_path, get_sam2bam_path, get_func_barplot_rmd_path, get_partition, get_mem, get_runtime, get_threads, get_host_mapping_samples, get_slurm_extra, get_gmm_rmd_path, get_kraken_db_loc
+from src.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil_rmd_path, get_nonpareil_html_path, get_agg_script_path, get_mphlan_conv_script_path, get_taxa_barplot_rmd_path, get_sam2bam_path, get_func_barplot_rmd_path, get_partition, get_mem, get_runtime, get_threads, get_host_mapping_samples, get_slurm_extra, get_gmm_rmd_path, get_kraken_db_loc, get_tpm_converter_path
 
 
 
@@ -62,6 +62,7 @@ rule all:
     # Host gene counts
     pj(f"{trim_trunc_path}.host", "counts.txt"),
     pj(f"{trim_trunc_path}.host", "counts.txt.summary"),
+    pj(f"{trim_trunc_path}.host", "counts_tpm.tsv"),
 
     # Bracken combined out
     pj(f"{trim_trunc_path}.nonhost.kraken", "Combined-taxonomy.tsv"),
@@ -1136,4 +1137,27 @@ rule generate_feature_counts:
     """
     featureCounts -T {threads} -p --countReadPairs \
     -t exon -g gene_id -a {input.ANNOTATION} -o {output.COUNTS} {input.BAM}
+    """
+
+
+rule feature_counts_to_tpm:
+  """
+  This rule converts featureCounts output to transcripts per million (TPM).
+  """
+  input:
+    COUNTS=pj(f"{trim_trunc_path}.host", "counts.txt")
+  output:
+    TPM=pj(f"{trim_trunc_path}.host", "counts_tpm.tsv")
+  conda: "conda_envs/featureCounts.yaml"
+  resources:
+    partition=get_partition("short", config, "feature_counts_to_tpm"),
+    mem_mb=get_mem(int(2*1000), config, "feature_counts_to_tpm"), # MB, or 2 GB
+    runtime=get_runtime(int(0.25*60), config, "feature_counts_to_tpm"), # min, should need much less
+    slurm=get_slurm_extra(config, "feature_counts_to_tpm")
+  threads: get_threads(1, config, "feature_counts_to_tpm")
+  params:
+    converter_script=get_tpm_converter_path()
+  shell:
+    """
+    python {params.converter_script} {input.COUNTS} --output {output.TPM}
     """

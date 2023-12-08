@@ -24,7 +24,7 @@ def filter_readcounts_df(df, sample_name=None):
 
     colnames = result.columns
     dont_include = {"Geneid", "Chr", "Start", "End", "Strand", "Length"}
-    sample_names = list(set(colnames) - dont_include)
+    sample_names = [name not in dont_include for name in colnames]
     sample_reads = result.loc[:, sample_names].copy()
 
     return sample_reads
@@ -36,7 +36,16 @@ def get_gene_lengths(df, colname="Length"):
     :param df: a dataFrame contains the result coming from featureCounts
     :param colname: name of the column with gene lengths
     """
-    return df.loc[:, ['Length']]
+    return df[colname]
+
+
+def get_gene_names(df, colname="Geneid"):
+    """
+    gets gene lengths from a featureCounts-like dataframe
+    :param df: a dataFrame contains the result coming from featureCounts
+    :param colname: name of the column with gene names
+    """
+    return df[colname]
 
 
 def read_counts2tpm(read_counts, gene_lengths):
@@ -48,21 +57,29 @@ def read_counts2tpm(read_counts, gene_lengths):
     modified from https://gist.github.com/slowkow/c6ab0348747f86e2748b?permalink_comment_id=3051443#gistcomment-3051443
     """
 
-    rate = read_counts.values / gene_lengths.values
-    tpm = rate / np.sum(rate, axis=0).reshape(1, -1) * 1e6
+    rate = read_counts.div(gene_lengths, axis=0)
+    tpm = rate / np.sum(rate, axis=0) * 1e6
     return pd.DataFrame(data=tpm, columns=read_counts.columns)
+
+
+def convert_dataframe(raw_data):
+    """
+    Does all of the conversion, from raw data to tpm table with gene names
+    """
+    read_counts = filter_readcounts_df(raw_data)
+    gene_lengths = get_gene_lengths(raw_data)
+
+    tpm = read_counts2tpm(read_counts, gene_lengths)
+    tpm.index = get_gene_names(raw_data)
+    return tpm
 
 
 def main():
     args = get_args()
-    read_counts = filter_readcounts_df(args.readcounts)
-    gene_lengths = get_gene_lengths(args.readcounts)
-
-    tpm = read_counts2tpm(read_counts, gene_lengths)
-    tpm.index = read_counts.index
-
+    raw_data = pd.read_csv(args.readcounts)
+    tpm = convert_dataframe(raw_data)
     tpm.to_csv(args.output, sep="\t")
+
 
 if __name__=="__main__":
     main()
-

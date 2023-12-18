@@ -1135,8 +1135,15 @@ rule generate_feature_counts:
   threads: get_threads(16, config, "generate_feature_counts")
   shell:
     """
-    featureCounts -T {threads} -p --countReadPairs \
-    -t exon -g gene_id -a {input.ANNOTATION} -o {output.COUNTS} {input.BAM}
+    if [ -z {input.BAM} ]
+    # if there is no input (no host transcriptome mapping), just touch the files
+    then
+      touch {output.COUNTS}
+      touch {output.SUMMARY}
+    else
+      featureCounts -T {threads} -p --countReadPairs \
+      -t exon -g gene_id -a {input.ANNOTATION} -o {output.COUNTS} {input.BAM}
+    fi
     """
 
 

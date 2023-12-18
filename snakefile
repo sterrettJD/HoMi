@@ -1155,7 +1155,7 @@ rule feature_counts_to_tpm:
     COUNTS=pj(f"{trim_trunc_path}.host", "counts.txt")
   output:
     TPM=pj(f"{trim_trunc_path}.host", "counts_tpm.tsv")
-  conda: "conda_envs/featureCounts.yaml"
+  conda: "conda_envs/humann.yaml"
   resources:
     partition=get_partition("short", config, "feature_counts_to_tpm"),
     mem_mb=get_mem(int(2*1000), config, "feature_counts_to_tpm"), # MB, or 2 GB

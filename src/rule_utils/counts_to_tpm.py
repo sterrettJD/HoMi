@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import argparse
+from pathlib import Path
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -76,8 +77,13 @@ def convert_dataframe(raw_data):
 def main():
     args = get_args()
     raw_data = pd.read_csv(args.readcounts)
-    tpm = convert_dataframe(raw_data)
-    tpm.to_csv(args.output, sep="\t")
+    try:
+        tpm = convert_dataframe(raw_data)
+        tpm.to_csv(args.output, sep="\t")
+    # If it is an empty file, just touch the output
+    except pd.errors.EmptyDataError:
+        print(f"{args.readcounts} is an EMPTY file. Creating EMPTY output at {args.output}")
+        Path(args.output).touch()    
 
 
 if __name__=="__main__":

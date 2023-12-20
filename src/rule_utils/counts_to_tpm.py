@@ -76,14 +76,14 @@ def convert_dataframe(raw_data):
 
 def main():
     args = get_args()
-    raw_data = pd.read_csv(args.readcounts)
     
     # If it is an empty file, just touch the output 
     if (path.isfile(args.readcounts) and path.getsize(args.readcounts) == 0):
         print(f"{args.readcounts} is an EMPTY file. Creating EMPTY output at {args.output}")
         Path(args.output).touch()  
         return
-    
+
+    raw_data = pd.read_csv(args.readcounts)    
     tpm = convert_dataframe(raw_data)
     tpm.to_csv(args.output, sep="\t")
 

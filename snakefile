@@ -1135,8 +1135,15 @@ rule generate_feature_counts:
   threads: get_threads(16, config, "generate_feature_counts")
   shell:
     """
-    featureCounts -T {threads} -p --countReadPairs \
-    -t exon -g gene_id -a {input.ANNOTATION} -o {output.COUNTS} {input.BAM}
+    if [ -z {input.BAM} ]
+    # if there is no input (no host transcriptome mapping), just touch the files
+    then
+      touch {output.COUNTS}
+      touch {output.SUMMARY}
+    else
+      featureCounts -T {threads} -p --countReadPairs \
+      -t exon -g gene_id -a {input.ANNOTATION} -o {output.COUNTS} {input.BAM}
+    fi
     """
 
 
@@ -1148,7 +1155,7 @@ rule feature_counts_to_tpm:
     COUNTS=pj(f"{trim_trunc_path}.host", "counts.txt")
   output:
     TPM=pj(f"{trim_trunc_path}.host", "counts_tpm.tsv")
-  conda: "conda_envs/featureCounts.yaml"
+  conda: "conda_envs/humann.yaml"
   resources:
     partition=get_partition("short", config, "feature_counts_to_tpm"),
     mem_mb=get_mem(int(2*1000), config, "feature_counts_to_tpm"), # MB, or 2 GB

@@ -1,8 +1,15 @@
 # HoMi
-Host-microbiome dual transcriptome pipeline
+HoMi is your friend for <ins>Ho</ins>st-<ins>Mi</ins>crobiome dual transcriptome data processing. 
 
 ![Readthedocs](https://readthedocs.org/projects/homi-pipeline/badge/)
 ![Build](https://github.com/sterrettJD/HoMi/actions/workflows/pytest.yaml/badge.svg)
+
+## What is HoMi?
+HoMi is a pipeline developed to streamline processing host-microbiome dual transcriptome data, but it can also work with solely metagenomic or metatranscriptomic data for host filtering and mapping-based processing to taxonomic and functional profiles.
+
+HoMi manages software environments and deployment on a Slurm-managed compute cluster, but it can also be run locally.
+
+HoMi is currently under development! Please feel free to raise an issue or contribute.
 
 ## Installation
 ```

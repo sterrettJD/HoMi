@@ -35,6 +35,8 @@ Metadata files should contain (at the minimum) a Sample column (named `Sample`),
 ### Using HoMi on a cluster
 If running HoMi on a cluster with SLURM, please setup a [Snakemake SLURM profile](https://github.com/Snakemake-Profiles/slurm). This will handle submitting batch jobs for each sample for each step of the pipeline. Then, pass this the name of this profile to `HoMi.py <config_file> --profile <profile_name>`, no cores need to be passed.
 
+`src/profile_setup.py` is a script that can be used to setup a cluster profile for Slurm integration, with options for clusters with and without hyperthreaded cores.
+
 ### Conda environment building
 If conda environments have already been built, and you'd like snakemake to not build them, pass the argument `--conda_prebuilt`. This is particularly useful if running HoMi on a system with ARM architecture, like a Mac with M1/M2 chip. 
 
@@ -97,7 +99,7 @@ sample_withhost,False
 
 ## Main repository contents
 - `snakefile` contains the bulk of the pipeline
-- `src/` contains `HoMi.py`, a wrapper controlling the behavior of the snakemake pipeline
+- `src/` contains `HoMi.py`, a wrapper controlling the behavior of the snakemake pipeline, as well as other auxilliary utility scripts.
 - `conda_envs/` contains the conda environments for each rule in the snakemake pipeline
 - `data/` contains relevant data, such as adapter sequences to be removed during trimming.
 

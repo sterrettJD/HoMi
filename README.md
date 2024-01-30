@@ -93,8 +93,8 @@ To use this pipeline for metagenomics/metatranscriptomics, you can add an (optio
 Example:
 ```
 Sample,map_host 
-sample_nohost,True 
-sample_withhost,False
+sample_nohost,False 
+sample_withhost,True
 ```
 
 ## Main repository contents

@@ -1,7 +1,7 @@
 import pandas as pd
 from os.path import join as pj
 from os.path import split
-from src.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil_rmd_path, get_nonpareil_html_path, get_agg_script_path, get_mphlan_conv_script_path, get_taxa_barplot_rmd_path, get_sam2bam_path, get_func_barplot_rmd_path, get_partition, get_mem, get_runtime, get_threads, get_host_mapping_samples, get_slurm_extra, get_gmm_rmd_path, get_kraken_db_loc, get_tpm_converter_path
+from src.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil_rmd_path, get_nonpareil_html_path, get_agg_script_path, get_mphlan_conv_script_path, get_taxa_barplot_rmd_path, get_sam2bam_path, get_func_barplot_rmd_path, get_partition, get_mem, get_runtime, get_threads, get_host_mapping_samples, get_slurm_extra, get_gmm_rmd_path, get_kraken_db_loc, get_tpm_converter_path, get_host_map_method
 
 
 
@@ -1028,8 +1028,8 @@ rule pull_host_genome:
     """
 
 
-# make bbmap index for host genome
-rule build_host_genome_index_bbmap:
+# make index for host genome mapping
+rule build_host_genome_index:
   """
   This rule builds an index for mapping the host genome.
   """
@@ -1037,26 +1037,31 @@ rule build_host_genome_index_bbmap:
     config['host_ref_fna']
   output:
     directory(pj(f"{trim_trunc_path}.host", "ref/"))
-  conda: "conda_envs/bbmap.yaml"
+  conda: f"conda_envs/{get_host_map_method(config).lower()}.yaml"
   resources:
-    partition=get_partition("short", config, "build_host_genome_index_bbmap"),
-    mem_mb=get_mem(int(30*1000), config, "build_host_genome_index_bbmap"), # MB, or 30 GB
-    runtime=get_runtime(int(2*60), config, "build_host_genome_index_bbmap"), # min, or 2 hrs
-    slurm=get_slurm_extra(config, "build_host_genome_index_bbmap")
-  threads: get_threads(8, config, "build_host_genome_index_bbmap")
+    partition=get_partition("short", config, "build_host_genome_index"),
+    mem_mb=get_mem(int(32*1000), config, "build_host_genome_index"), # MB, or 30 GB
+    runtime=get_runtime(int(2*60), config, "build_host_genome_index"), # min, or 2 hrs
+    slurm=get_slurm_extra(config, "build_host_genome_index")
+  threads: get_threads(8, config, "build_host_genome_index")
   params:
     ref_dir=f"{trim_trunc_path}.host"
+    method=get_host_map_method(config)
   shell:
     """
     mkdir -p {params.ref_dir}
-    bbmap.sh ref={input} path={params.ref_dir} threads={threads} -Xmx{resources.mem_mb}m
+    if [ "{method}" == "BBMap" ]; then
+        bbmap.sh ref={input} path={params.ref_dir} threads={threads} -Xmx{resources.mem_mb}m
+    elif [ "{method}" == "HISAT2" ]; then
+        hisat2-build -p {threads} {input} {output}
+    fi
     """
 
 
 # Map to host genome
 rule map_host:
   """
-  This rule maps reads to the host genome using Bbmap and compresses SAM files to BAM files.
+  This rule maps reads to the host genome and compresses SAM files to BAM files.
   """
   input:
       REF=pj(f"{trim_trunc_path}.host", "ref/"),

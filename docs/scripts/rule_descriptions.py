@@ -67,7 +67,11 @@ def get_conda_env(string):
     for substring in string.split("\n\n\n"):
         for match in splitter.finditer(substring):
             conda_env = match.group(3).split("/")[-1]
-            conda_url = f"""https://github.com/sterrettJD/HoMi/blob/main/conda_envs/{conda_env}"""
+            # If conda environment depends on user input, just link to the conda_envs directory
+            if "{" in conda_env:
+                conda_url = ""
+            else:
+                conda_url = f"""https://github.com/sterrettJD/HoMi/blob/main/conda_envs/{conda_env}"""
             shell_cmds[match.group(2)] = conda_url
 
     return shell_cmds

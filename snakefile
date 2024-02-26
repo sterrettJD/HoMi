@@ -1045,7 +1045,7 @@ rule build_host_genome_index:
     slurm=get_slurm_extra(config, "build_host_genome_index")
   threads: get_threads(8, config, "build_host_genome_index")
   params:
-    ref_dir=f"{trim_trunc_path}.host"
+    ref_dir=f"{trim_trunc_path}.host",
     method=get_host_map_method(config)
   shell:
     """
@@ -1053,7 +1053,7 @@ rule build_host_genome_index:
     if [ "{method}" == "BBMap" ]; then
         bbmap.sh ref={input} path={params.ref_dir} threads={threads} -Xmx{resources.mem_mb}m
     elif [ "{method}" == "HISAT2" ]; then
-        hisat2-build -p {threads} {input} {output}
+        hisat2-build {input} {output} -p {threads}
     fi
     """
 
@@ -1064,34 +1064,43 @@ rule map_host:
   This rule maps reads to the host genome and compresses SAM files to BAM files.
   """
   input:
-      REF=pj(f"{trim_trunc_path}.host", "ref/"),
-      FWD=pj(trim_trunc_path,
-            "{sample}.R1.fq"),
-      REV=pj(trim_trunc_path,
-            "{sample}.R2.fq")
+    REF=pj(f"{trim_trunc_path}.host", "ref/"),
+    FWD=pj(trim_trunc_path,
+          "{sample}.R1.fq"),
+    REV=pj(trim_trunc_path,
+          "{sample}.R2.fq")
   output:
     SAM=pj(f"{trim_trunc_path}.host", "{sample}.sam"),
     BAM=pj(f"{trim_trunc_path}.host", "{sample}.bam")
-  conda: "conda_envs/bbmap.yaml"
+  conda: f"conda_envs/{get_host_map_method(config).lower()}.yaml"
   resources:
-    partition=get_partition("short", config, "bbmap_host"),
-    mem_mb=get_mem(int(210*1000), config, "bbmap_host"), # MB, or 210 GB, can cut to ~100 for 16 threads
-    runtime=get_runtime(int(23.9*60), config, "bbmap_host"), # min, or almost 24 hrs
-    slurm=get_slurm_extra(config, "bbmap_host")
-  threads: get_threads(32, config, "bbmap_host")
+    partition=get_partition("short", config, "map_host"),
+    mem_mb=get_mem(int(210*1000), config, "map_host"), # MB, or 210 GB, can cut to ~100 for 16 threads
+    runtime=get_runtime(int(23.9*60), config, "map_host"), # min, or almost 24 hrs
+    slurm=get_slurm_extra(config, "map_host")
+  threads: get_threads(32, config, "map_host")
   params:
     out_dir=f"{trim_trunc_path}.host",
-    sam2bam_path=get_sam2bam_path()
+    sam2bam_path=get_sam2bam_path(),
+    method=get_host_map_method(config)
   shell:
     """
     cd {params.out_dir}
 
-    bbmap.sh in=../{input.FWD} in2=../{input.REV} \
-    out={wildcards.sample}.sam \
-    trimreaddescriptions=t \
-    threads={threads} \
-    -Xmx{resources.mem_mb}m
+    if [ "{method}" == "BBMap" ]; then
+      bbmap.sh in=../{input.FWD} in2=../{input.REV} \
+      out={wildcards.sample}.sam \
+      trimreaddescriptions=t \
+      threads={threads} \
+      -Xmx{resources.mem_mb}m
 
+    elif [ "{method}" == "HISAT2" ]; then
+        hisat2 -1 ../{input.FWD} -2 ../{input.REV} \
+        -S {wildcards.sample}.sam \
+        -x ref/ \
+        -p {threads} 
+    fi
+    
     bash {params.sam2bam_path} {wildcards.sample}.sam
     """
 

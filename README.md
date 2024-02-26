@@ -81,7 +81,7 @@ Sometimes, when snakemake unexpectedly exits (e.g., due to a server connection t
 
 8. Align all reads against the host genome
     - HoMi will by default download the GRCh38 human reference genome, but you can provide an alternative genome (fna + gtf) if it's already downloaded
-    - BBmap is used to map the reads, and featureCounts is used to generate a read count table
+    - Either BBmap or HISAT2 is used to map the reads (HISAT2 by default), and featureCounts is used to generate a read count table
 
 ### DAG
 ![DAG](figures/dag.svg)

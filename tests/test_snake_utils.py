@@ -53,3 +53,18 @@ def test_get_kraken_db_default():
 def test_get_kraken_db_nondefault():
     config = {"kraken_db": "NEW_location"}
     assert su.get_kraken_db_loc(default="data_location", config=config) == "NEW_location"
+
+
+def test_get_host_map_method_bbmap():
+    config = {"host_map_method": "BBMap"}
+    assert su.get_host_map_method(config) == "BBMap"
+
+
+def test_get_host_map_method_default():
+    config = {"Nothing relevant": "is here"}
+    assert su.get_host_map_method(config) == "HISAT2"
+
+def test_get_host_map_method_not_implemented():
+    config = {"host_map_method": "A method that isn't implemented"}
+    with pytest.raises(NotImplementedError):
+        out = su.get_host_map_method(config)

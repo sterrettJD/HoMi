@@ -1,7 +1,7 @@
 import pandas as pd
 from os.path import join as pj
 from os.path import split
-from src.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil_rmd_path, get_nonpareil_html_path, get_agg_script_path, get_mphlan_conv_script_path, get_taxa_barplot_rmd_path, get_sam2bam_path, get_func_barplot_rmd_path, get_partition, get_mem, get_runtime, get_threads, get_host_mapping_samples, get_slurm_extra, get_gmm_rmd_path, get_kraken_db_loc, get_tpm_converter_path
+from src.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil_rmd_path, get_nonpareil_html_path, get_agg_script_path, get_mphlan_conv_script_path, get_taxa_barplot_rmd_path, get_sam2bam_path, get_func_barplot_rmd_path, get_partition, get_mem, get_runtime, get_threads, get_host_mapping_samples, get_slurm_extra, get_gmm_rmd_path, get_kraken_db_loc, get_tpm_converter_path, get_host_map_method
 
 
 
@@ -998,7 +998,7 @@ rule nonpareil_curves:
 # pull human genome
 rule pull_host_genome:
   """
-  This rule downloads the human GRCh38 reference genome and annotation.
+  This rule downloads the host (default human GRCh38) reference genome and annotation.
   """
   output:
     GENOME=config['host_ref_fna'], 
@@ -1028,65 +1028,79 @@ rule pull_host_genome:
     """
 
 
-# make bbmap index for human genome
-rule build_human_genome_index_bbmap:
+# make index for host genome mapping
+rule build_host_genome_index:
   """
-  This rule builds a Bbmap index for the host genome.
+  This rule builds an index for mapping the host genome.
   """
   input:
     config['host_ref_fna']
   output:
     directory(pj(f"{trim_trunc_path}.host", "ref/"))
-  conda: "conda_envs/bbmap.yaml"
+  conda: f"conda_envs/{get_host_map_method(config).lower()}.yaml"
   resources:
-    partition=get_partition("short", config, "build_human_genome_index_bbmap"),
-    mem_mb=get_mem(int(30*1000), config, "build_human_genome_index_bbmap"), # MB, or 30 GB
-    runtime=get_runtime(int(2*60), config, "build_human_genome_index_bbmap"), # min, or 2 hrs
-    slurm=get_slurm_extra(config, "build_human_genome_index_bbmap")
-  threads: get_threads(8, config, "build_human_genome_index_bbmap")
+    partition=get_partition("short", config, "build_host_genome_index"),
+    mem_mb=get_mem(int(32*1000), config, "build_host_genome_index"), # MB, or 30 GB
+    runtime=get_runtime(int(2*60), config, "build_host_genome_index"), # min, or 2 hrs
+    slurm=get_slurm_extra(config, "build_host_genome_index")
+  threads: get_threads(8, config, "build_host_genome_index")
   params:
-    ref_dir=f"{trim_trunc_path}.host"
+    ref_dir=f"{trim_trunc_path}.host",
+    method=get_host_map_method(config)
   shell:
     """
     mkdir -p {params.ref_dir}
-    bbmap.sh ref={input} path={params.ref_dir} threads={threads} -Xmx{resources.mem_mb}m
+    if [ "{method}" == "BBMap" ]; then
+        bbmap.sh ref={input} path={params.ref_dir} threads={threads} -Xmx{resources.mem_mb}m
+    elif [ "{method}" == "HISAT2" ]; then
+        hisat2-build {input} {output} -p {threads}
+    fi
     """
 
 
-# Map to human genome
-rule bbmap_host:
+# Map to host genome
+rule map_host:
   """
-  This rule maps reads to the host genome using Bbmap and compresses SAM files to BAM files.
+  This rule maps reads to the host genome and compresses SAM files to BAM files.
   """
   input:
-      REF=pj(f"{trim_trunc_path}.host", "ref/"),
-      FWD=pj(trim_trunc_path,
-            "{sample}.R1.fq"),
-      REV=pj(trim_trunc_path,
-            "{sample}.R2.fq")
+    REF=pj(f"{trim_trunc_path}.host", "ref/"),
+    FWD=pj(trim_trunc_path,
+          "{sample}.R1.fq"),
+    REV=pj(trim_trunc_path,
+          "{sample}.R2.fq")
   output:
     SAM=pj(f"{trim_trunc_path}.host", "{sample}.sam"),
     BAM=pj(f"{trim_trunc_path}.host", "{sample}.bam")
-  conda: "conda_envs/bbmap.yaml"
+  conda: f"conda_envs/{get_host_map_method(config).lower()}.yaml"
   resources:
-    partition=get_partition("short", config, "bbmap_host"),
-    mem_mb=get_mem(int(210*1000), config, "bbmap_host"), # MB, or 210 GB, can cut to ~100 for 16 threads
-    runtime=get_runtime(int(23.9*60), config, "bbmap_host"), # min, or almost 24 hrs
-    slurm=get_slurm_extra(config, "bbmap_host")
-  threads: get_threads(32, config, "bbmap_host")
+    partition=get_partition("short", config, "map_host"),
+    mem_mb=get_mem(int(210*1000), config, "map_host"), # MB, or 210 GB, can cut to ~100 for 16 threads
+    runtime=get_runtime(int(23.9*60), config, "map_host"), # min, or almost 24 hrs
+    slurm=get_slurm_extra(config, "map_host")
+  threads: get_threads(32, config, "map_host")
   params:
     out_dir=f"{trim_trunc_path}.host",
-    sam2bam_path=get_sam2bam_path()
+    sam2bam_path=get_sam2bam_path(),
+    method=get_host_map_method(config)
   shell:
     """
     cd {params.out_dir}
 
-    bbmap.sh in=../{input.FWD} in2=../{input.REV} \
-    out={wildcards.sample}.sam \
-    trimreaddescriptions=t \
-    threads={threads} \
-    -Xmx{resources.mem_mb}m
+    if [ "{method}" == "BBMap" ]; then
+      bbmap.sh in=../{input.FWD} in2=../{input.REV} \
+      out={wildcards.sample}.sam \
+      trimreaddescriptions=t \
+      threads={threads} \
+      -Xmx{resources.mem_mb}m
 
+    elif [ "{method}" == "HISAT2" ]; then
+        hisat2 -1 ../{input.FWD} -2 ../{input.REV} \
+        -S {wildcards.sample}.sam \
+        -x ref/ \
+        -p {threads} 
+    fi
+    
     bash {params.sam2bam_path} {wildcards.sample}.sam
     """
 

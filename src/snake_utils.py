@@ -186,3 +186,12 @@ def get_tpm_converter_path():
         return converter
     else:
         raise FileNotFoundError(f"TPM conversion script was not found at {converter}.")
+    
+def get_host_map_method(config):
+    implemented_mappers = ["HISAT2", "BBMap"]
+    map_method = config.get("host_map_method")
+    if map_method is None:
+        return "HISAT2"
+    if map_method in implemented_mappers:
+        return map_method
+    raise NotImplementedError(f"Mapping host transcriptomes with {map_method} is not yet an implemented option. Please use an option from {implemented_mappers}")

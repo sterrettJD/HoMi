@@ -998,7 +998,7 @@ rule nonpareil_curves:
 # pull human genome
 rule pull_host_genome:
   """
-  This rule downloads the human GRCh38 reference genome and annotation.
+  This rule downloads the host (default human GRCh38) reference genome and annotation.
   """
   output:
     GENOME=config['host_ref_fna'], 
@@ -1028,10 +1028,10 @@ rule pull_host_genome:
     """
 
 
-# make bbmap index for human genome
-rule build_human_genome_index_bbmap:
+# make bbmap index for host genome
+rule build_host_genome_index_bbmap:
   """
-  This rule builds a Bbmap index for the host genome.
+  This rule builds an index for mapping the host genome.
   """
   input:
     config['host_ref_fna']
@@ -1039,11 +1039,11 @@ rule build_human_genome_index_bbmap:
     directory(pj(f"{trim_trunc_path}.host", "ref/"))
   conda: "conda_envs/bbmap.yaml"
   resources:
-    partition=get_partition("short", config, "build_human_genome_index_bbmap"),
-    mem_mb=get_mem(int(30*1000), config, "build_human_genome_index_bbmap"), # MB, or 30 GB
-    runtime=get_runtime(int(2*60), config, "build_human_genome_index_bbmap"), # min, or 2 hrs
-    slurm=get_slurm_extra(config, "build_human_genome_index_bbmap")
-  threads: get_threads(8, config, "build_human_genome_index_bbmap")
+    partition=get_partition("short", config, "build_host_genome_index_bbmap"),
+    mem_mb=get_mem(int(30*1000), config, "build_host_genome_index_bbmap"), # MB, or 30 GB
+    runtime=get_runtime(int(2*60), config, "build_host_genome_index_bbmap"), # min, or 2 hrs
+    slurm=get_slurm_extra(config, "build_host_genome_index_bbmap")
+  threads: get_threads(8, config, "build_host_genome_index_bbmap")
   params:
     ref_dir=f"{trim_trunc_path}.host"
   shell:
@@ -1053,8 +1053,8 @@ rule build_human_genome_index_bbmap:
     """
 
 
-# Map to human genome
-rule bbmap_host:
+# Map to host genome
+rule map_host:
   """
   This rule maps reads to the host genome using Bbmap and compresses SAM files to BAM files.
   """

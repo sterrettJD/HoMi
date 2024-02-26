@@ -61,12 +61,14 @@ kraken_db: data/kraken2_db
 
 
 #################################
-### Host read mapping (BBmap) ###
+### Host read mapping ###
 # provide the path for the host reference genome
 # if these files do not exist yet, HoMi will by default download the GRCh38 human reference genome
 host_ref_fna: GRCh38/GRCh38_full_analysis_set.fna 
 host_ref_gtf: GRCh38/GRCh38_full_analysis_set.refseq.gtf
 
+# Specifying the host mapping method here. options include BBMap and HISAT2
+host_map_method: BBMap
 
 ################################
 ### Resources ###
@@ -78,10 +80,10 @@ host_ref_gtf: GRCh38/GRCh38_full_analysis_set.refseq.gtf
 # rule_name_mem_mb: 10000 # (10 GB)
 # rule_name_runtime: 600 # (10 hours)
 # rule_name_threads: 8 
-bbmap_host_partition: long
-bbmap_host_runtime: 2160 # 36 hours
-bbmap_host_threads: 48
-bbmap_host_mem_mb: 250000
+map_host_partition: long
+map_host_runtime: 2160 # 36 hours
+map_host_threads: 48
+map_host_mem_mb: 250000
 
 ################################
 ### Partition ###
@@ -105,6 +107,6 @@ default_long_partition_name: long
 # <slurm_long_name>=<parameter> <slurm_long_name_2>=<parameter_2>
 # examples:
 # default_slurm_extra: email=sample_email@colorado.edu
-# bbmap_host_slurm_extra: qos=long email=sample_email@colorado.edu
+# map_host_slurm_extra: qos=long email=sample_email@colorado.edu
 # All rules would receive the email param, 
 # and the bbmap host rule would also receive the qos param

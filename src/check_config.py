@@ -7,10 +7,16 @@ def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("config", help="path config file for pipeline (yaml)")
     parser.add_argument("metadata", help="the metadata file used for HoMi")
-    return parser
+    return parser.parse_args()
 
 
 def check_strings(config):
+    """
+    Checks string required and recommended inputs from the config file.
+    Takes the parsed config file as an input and returns nothing.
+    Raises errors if values are missing or of the wrong type.
+    Prints a warning if recommended params are missing.
+    """
     required = {"PROJ": "PROJ is the project name and prefix given to all files created.", 
                 "METADATA": "METADATA should be a filepath to the .csv file with sample metadata.", 
                 "fwd_reads_path": "The name of the column in METADATA with the forward reads filepaths.", 
@@ -43,6 +49,11 @@ def check_strings(config):
     
 
 def check_nums(config):
+    """
+    Checks numeric required inputs from the config file.
+    Takes the parsed config file as an input and returns nothing.
+    Raises errors if values are missing or of the wrong type.
+    """
     required = {"min_readlen": "Reads shorter than this after trimming will be discarded.",
                 "readstart_qual_min": "Base pairs below this quality will be trimmed from the beginning of each read.",
                 "readend_qual_min": "Base pairs below this quality will be trimmed from the end of each read.",
@@ -60,6 +71,11 @@ def check_nums(config):
 
 
 def check_metadata_cols(config, metadata_path):
+    """
+    Checks metadata for any required columns specified in the config.
+    Takes the parsed config file and the metadata filepath as inputs and returns nothing.
+    Raises errors if columns are missing.
+    """
     fwd = config["fwd_reads_path"]
     rev = config["rev_reads_path"]
     metadata = pd.read_csv(metadata_path)
@@ -71,12 +87,14 @@ def check_metadata_cols(config, metadata_path):
 
 
 def main():
+    
     args = get_args()
     config = read_config(args.config)
     check_strings(config)
     check_nums(config)
     check_metadata_cols(config, args.metadata)
+    print("No issues found in config file.")
 
 
-if __name__=="main":
+if __name__ == "__main__":
     main()

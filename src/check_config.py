@@ -43,8 +43,9 @@ def check_strings(config):
         conf_param = config.get(param)
         if conf_param is None:
             print(f"{param} is missing from the config file. {recommended[param]}")
-        if type(conf_param) != str:
-            raise TypeError(f"{param} is the wrong type in the config file. It should be a string.")
+            # This one is nested bc NoneType is also okay
+            if type(conf_param) != str:
+                raise TypeError(f"{param} is the wrong type in the config file. It should be a string.")
     
 
 def check_nums(config):

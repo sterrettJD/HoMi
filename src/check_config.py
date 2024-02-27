@@ -1,4 +1,5 @@
 import argparse
+import pandas as pd
 from HoMi_cleanup import read_config
 
 
@@ -58,11 +59,23 @@ def check_nums(config):
             raise TypeError(f"{param} is the wrong type in the config file. It should be a string.")
 
 
+def check_metadata_cols(config, metadata_path):
+    fwd = config["fwd_reads_path"]
+    rev = config["rev_reads_path"]
+    metadata = pd.read_csv(metadata_path)
+
+    if fwd not in metadata.columns:
+        raise ValueError(f"fwd_reads_path {fwd} can't be found in your metadata. Please check this.")
+    if rev not in metadata.columns:
+        raise ValueError(f"rev_reads_path {rev} can't be found in your metadata. Please check this.")
+
+
 def main():
     args = get_args()
     config = read_config(args.config)
     check_strings(config)
     check_nums(config)
+    check_metadata_cols(config, args.metadata)
 
 
 if __name__=="main":

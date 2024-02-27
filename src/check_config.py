@@ -6,7 +6,6 @@ from HoMi_cleanup import read_config
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("config", help="path config file for pipeline (yaml)")
-    parser.add_argument("metadata", help="the metadata file used for HoMi")
     return parser.parse_args()
 
 
@@ -86,13 +85,21 @@ def check_metadata_cols(config, metadata_path):
         raise ValueError(f"rev_reads_path {rev} can't be found in your metadata. Please check this.")
 
 
-def main():
-    
-    args = get_args()
-    config = read_config(args.config)
+def run_checker(config):
+    """
+    Runs checks for params' existence and types and metadata columns existence.
+    Takes the parsed config as an input and returns nothing. 
+    Errors will be raised if there are issues.
+    """
     check_strings(config)
     check_nums(config)
-    check_metadata_cols(config, args.metadata)
+    check_metadata_cols(config, metadata_path=config["METADATA"])
+
+
+def main():
+    args = get_args()
+    config = read_config(args.config)
+    run_checker(config)
     print("No issues found in config file.")
 
 

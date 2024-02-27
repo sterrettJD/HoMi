@@ -60,9 +60,9 @@ rule all:
     pj(f"{trim_trunc_path}.nonhost.nonpareil", "nonpareil_curves.html"),
 
     # Host gene counts
-    pj(f"{trim_trunc_path}.host", "counts.txt"),
-    pj(f"{trim_trunc_path}.host", "counts.txt.summary"),
-    pj(f"{trim_trunc_path}.host", "counts_tpm.tsv"),
+    pj(f"{trim_trunc_path}.{get_host_map_method(config)}", "counts.txt"),
+    pj(f"{trim_trunc_path}.{get_host_map_method(config)}", "counts.txt.summary"),
+    pj(f"{trim_trunc_path}.{get_host_map_method(config)}", "counts_tpm.tsv"),
 
     # Bracken combined out
     pj(f"{trim_trunc_path}.nonhost.kraken", "Combined-taxonomy.tsv"),
@@ -1036,7 +1036,7 @@ rule build_host_genome_index:
   input:
     config['host_ref_fna']
   output:
-    directory(pj(f"{trim_trunc_path}.host", "ref/"))
+    directory(pj(f"{trim_trunc_path}.{get_host_map_method(config)}", "ref/"))
   conda: f"conda_envs/{get_host_map_method(config).lower()}.yaml"
   resources:
     partition=get_partition("short", config, "build_host_genome_index"),
@@ -1045,7 +1045,7 @@ rule build_host_genome_index:
     slurm=get_slurm_extra(config, "build_host_genome_index")
   threads: get_threads(8, config, "build_host_genome_index")
   params:
-    ref_dir=f"{trim_trunc_path}.host",
+    ref_dir=f"{trim_trunc_path}.{get_host_map_method(config)}",
     method=get_host_map_method(config)
   shell:
     """
@@ -1064,14 +1064,14 @@ rule map_host:
   This rule maps reads to the host genome and compresses SAM files to BAM files.
   """
   input:
-    REF=pj(f"{trim_trunc_path}.host", "ref/"),
+    REF=pj(f"{trim_trunc_path}.{get_host_map_method(config)}", "ref/"),
     FWD=pj(trim_trunc_path,
           "{sample}.R1.fq"),
     REV=pj(trim_trunc_path,
           "{sample}.R2.fq")
   output:
-    SAM=pj(f"{trim_trunc_path}.host", "{sample}.sam"),
-    BAM=pj(f"{trim_trunc_path}.host", "{sample}.bam")
+    SAM=pj(f"{trim_trunc_path}.{get_host_map_method(config)}", "{sample}.sam"),
+    BAM=pj(f"{trim_trunc_path}.{get_host_map_method(config)}", "{sample}.bam")
   conda: f"conda_envs/{get_host_map_method(config).lower()}.yaml"
   resources:
     partition=get_partition("short", config, "map_host"),
@@ -1080,7 +1080,7 @@ rule map_host:
     slurm=get_slurm_extra(config, "map_host")
   threads: get_threads(32, config, "map_host")
   params:
-    out_dir=f"{trim_trunc_path}.host",
+    out_dir=f"{trim_trunc_path}.{get_host_map_method(config)}",
     sam2bam_path=get_sam2bam_path(),
     method=get_host_map_method(config)
   shell:
@@ -1110,9 +1110,9 @@ rule validate_bams:
   It doesn't stop the pipeline if they aren't but you can check these files manually.
   """
   input:
-    BAM=pj(f"{trim_trunc_path}.host", "{sample}.bam")
+    BAM=pj(f"{trim_trunc_path}.{get_host_map_method(config)}", "{sample}.bam")
   output:
-    BAM_VALID=pj(f"{trim_trunc_path}.host", "{sample}_bam_valid.tsv")
+    BAM_VALID=pj(f"{trim_trunc_path}.{get_host_map_method(config)}", "{sample}_bam_valid.tsv")
   conda: "conda_envs/featureCounts.yaml"
   resources:
     partition=get_partition("short", config, "validate_bams"),
@@ -1133,13 +1133,13 @@ rule generate_feature_counts:
   """
   input:
     ANNOTATION=config['host_ref_gtf'],
-    VALID=expand(pj(f"{trim_trunc_path}.host", "{sample}_bam_valid.tsv"), 
+    VALID=expand(pj(f"{trim_trunc_path}.{get_host_map_method(config)}", "{sample}_bam_valid.tsv"), 
                   sample=HOST_MAP_SAMPLES),
-    BAM=expand(pj(f"{trim_trunc_path}.host", "{sample}.bam"), 
+    BAM=expand(pj(f"{trim_trunc_path}.{get_host_map_method(config)}", "{sample}.bam"), 
                 sample=HOST_MAP_SAMPLES)
   output:
-    COUNTS=pj(f"{trim_trunc_path}.host", "counts.txt"),
-    SUMMARY=pj(f"{trim_trunc_path}.host", "counts.txt.summary")
+    COUNTS=pj(f"{trim_trunc_path}.{get_host_map_method(config)}", "counts.txt"),
+    SUMMARY=pj(f"{trim_trunc_path}.{get_host_map_method(config)}", "counts.txt.summary")
   conda: "conda_envs/featureCounts.yaml"
   resources:
     partition=get_partition("short", config, "generate_feature_counts"),
@@ -1166,9 +1166,9 @@ rule feature_counts_to_tpm:
   This rule converts featureCounts output to transcripts per million (TPM).
   """
   input:
-    COUNTS=pj(f"{trim_trunc_path}.host", "counts.txt")
+    COUNTS=pj(f"{trim_trunc_path}.{get_host_map_method(config)}", "counts.txt")
   output:
-    TPM=pj(f"{trim_trunc_path}.host", "counts_tpm.tsv")
+    TPM=pj(f"{trim_trunc_path}.{get_host_map_method(config)}", "counts_tpm.tsv")
   conda: "conda_envs/humann.yaml"
   resources:
     partition=get_partition("short", config, "feature_counts_to_tpm"),

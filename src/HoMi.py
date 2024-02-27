@@ -2,6 +2,8 @@ import subprocess
 import argparse
 import os
 from re import findall
+from check_config import run_checker
+from HoMi_cleanup import read_config
 
 
 def get_args():
@@ -113,8 +115,13 @@ def unlock_snakemake_directory(snakepath, args):
 def main():
     args = get_args()
 
+    # Check config file
+    config = read_config(args.config)
+    run_checker(config)
+
     snakepath = get_snakefile_path()
 
+    # Alter snakefile for prebuilt conda environments
     if args.conda_prebuilt == True:
         snakepath = make_prebuilt_conda_snakefile(snakepath)
 

@@ -427,7 +427,7 @@ rule setup_metaphlan:
   shell:
     """
     mkdir -p {output}
-    metaphlan --install --bowtie2db --nproc {threads} {output}
+    metaphlan --install --nproc {threads} --bowtie2db {output}
     # Option to do it manually if --install doesn't seem to work
     # cd {output}
     # wget http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/bowtie2_indexes/mpa_vOct22_CHOCOPhlAnSGB_202212_bt2.tar

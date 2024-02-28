@@ -11,7 +11,7 @@ setup(
       setup_requires=['pytest-runner'],
       tests_require=['pytest', 'cookiecutter', 'pandas'],
       install_requires=['snakemake', 'pandas', 'biopython', 'numpy', 'argparse', 'pyyaml', 'cookiecutter'],
-      scripts=['src/HoMi.py', 'src/snake_utils.py', 'src/HoMi_cleanup.py', 'src/profile_setup.py'],
+      scripts=['src/HoMi.py', 'src/snake_utils.py', 'src/HoMi_cleanup.py', 'src/profile_setup.py', 'src/check_config.py'],
       packages=find_packages(),
       description="Pipeline for analysis of host-microbiome dual transcriptome data",
       author="John Sterrett",

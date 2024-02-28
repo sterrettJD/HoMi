@@ -3,7 +3,7 @@ import argparse
 import os
 from re import findall
 from check_config import run_checker
-from HoMi_cleanup import read_config
+from src.HoMi_cleanup import read_config
 
 
 def get_args():

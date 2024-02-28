@@ -52,10 +52,21 @@ def test_config_checker_valueerror(config):
 
 
 def test_config_checker_num_typeerror(config):
-    # Remove one param at a time, should error for every required param
+    # Swap each num for a string. Should error
     for param in config.keys():
         current_config = config.copy()
         if type(current_config[param]) == int:
             current_config[param] = "A STRING WHERE IT SHOULDN'T BE"
             with pytest.raises(TypeError):
                 cc.check_nums(current_config)
+
+
+def test_config_checker_string_typeerror(config):
+    # Swap each num for a string. Should error
+    for param in config.keys():
+        current_config = config.copy()
+        if type(current_config[param]) == str:
+            # Put a numeric type where it shouldn't be
+            current_config[param] = 1
+            with pytest.raises(TypeError):
+                cc.check_strings(current_config)

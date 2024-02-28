@@ -5,11 +5,6 @@ from pathlib import Path
 
 import src.HoMi_cleanup as hmc
 
-# lightweight helper for making files
-#def touch(fname):
-#    with open(fname, 'w'):
-#        pass
-
 
 def test_config_read_correctly(filepath="tests/test_data/test_cleanup_config.yaml"):
     config = hmc.read_config(filepath)

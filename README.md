@@ -28,6 +28,8 @@ HoMi.py <config_file> --cores <n_cores> --profile <profile_name>
 ### Config file
 An example config file is provided in `tests/example_config.yaml`. This config file should contain paths to relevant files, like the metadata and databases. It can also be used to alter rule-specific resource requirements (details in example config).
 
+Do you want to make sure your config file fits the requirements? Run `check_config.py <config_filepath>` to find out! (See `src/check_config.py`). HoMi will also automatically check your config before running the pipeline.
+
 ### Metadata file
 An example metadata file is provided in `tests/example_metadata.csv`.
 Metadata files should contain (at the minimum) a Sample column (named `Sample`), a forward reads filepath column (column name specified in the config file under `fwd_reads_path`), and a reverse reads filepath column (column name specified in the config file under `rev_reads_path`). These filepaths should be relative to the directory from which you are running `HoMi`.

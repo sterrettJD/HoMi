@@ -2,7 +2,7 @@ import subprocess
 import argparse
 import os
 from re import findall
-from check_config import run_checker
+from src.check_config import run_checker
 from src.HoMi_cleanup import read_config
 
 

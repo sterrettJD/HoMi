@@ -12,6 +12,9 @@ NOTE: Because `ncbi-datasets-cli` doesn't have a MacOS ARM-compatible conda-forg
 ```
 conda create -n benchmarking-homi
 conda activate benchmarking-homi 
-conda config --env --set subdir osx-arm64
+conda config --env --set subdir osx-64
 conda env update --file benchmarking_env.yaml
 ```
+
+## Semi-synthetic communities
+

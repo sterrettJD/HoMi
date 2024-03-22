@@ -1,17 +1,17 @@
 import subprocess
 
-def fetch_data(bioproj, output_dir):
+def fetch_data(accession_id, output_dir):
     """
     Pulls data for a given BioProject accession using the ncbi-datasets tool.
 
     Args:
-        bioproj (str): The BioProject accession number.
+        accession_id (str): The accession number.
         output_dir (str): The directory where the downloaded data will be saved.
 
     Returns:
         None
     """
-    command = ["datasets", "download", "genome", "accession", "--id", bioproj, "--out", output_dir]
+    command = ["fastq-dump", "-O", output_dir, "--split-files", accession_id]
     try:
         res = subprocess.run(command, check=True)
         print("Data downloaded successfully.")
@@ -21,9 +21,9 @@ def fetch_data(bioproj, output_dir):
 
 
 def main():
-    HMP2_htx="PRJNA438663"
+    colon_sample_htx="SRR28258513"
     output_dir="semisynthetic"
-    fetch_data(HMP2_htx, output_dir)
+    fetch_data(colon_sample_htx, output_dir)
 
 if __name__ == "__main__":
     main()

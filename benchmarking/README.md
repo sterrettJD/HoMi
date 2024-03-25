@@ -8,6 +8,8 @@ This directory includes helper scripts to benchmark HoMi against simulated fully
 conda create -n benchmarking-homi -f benchmarking_env.yaml
 ```
 
+**NOTE:** Users need to install the SRA toolkit outside of conda, as SRA-tools doesn't support a conda distribution. See the [SRA toolkit official instructions](https://github.com/ncbi/sra-tools/wiki/01.-Downloading-SRA-Toolkit).
+
 NOTE: Because `ncbi-datasets-cli` doesn't have a MacOS ARM-compatible conda-forge distribution, MacOS ARM users need to create the environment and configure the subdir with the following commands:
 ```
 conda create -n benchmarking-homi

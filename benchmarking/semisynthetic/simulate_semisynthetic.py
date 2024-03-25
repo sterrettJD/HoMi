@@ -2,7 +2,7 @@ import subprocess
 
 def fetch_data(accession_id, output_dir):
     """
-    Pulls data for a given BioProject accession using the ncbi-datasets tool.
+    Pulls data for a given SRA accession using the fasterq-dump.
 
     Args:
         accession_id (str): The accession number.
@@ -11,7 +11,7 @@ def fetch_data(accession_id, output_dir):
     Returns:
         None
     """
-    command = ["fastq-dump", "-O", output_dir, "--split-files", accession_id]
+    command = ["fasterq-dump", "-O", output_dir, "--split-files", accession_id]
     try:
         res = subprocess.run(command, check=True)
         print("Data downloaded successfully.")

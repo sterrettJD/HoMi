@@ -1,4 +1,9 @@
 import subprocess
+import os
+import random
+from BioPython import SeqIO
+
+
 
 def fetch_data(accession_id, output_dir, threads=1):
     """
@@ -20,6 +25,28 @@ def fetch_data(accession_id, output_dir, threads=1):
         print(f"Error: {e.output}")
         print("Failed to download data.")
 
+
+def sample_reads(filepath, n_reads, output_filepath, seed=1234):
+    """
+    Samples reads from a fastq
+
+    Args:
+        filepath (str): The fastq filepath.
+        n_reads (int): The number of reads to sample
+        output_filepath (str): The file to store the sampled sequences in.
+
+    Returns:
+        None
+    """
+    with open(os.path.join(filepath, FASTQFILEHERE)) as f:
+        # should be better to add in some sort of subsetting for sampling without reading all of the file into memory...
+        genome = [read for read in SeqIO.FastaIO.FastqIterator(f)]
+    random.seed(seed)
+    subset = random.choices(genome, k=n_reads)
+    
+    # NEED TO WRITE TO FASTQ
+    
+    
 
 def main():
     colon_sample_htx="SRP127360"

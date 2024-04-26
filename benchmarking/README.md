@@ -18,5 +18,10 @@ conda config --env --set subdir osx-64
 conda env update --file benchmarking_env.yaml
 ```
 
+## Running it all
+
+`benchmarking.smk` is the snakemake file that will run all of the benchmarking. Run it at your leisure via snakemake (e.g., ` snakemake -s benchmarking.smk -c8` for 8 cores.)
+
 ## Semi-synthetic communities
+
 

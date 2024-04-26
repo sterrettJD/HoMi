@@ -13,7 +13,6 @@ build:
   jobs:
     pre_build:
       - python docs/scripts/rule_descriptions.py snakefile
-    copy_static_files:
       # The README.md looks for some static files but it can't find them because the filepath isn't updated.
       # Could try updating any paths in the readme but not sure that's the most reliable
       - mkdir -p docs/figures

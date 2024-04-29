@@ -29,7 +29,7 @@ def parse_sample_data(filepath):
     return df
 
 
-def download_genomes(genome_name, accession_id, fpath=os.path.join("benchmarking", "synthetic" ,"data")):
+def download_microbial_genomes(genome_name, accession_id, fpath=os.path.join("benchmarking", "synthetic" ,"data")):
     print(f"Moving out of {os.getcwd()}")
     os.chdir(fpath)
     # make sure we're in the right place
@@ -195,18 +195,23 @@ def main():
     # list of genomes to include
     genomes = sample_data["genome"].to_list()
     accession_ids = sample_data["GCF_id"].to_list()
+
+    # Get non-host genomes and accession IDs
+    nh_genomes = [x for x in genomes if "human" not in x]
+    nh_accession_ids = [accession_ids[i] for i, x in genomes if "human" not in x]
     
     genomes_paths = [os.path.join("benchmarking", "synthetic", "data", g, "genome")
                      for g in genomes]
-    
     # check if these genomes exist
     genomes_exist = [os.path.exists(genome_path) 
                      for genome_path in genomes_paths]
+    
     if sum(genomes_exist) < len(genomes):
-       print("At least one genome is missing. "
+        print("At least one genome is missing. "
              "Redownloading all genomes, as others might be incomplete or missing.")
-       # TODO: set this up to generalize
-       download_genomes()
+        for i, genome in enumerate(nh_genomes):
+           download_microbial_genomes(genome, nh_accession_ids[i])
+        download_human_pangenome()
     else:
         print("All genomes have already been downloaded.")
 

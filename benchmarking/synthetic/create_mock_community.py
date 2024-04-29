@@ -29,16 +29,25 @@ def parse_sample_data(filepath):
     return df
 
 
-def download_genomes(fpath=os.path.join("benchmarking", "synthetic" ,"data")):
-    print(os.getcwd())
+def download_genomes(genome_name, accession_id, fpath=os.path.join("benchmarking", "synthetic" ,"data")):
+    print(f"Moving out of {os.getcwd()}")
     os.chdir(fpath)
     # make sure we're in the right place
     print(f"Downloading genomes in: {os.getcwd()}")
 
-    subprocess.run(["bash", os.path.join("..", "download_genomes_for_mock.sh")])
+    # setup
+    os.mkdir(genome_name)
+    os.chdir(genome_name)
 
-
-    # maybe return a list of the genomes?
+    # Download and unzip
+    subprocess.run(["curl", "-OJX", "GET", f"https://api.ncbi.nlm.nih.gov/datasets/v2alpha/genome/accession/{accession_id}/download?include_annotation_type=GENOME_FASTA,GENOME_GFF,RNA_FASTA,CDS_FASTA,PROT_FASTA,SEQUENCE_REPORT&filename={accession_id}.zip", "-H", "Accept: application/zip"])
+    subprocess.run(["unzip", f"{accession_id}.zip"])
+    
+    # cleanup
+    subprocess.run(["rm", f"{accession_id}.zip"])
+    os.mkdir("genome")
+    subprocess.run("mv", f"ncbi_dataset/data/{accession_id}/*", "./genome/")
+    os.chdir("..")
 
 
 def read_microbial_genome(filepath):

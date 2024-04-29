@@ -2,19 +2,42 @@ import subprocess
 import os
 import random
 import numpy as np
+import pandas as pd
+import gzip
+import argparse
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
 from itertools import chain
-import gzip
 
-def download_genomes(fpath=os.path.join("tests", "mock_community" ,"data")):
+
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("sample_data", help="a CSV file with the columns 'genome', 'GCF_id',"
+                                            "and a column for each sample that should be created. "
+                                            "Rows denote genomes to sample reads from, and the values "
+                                            "in each sample's column denotes how many reads should come "
+                                            "from each genome.")
+    parser.add_argument("leave_unzipped", help="Pass this flag if unzipped fastq files should be left. "
+                                            "Otherwise, they will be deleted",
+                        action="store_true")
+    return parser.parse_args()
+
+
+def parse_sample_data(filepath):
+    df = pd.read_csv(filepath)
+    return df
+
+
+def download_genomes(fpath=os.path.join("benchmarking", "synthetic" ,"data")):
     print(os.getcwd())
     os.chdir(fpath)
     # make sure we're in the right place
     print(f"Downloading genomes in: {os.getcwd()}")
 
     subprocess.run(["bash", os.path.join("..", "download_genomes_for_mock.sh")])
+
+
     # maybe return a list of the genomes?
 
 
@@ -152,20 +175,19 @@ def compress_fastq(fp):
 
 
 def main():
+    args = get_args()
+    sample_data = parse_sample_data(args.sample_data)
+
     # check for mock community data already existing
-    if os.path.exists("tests/mock_community/data") == False:
-        os.mkdir("tests/mock_community/data/")
-        print("Creating directory tests/mock_community/data")
+    if os.path.exists("benchmarking/synthetic/data") == False:
+        os.mkdir("benchmarking/synthetic/data/")
+        print("Creating directory benchmarking/synthetic/data")
 
     # list of genomes to include
-    genomes = ["e_coli", "c_beijerinckii", "f_prausnitzii", "human_pangenome"]
-    genomes_read_num_dict = {
-        "e_coli": int(1e4), 
-        "c_beijerinckii": int(1e4), 
-        "f_prausnitzii": int(1e4), 
-        "human_pangenome": int(1e4)
-    }
-    genomes_paths = [os.path.join('tests', 'mock_community', 'data', g, 'genome')
+    genomes = sample_data["genome"].to_list()
+    accession_ids = sample_data["GCF_id"].to_list()
+    
+    genomes_paths = [os.path.join("benchmarking", "synthetic", "data", g, "genome")
                      for g in genomes]
     
     # check if these genomes exist
@@ -174,38 +196,46 @@ def main():
     if sum(genomes_exist) < len(genomes):
        print("At least one genome is missing. "
              "Redownloading all genomes, as others might be incomplete or missing.")
+       # TODO: set this up to generalize
        download_genomes()
     else:
         print("All genomes have already been downloaded.")
-    # TODO: add a check to make sure it has the right stuff?
 
     # sample some reads with replacement
     random.seed(42)
+    
+    sample_columns = [col for col in sample_data.columns if any(s in col for s in ["genome", "GCF_id"])]
+    
 
-    sampled_reads = get_sampled_reads_from_all_genomes(genomes_read_num_dict, genomes_paths)
-    sampled_reads_bio = [[SeqRecord(Seq(seq), '', '', '') 
-                          for seq_id, seq in genome_sampled_reads.items()] 
-                         for genome_sampled_reads in sampled_reads]
-    # flatten the list of lists (reads per genome) to just a list (reads)
-    sampled_reads_flat = list(chain.from_iterable(sampled_reads_bio))
+    for sample in sample_columns:
 
-    # create the reverse reads
-    sampled_reads_flat_rev = [SeqRecord(Seq(''), '', '', '')] * len(sampled_reads_flat)
-    for i, sequence in enumerate(sampled_reads_flat):
-        sampled_reads_flat_rev[i].seq = sequence.seq[::-1] 
-    
-    sampled_reads_flat_mut = create_qual_scores_and_mutate(sampled_reads_flat, 
-                                        mean_phred=35, var_phred=5, min_phred=10)
-    
-    sampled_reads_flat_rev_mut = create_qual_scores_and_mutate(sampled_reads_flat_rev, 
-                                        mean_phred=35, var_phred=3, min_phred=10)
-    
-    
-    SeqIO.write(sampled_reads_flat_mut, "tests/mock_community/mock_community_R1.fastq", "fastq")
-    SeqIO.write(sampled_reads_flat_rev_mut, "tests/mock_community/mock_community_R2.fastq", "fastq")
+        genomes_read_num_dict = dict(zip(sample_data["genome"], sample_data[sample]))
 
-    compress_fastq("tests/mock_community/mock_community_R1.fastq")
-    compress_fastq("tests/mock_community/mock_community_R2.fastq")
+        sampled_reads = get_sampled_reads_from_all_genomes(genomes_read_num_dict, genomes_paths)
+        sampled_reads_bio = [[SeqRecord(Seq(seq), '', '', '') 
+                            for seq_id, seq in genome_sampled_reads.items()] 
+                            for genome_sampled_reads in sampled_reads]
+        
+        # flatten the list of lists (reads per genome) to just a list (reads)
+        sampled_reads_flat = list(chain.from_iterable(sampled_reads_bio))
+
+        # create the reverse reads
+        sampled_reads_flat_rev = [SeqRecord(Seq(''), '', '', '')] * len(sampled_reads_flat)
+        for i, sequence in enumerate(sampled_reads_flat):
+            sampled_reads_flat_rev[i].seq = sequence.seq[::-1] 
+        
+        sampled_reads_flat_mut = create_qual_scores_and_mutate(sampled_reads_flat, 
+                                            mean_phred=35, var_phred=5, min_phred=10)
+        
+        sampled_reads_flat_rev_mut = create_qual_scores_and_mutate(sampled_reads_flat_rev, 
+                                            mean_phred=35, var_phred=3, min_phred=10)
+        
+        
+        SeqIO.write(sampled_reads_flat_mut, f"benchmarking/synthetic/{sample}_R1.fastq", "fastq")
+        SeqIO.write(sampled_reads_flat_rev_mut, f"benchmarking/synthetic/{sample}_R2.fastq", "fastq")
+
+        compress_fastq(f"benchmarking/synthetic/{sample}_R1.fastq")
+        compress_fastq(f"benchmarking/synthetic/{sample}_R2.fastq")
 
 if __name__=="__main__":
     main()

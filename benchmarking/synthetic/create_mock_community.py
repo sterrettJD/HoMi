@@ -198,9 +198,12 @@ def create_qual_scores_and_mutate(list_of_seqrecords,
     return sampled_reads_flat_mut
 
 
-def compress_fastq(fp):
+def compress_fastq(fp, remove_unzipped=True):
     with open(fp, 'rb') as f_in, gzip.open(f"{fp}.gz", 'wb') as f_out:
         f_out.writelines(f_in)
+
+    if remove_unzipped:
+        os.remove(fp)
 
 
 def main():
@@ -267,8 +270,8 @@ def main():
         SeqIO.write(sampled_reads_flat_mut, f"benchmarking/synthetic/{sample}_R1.fastq", "fastq")
         SeqIO.write(sampled_reads_flat_rev_mut, f"benchmarking/synthetic/{sample}_R2.fastq", "fastq")
 
-        compress_fastq(f"benchmarking/synthetic/{sample}_R1.fastq")
-        compress_fastq(f"benchmarking/synthetic/{sample}_R2.fastq")
+        compress_fastq(f"benchmarking/synthetic/{sample}_R1.fastq", remove_unzipped=args.leave_unzipped)
+        compress_fastq(f"benchmarking/synthetic/{sample}_R2.fastq", remove_unzipped=args.leave_unzipped)
 
 if __name__=="__main__":
     main()

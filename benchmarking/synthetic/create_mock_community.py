@@ -216,7 +216,9 @@ def main():
     sample_data = parse_sample_data(args.sample_data)
 
     work_dir = args.work_dir
+    os.makedirs(work_dir, exist_ok=True)
     os.chdir(work_dir)
+
     # check for mock community data already existing
     if os.path.exists("data") == False:
         os.mkdir("data/")

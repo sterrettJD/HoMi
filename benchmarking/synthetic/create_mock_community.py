@@ -17,8 +17,13 @@ def get_args():
                                             "and a column for each sample that should be created. "
                                             "Rows denote genomes to sample reads from, and the values "
                                             "in each sample's column denotes how many reads should come "
-                                            "from each genome.")
-    parser.add_argument("leave_unzipped", help="Pass this flag if unzipped fastq files should be left. "
+                                            "from each genome. At least one genome should be 'human', "
+                                            "and the GCF id for it does not matter.")
+    parser.add_argument("--work_dir", help="The working directory in which data should be downloaded and "
+                                            "fastq files should be created. The <sample_data> path should "
+                                            "NOT be relative to this path (it should be relative to where the)"
+                                            "script it run from.")
+    parser.add_argument("--leave_unzipped", help="Pass this flag if unzipped fastq files should be left. "
                                             "Otherwise, they will be deleted",
                         action="store_true")
     return parser.parse_args()
@@ -210,10 +215,12 @@ def main():
     args = get_args()
     sample_data = parse_sample_data(args.sample_data)
 
+    work_dir = args.work_dir
+    os.chdir(work_dir)
     # check for mock community data already existing
-    if os.path.exists("benchmarking/synthetic/data") == False:
-        os.mkdir("benchmarking/synthetic/data/")
-        print("Creating directory benchmarking/synthetic/data")
+    if os.path.exists("data") == False:
+        os.mkdir("data/")
+        print(f"Creating directory {work_dir}/data")
 
     # list of genomes to include
     genomes = sample_data["genome"].to_list()
@@ -223,7 +230,7 @@ def main():
     nh_genomes = [x for x in genomes if "human" not in x]
     nh_accession_ids = [accession_ids[i] for i, x in enumerate(genomes) if "human" not in x]
     
-    genomes_paths = [os.path.join("benchmarking", "synthetic", "data", g, "genome")
+    genomes_paths = [os.path.join(work_dir, "data", g, "genome")
                      for g in genomes]
     # check if these genomes exist
     genomes_exist = [os.path.exists(genome_path) 
@@ -265,12 +272,12 @@ def main():
                                             mean_phred=35, var_phred=3, min_phred=10)
         
         
-        SeqIO.write(sampled_reads_flat_mut, f"benchmarking/synthetic/{sample}_R1.fastq", "fastq")
-        SeqIO.write(sampled_reads_flat_rev_mut, f"benchmarking/synthetic/{sample}_R2.fastq", "fastq")
+        SeqIO.write(sampled_reads_flat_mut, os.path.join(work_dir, f"{sample}_R1.fastq"), "fastq")
+        SeqIO.write(sampled_reads_flat_rev_mut, os.path.join(work_dir, f"{sample}_R2.fastq"), "fastq")
 
         remove_unzipped = args.leave_unzipped == False
-        compress_fastq(f"benchmarking/synthetic/{sample}_R1.fastq", remove_unzipped=remove_unzipped)
-        compress_fastq(f"benchmarking/synthetic/{sample}_R2.fastq", remove_unzipped=remove_unzipped)
+        compress_fastq(os.path.join(work_dir, f"{sample}_R1.fastq"), remove_unzipped=remove_unzipped)
+        compress_fastq(os.path.join(work_dir, f"{sample}_R2.fastq"), remove_unzipped=remove_unzipped)
 
 
 if __name__=="__main__":

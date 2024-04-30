@@ -5,7 +5,7 @@ This directory includes helper scripts to benchmark HoMi against simulated fully
 ## Environment
 `benchmarking_env.yaml` contains the conda environment used for benchmarking. To create this environment, run:
 ```
-conda create -n benchmarking-homi -f benchmarking_env.yaml
+mamba env create -n benchmarking-homi --file benchmarking_env.yaml
 ```
 
 **NOTE:** Users need to install the SRA toolkit outside of conda, as SRA-tools doesn't support a conda distribution. See the [SRA toolkit official instructions](https://github.com/ncbi/sra-tools/wiki/01.-Downloading-SRA-Toolkit).

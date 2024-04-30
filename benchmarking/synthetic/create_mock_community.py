@@ -37,7 +37,7 @@ def download_microbial_genome(genome_name, accession_id, fpath=os.path.join("ben
     print(f"Downloading genomes in: {os.getcwd()}")
 
     # setup
-    os.mkdir(genome_name)
+    os.makedirs(genome_name, exist_ok=True)
     os.chdir(genome_name)
 
     # Download and unzip
@@ -46,8 +46,8 @@ def download_microbial_genome(genome_name, accession_id, fpath=os.path.join("ben
     
     # cleanup
     subprocess.run(["rm", f"{accession_id}.zip"])
-    os.mkdir("genome")
-    subprocess.run("mv", f"ncbi_dataset/data/{accession_id}/*", "./genome/")
+    os.makedirs("genome", exist_ok=True)
+    subprocess.run(["mv", f"ncbi_dataset/data/{accession_id}/*", "./genome/"])
     os.chdir(start_dir)
 
 
@@ -59,13 +59,13 @@ def download_human_pangenome(fpath=os.path.join("benchmarking", "synthetic" ,"da
     print(f"Downloading human pangenome in: {os.getcwd()}")
 
     # setup
-    os.mkdir("human")
+    os.makedirs("human", exist_ok=True)
     os.chdir("human")
     
     subprocess.run(["wget", "https://s3-us-west-2.amazonaws.com/human-pangenomics/pangenomes/freeze/freeze1/minigraph/CHM13v11Y.fa.gz"])
     subprocess.run(["gunzip", "CHM13v11Y.fa.gz"])
     
-    os.mkdir("genome")
+    os.makedirs("genome", exist_ok=True)
     subprocess.run(["mv", "CHM13v11Y.fa", "genome/"])
     os.chdir(start_dir)
 
@@ -221,7 +221,7 @@ def main():
 
     # Get non-host genomes and accession IDs
     nh_genomes = [x for x in genomes if "human" not in x]
-    nh_accession_ids = [accession_ids[i] for i, x in genomes if "human" not in x]
+    nh_accession_ids = [accession_ids[i] for i, x in enumerate(genomes) if "human" not in x]
     
     genomes_paths = [os.path.join("benchmarking", "synthetic", "data", g, "genome")
                      for g in genomes]
@@ -241,12 +241,10 @@ def main():
     # sample some reads with replacement
     random.seed(42)
     
-
-    sample_columns = [col for col in sample_data.columns if any(s in col for s in ["genome", "GCF_id"])]
+    sample_columns = [col for col in sample_data.columns if (any(s in col for s in ["genome", "GCF_id"])==False)]
     for sample in sample_columns:
-
-        genomes_read_num_dict = dict(zip(sample_data["genome"], sample_data[sample]))
-
+        genomes_read_num_dict = dict(zip(sample_data["genome"], sample_data[sample].astype(int)))
+        print(genomes_read_num_dict)
         sampled_reads = get_sampled_reads_from_all_genomes(genomes_read_num_dict, genomes_paths)
         sampled_reads_bio = [[SeqRecord(Seq(seq), '', '', '') 
                             for seq_id, seq in genome_sampled_reads.items()] 
@@ -270,8 +268,10 @@ def main():
         SeqIO.write(sampled_reads_flat_mut, f"benchmarking/synthetic/{sample}_R1.fastq", "fastq")
         SeqIO.write(sampled_reads_flat_rev_mut, f"benchmarking/synthetic/{sample}_R2.fastq", "fastq")
 
-        compress_fastq(f"benchmarking/synthetic/{sample}_R1.fastq", remove_unzipped=args.leave_unzipped)
-        compress_fastq(f"benchmarking/synthetic/{sample}_R2.fastq", remove_unzipped=args.leave_unzipped)
+        remove_unzipped = args.leave_unzipped == False
+        compress_fastq(f"benchmarking/synthetic/{sample}_R1.fastq", remove_unzipped=remove_unzipped)
+        compress_fastq(f"benchmarking/synthetic/{sample}_R2.fastq", remove_unzipped=remove_unzipped)
+
 
 if __name__=="__main__":
     main()

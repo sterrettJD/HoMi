@@ -29,8 +29,9 @@ def parse_sample_data(filepath):
     return df
 
 
-def download_microbial_genomes(genome_name, accession_id, fpath=os.path.join("benchmarking", "synthetic" ,"data")):
-    print(f"Moving out of {os.getcwd()}")
+def download_microbial_genome(genome_name, accession_id, fpath=os.path.join("benchmarking", "synthetic" ,"data")):
+    start_dir = os.getcwd()
+    print(f"Moving out of {start_dir}")
     os.chdir(fpath)
     # make sure we're in the right place
     print(f"Downloading genomes in: {os.getcwd()}")
@@ -47,7 +48,26 @@ def download_microbial_genomes(genome_name, accession_id, fpath=os.path.join("be
     subprocess.run(["rm", f"{accession_id}.zip"])
     os.mkdir("genome")
     subprocess.run("mv", f"ncbi_dataset/data/{accession_id}/*", "./genome/")
-    os.chdir("..")
+    os.chdir(start_dir)
+
+
+def download_human_pangenome(fpath=os.path.join("benchmarking", "synthetic" ,"data")):
+    start_dir = os.getcwd()
+    print(f"Moving out of {start_dir}")
+    os.chdir(fpath)
+    # make sure we're in the right place
+    print(f"Downloading human pangenome in: {os.getcwd()}")
+
+    # setup
+    os.mkdir("human")
+    os.chdir("human")
+    
+    subprocess.run(["wget", "https://s3-us-west-2.amazonaws.com/human-pangenomics/pangenomes/freeze/freeze1/minigraph/CHM13v11Y.fa.gz"])
+    subprocess.run(["gunzip", "CHM13v11Y.fa.gz"])
+    
+    os.mkdir("genome")
+    subprocess.run(["mv", "CHM13v11Y.fa", "genome/"])
+    os.chdir(start_dir)
 
 
 def read_microbial_genome(filepath):
@@ -210,7 +230,7 @@ def main():
         print("At least one genome is missing. "
              "Redownloading all genomes, as others might be incomplete or missing.")
         for i, genome in enumerate(nh_genomes):
-           download_microbial_genomes(genome, nh_accession_ids[i])
+           download_microbial_genome(genome, nh_accession_ids[i])
         download_human_pangenome()
     else:
         print("All genomes have already been downloaded.")
@@ -218,9 +238,8 @@ def main():
     # sample some reads with replacement
     random.seed(42)
     
-    sample_columns = [col for col in sample_data.columns if any(s in col for s in ["genome", "GCF_id"])]
-    
 
+    sample_columns = [col for col in sample_data.columns if any(s in col for s in ["genome", "GCF_id"])]
     for sample in sample_columns:
 
         genomes_read_num_dict = dict(zip(sample_data["genome"], sample_data[sample]))

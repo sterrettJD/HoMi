@@ -34,7 +34,7 @@ def parse_sample_data(filepath):
     return df
 
 
-def download_microbial_genome(genome_name, accession_id, fpath=os.path.join("benchmarking", "synthetic" ,"data")):
+def download_microbial_genome(genome_name, accession_id, fpath):
     start_dir = os.getcwd()
     print(f"Moving out of {start_dir}")
     os.chdir(fpath)
@@ -51,12 +51,11 @@ def download_microbial_genome(genome_name, accession_id, fpath=os.path.join("ben
     
     # cleanup
     subprocess.run(["rm", f"{accession_id}.zip"])
-    os.makedirs("genome", exist_ok=True)
-    subprocess.run(["mv", f"ncbi_dataset/data/{accession_id}/*", "./genome/"])
+    subprocess.run(["mv", f"ncbi_dataset/data/{accession_id}", "./genome"])
     os.chdir(start_dir)
 
 
-def download_human_pangenome(fpath=os.path.join("benchmarking", "synthetic" ,"data")):
+def download_human_pangenome(fpath):
     start_dir = os.getcwd()
     print(f"Moving out of {start_dir}")
     os.chdir(fpath)
@@ -232,7 +231,7 @@ def main():
     nh_genomes = [x for x in genomes if "human" not in x]
     nh_accession_ids = [accession_ids[i] for i, x in enumerate(genomes) if "human" not in x]
     
-    genomes_paths = [os.path.join(work_dir, "data", g, "genome")
+    genomes_paths = [os.path.join("data", g, "genome")
                      for g in genomes]
     # check if these genomes exist
     genomes_exist = [os.path.exists(genome_path) 
@@ -242,8 +241,8 @@ def main():
         print("At least one genome is missing. "
              "Redownloading all genomes, as others might be incomplete or missing.")
         for i, genome in enumerate(nh_genomes):
-           download_microbial_genome(genome, nh_accession_ids[i])
-        download_human_pangenome()
+           download_microbial_genome(genome, nh_accession_ids[i], fpath="data")
+        download_human_pangenome(fpath="data")
     else:
         print("All genomes have already been downloaded.")
 
@@ -274,12 +273,12 @@ def main():
                                             mean_phred=35, var_phred=3, min_phred=10)
         
         
-        SeqIO.write(sampled_reads_flat_mut, os.path.join(work_dir, f"{sample}_R1.fastq"), "fastq")
-        SeqIO.write(sampled_reads_flat_rev_mut, os.path.join(work_dir, f"{sample}_R2.fastq"), "fastq")
+        SeqIO.write(sampled_reads_flat_mut, os.path.join(f"{sample}_R1.fastq"), "fastq")
+        SeqIO.write(sampled_reads_flat_rev_mut, os.path.join(f"{sample}_R2.fastq"), "fastq")
 
         remove_unzipped = args.leave_unzipped == False
-        compress_fastq(os.path.join(work_dir, f"{sample}_R1.fastq"), remove_unzipped=remove_unzipped)
-        compress_fastq(os.path.join(work_dir, f"{sample}_R2.fastq"), remove_unzipped=remove_unzipped)
+        compress_fastq(os.path.join(f"{sample}_R1.fastq"), remove_unzipped=remove_unzipped)
+        compress_fastq(os.path.join(f"{sample}_R2.fastq"), remove_unzipped=remove_unzipped)
 
 
 if __name__=="__main__":

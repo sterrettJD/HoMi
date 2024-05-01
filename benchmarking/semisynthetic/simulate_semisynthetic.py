@@ -1,8 +1,7 @@
 import subprocess
 import os
 import random
-from BioPython import SeqIO
-
+from Bio import SeqIO
 
 
 def fetch_data(accession_id, output_dir, threads=1):
@@ -37,7 +36,8 @@ def sample_reads(filepath, n_reads, output_filepath, seed=1234):
 
     Returns:
         None
-    """
+
+
     with open(os.path.join(filepath, FASTQFILEHERE)) as f:
         # should be better to add in some sort of subsetting for sampling without reading all of the file into memory...
         genome = [read for read in SeqIO.FastaIO.FastqIterator(f)]
@@ -45,7 +45,9 @@ def sample_reads(filepath, n_reads, output_filepath, seed=1234):
     subset = random.choices(genome, k=n_reads)
     
     # NEED TO WRITE TO FASTQ
+    """
     
+    return None    
     
 
 def main():

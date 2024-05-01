@@ -5,7 +5,7 @@ ROOT: .
 PROJ: benchmarking_synthetic
 
 # Metadata file
-METADATA: synthetic/synthetic_HoMi_config.yaml
+METADATA: synthetic/synthetic_homi_metadata.csv
 fwd_reads_path: forward_reads
 rev_reads_path: reverse_reads
 

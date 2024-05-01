@@ -4,7 +4,8 @@ channels:
   - defaults
 dependencies:
   - python=3.11
-  - snakemake
+  - snakemake<8.0.0
   - biopython
   - numpy
   - pandas
+  - pulp=2.7.0

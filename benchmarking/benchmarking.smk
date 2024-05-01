@@ -66,7 +66,7 @@ rule create_HoMi_metadata:
         df["reverse_reads"] = [os.path.join(params.work_dir, params.communities_dir, f"{sample}_R1.fastq.gz") 
                                 for sample in df.index]
 
-        df.to_csv(output.homi_metadata, index_label="SampleID")
+        df.to_csv(output.homi_metadata, index_label="Sample")
 
 rule run_HoMi_synthetic_communities:
     input:

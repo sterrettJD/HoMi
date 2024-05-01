@@ -6,6 +6,7 @@ This directory includes helper scripts to benchmark HoMi against simulated fully
 `benchmarking_env.yaml` contains the conda environment used for benchmarking. To create this environment, run the following command from this `benchmarking/` directory:
 ```
 mamba env create -n benchmarking-homi --file benchmarking_env.yaml
+conda activate benchmarking-homi
 pip install -e ../
 ```
 

@@ -5,6 +5,7 @@ from semisynthetic import simulate_semisynthetic as sss
 # some global vars here for now BUT NEED TO BE MIGRATED TO CONFIG
 synthetic_work_dir = "synthetic"
 synthetic_communities_dir = "synthetic_communities"
+homi_args = "--profile slurm"
 
 #colon_sample_htx="SRP127360"
 #colon_sample_htx="SRR6410603"
@@ -12,8 +13,12 @@ synthetic_communities_dir = "synthetic_communities"
 
 rule all:
     input:
+        # From simulate_synthetic_communities
         os.path.join(synthetic_work_dir, synthetic_communities_dir),
-        os.path.join(synthetic_work_dir, "synthetic_homi_metadata.csv")
+        # From create_HoMi_metadata
+        os.path.join(synthetic_work_dir, "synthetic_homi_metadata.csv"),
+        # From run_HoMi_synthetic_communities
+        "HoMi_is_done_synthetic"
 
 
 rule simulate_synthetic_communities:
@@ -22,6 +27,10 @@ rule simulate_synthetic_communities:
     output:
         directory(os.path.join(synthetic_work_dir, synthetic_communities_dir))
     threads: 1
+    resources:
+        partition="short",
+        mem_mb=int(16*1000), # MB
+        runtime=int(1*60) # min
     params:
         script=os.path.join(synthetic_work_dir, "create_mock_community.py"),
         work_dir=synthetic_work_dir,
@@ -38,6 +47,10 @@ rule create_HoMi_metadata:
     output:
         homi_metadata=os.path.join(synthetic_work_dir, "synthetic_homi_metadata.csv")
     threads: 1
+    resources:
+        partition="short",
+        mem_mb=int(8*1000), # MB
+        runtime=int(10) # min
     params:
         work_dir=synthetic_work_dir,
         communities_dir=synthetic_communities_dir
@@ -55,4 +68,22 @@ rule create_HoMi_metadata:
 
         df.to_csv(output.homi_metadata, index_label="SampleID")
 
-# rule run_HoMi_synthetic_communities:
+rule run_HoMi_synthetic_communities:
+    input:
+        homi_metadata=os.path.join(synthetic_work_dir, "synthetic_homi_metadata.csv"),
+        homi_config=os.path.join(synthetic_work_dir, "synthetic_HoMi_config.yaml")        
+    output:
+        "HoMi_is_done_synthetic"
+    threads: 1
+    resources:
+        partition="short",
+        mem_mb=int(8*1000), # MB
+        runtime=int(20*60) # min
+    params:
+        homi_args=homi_args
+    shell:
+        """
+        HoMi.py {input.homi_config} {params.homi_args}
+        touch {output}
+        """
+

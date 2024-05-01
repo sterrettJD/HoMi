@@ -1,0 +1,5 @@
+genome,GCF_id,0_perc_host,25_perc_host,50_perc_host,66_perc_host,80_perc_host
+e_coli,GCF_000016965.1,1000,1000,1000,1000,1000
+c_beijerinckii,GCF_000005845.2,1000,1000,1000,1000,1000
+f_prausnitzii,GCF_000154385.1,1000,1000,1000,1000,1000
+human,CHM13v11Y,0,1000,3000,6000,12000

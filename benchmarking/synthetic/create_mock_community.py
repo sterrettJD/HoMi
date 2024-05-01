@@ -13,7 +13,7 @@ from itertools import chain
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("sample_data", help="a CSV file with the columns 'genome', 'GCF_id',"
+    parser.add_argument("sample_data", help="A CSV file with the columns 'genome', 'GCF_id',"
                                             "and a column for each sample that should be created. "
                                             "Rows denote genomes to sample reads from, and the values "
                                             "in each sample's column denotes how many reads should come "
@@ -26,6 +26,7 @@ def get_args():
     parser.add_argument("--leave_unzipped", help="Pass this flag if unzipped fastq files should be left. "
                                             "Otherwise, they will be deleted",
                         action="store_true")
+    parser.add_argument("--output_dir", help="Directory (relative to work_dir) where output fastqs should be written.")
     return parser.parse_args()
 
 
@@ -218,6 +219,12 @@ def main():
     os.makedirs(work_dir, exist_ok=True)
     os.chdir(work_dir)
 
+    if args.output_dir is None:
+        output_dir = "."
+    else:
+        output_dir = args.output_dir
+        os.makedirs(output_dir, exist_ok=True)
+
     # check for mock community data already existing
     if os.path.exists("data") == False:
         os.mkdir("data/")
@@ -273,12 +280,12 @@ def main():
                                             mean_phred=35, var_phred=3, min_phred=10)
         
         
-        SeqIO.write(sampled_reads_flat_mut, os.path.join(f"{sample}_R1.fastq"), "fastq")
-        SeqIO.write(sampled_reads_flat_rev_mut, os.path.join(f"{sample}_R2.fastq"), "fastq")
+        SeqIO.write(sampled_reads_flat_mut, os.path.join(output_dir, f"{sample}_R1.fastq"), "fastq")
+        SeqIO.write(sampled_reads_flat_rev_mut, os.path.join(output_dir, f"{sample}_R2.fastq"), "fastq")
 
         remove_unzipped = args.leave_unzipped == False
-        compress_fastq(os.path.join(f"{sample}_R1.fastq"), remove_unzipped=remove_unzipped)
-        compress_fastq(os.path.join(f"{sample}_R2.fastq"), remove_unzipped=remove_unzipped)
+        compress_fastq(os.path.join(output_dir, f"{sample}_R1.fastq"), remove_unzipped=remove_unzipped)
+        compress_fastq(os.path.join(output_dir, f"{sample}_R2.fastq"), remove_unzipped=remove_unzipped)
 
 
 if __name__=="__main__":

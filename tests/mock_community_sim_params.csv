@@ -1,0 +1,5 @@
+genome,GCF_id,mock_community
+e_coli,GCF_000016965.1,1000
+c_beijerinckii,GCF_000005845.2,1000
+f_prausnitzii,GCF_000154385.1,1000
+human,CHM13v11Y,1000

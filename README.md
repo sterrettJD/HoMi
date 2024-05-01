@@ -48,7 +48,7 @@ The working directory for HoMi can be set using the `--workdir` flag. This will 
 ### Running with example dataset
 ```
 # Create the mock community (too big for github)
-python tests/mock_community/create_mock_community.py
+python benchmarking/synthetic/create_mock_community.py tests/mock_community_sim_params.csv --work_dir tests/mock_community/
 
 # Use the example config and example metadata provided
 HoMi.py tests/example_config.yaml --cores 1

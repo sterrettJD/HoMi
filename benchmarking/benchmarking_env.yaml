@@ -4,4 +4,7 @@ channels:
   - defaults
 dependencies:
   - python=3.11
-  - ncbi-datasets-cli
+  - snakemake
+  - biopython
+  - numpy
+  - pandas

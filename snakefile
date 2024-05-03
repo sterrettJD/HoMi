@@ -1053,7 +1053,7 @@ rule build_host_genome_index:
     if [ "{params.method}" == "BBMap" ]; then
         bbmap.sh ref={input} path={params.ref_dir} threads={threads} -Xmx{resources.mem_mb}m
     elif [ "{params.method}" == "HISAT2" ]; then
-        hisat2-build {input} {output} -p {threads}
+        hisat2-build {input} {output}/ -p {threads}
     fi
     """
 

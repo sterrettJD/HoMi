@@ -785,10 +785,10 @@ rule get_kraken_db:
     TAX=directory(pj(kraken_db_loc, "taxonomy"))
   resources:
     partition=get_partition("short", config, "get_kraken_db"),
-    mem_mb=get_mem(int(96*1000), config, "get_kraken_db"), # MB
-    runtime=get_runtime(int(23*60), config, "get_kraken_db"), # min 
+    mem_mb=get_mem(int(188*1000), config, "get_kraken_db"), # MB
+    runtime=get_runtime(int(23.9*60), config, "get_kraken_db"), # min 
     slurm=get_slurm_extra(config, "get_kraken_db")
-  threads: get_threads(32, config, "get_kraken_db")
+  threads: get_threads(64, config, "get_kraken_db")
   conda: "conda_envs/kraken.yaml"
   params:
     database_dir=kraken_db_loc
@@ -1053,6 +1053,7 @@ rule build_host_genome_index:
     if [ "{params.method}" == "BBMap" ]; then
         bbmap.sh ref={input} path={params.ref_dir} threads={threads} -Xmx{resources.mem_mb}m
     elif [ "{params.method}" == "HISAT2" ]; then
+        mkdir -p {output}/
         hisat2-build {input} {output}/ -p {threads}
     fi
     """

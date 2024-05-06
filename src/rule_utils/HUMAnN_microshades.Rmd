@@ -13,6 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 if (!require("tidyverse")) {
     install.packages("tidyverse", repos="http://cran.us.r-project.org")
+    library("tidyverse")
 }
 
 if (!require("data.table")) {
@@ -21,14 +22,17 @@ if (!require("data.table")) {
 
 if (!require("ggplot2")) {
     install.packages("ggplot2", repos="http://cran.us.r-project.org")
+    library("ggplot2")
 }
 
 if (!require("patchwork")) {
     install.packages("patchwork", repos="http://cran.us.r-project.org")
+    library("patchwork")
 }
 
 if (!require("cowplot")) {
     install.packages("cowplot", repos="http://cran.us.r-project.org")
+    library("cowplot")
 }
 
 if (!require("remotes")) {

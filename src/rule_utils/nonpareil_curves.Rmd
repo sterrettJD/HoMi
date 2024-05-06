@@ -10,13 +10,16 @@ params:
 knitr::opts_chunk$set(echo = TRUE)
 
 if (!require("Nonpareil")){
-  install.packages('Nonpareil', repos="http://cran.us.r-project.org");  
+  install.packages('Nonpareil', repos="http://cran.us.r-project.org")
+  library("Nonpareil")
 }
 if (!require("data.table")){
-  install.packages('data.table', repos="http://cran.us.r-project.org");
+  install.packages('data.table', repos="http://cran.us.r-project.org")
+  library("data.table")
 }
 if (!require("ggplot2")){
-  install.packages('ggplot2', repos="http://cran.us.r-project.org");
+  install.packages('ggplot2', repos="http://cran.us.r-project.org")
+  library("ggplot2")
 }
 ```
 

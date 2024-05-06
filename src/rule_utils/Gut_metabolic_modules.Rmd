@@ -16,6 +16,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 if (!require("tidyverse")) {
     install.packages("tidyverse", repos="http://cran.us.r-project.org")
+    library("tidyverse")
 }
 
 if (!require("data.table")) {

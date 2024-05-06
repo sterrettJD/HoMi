@@ -195,3 +195,12 @@ def get_host_map_method(config):
     if map_method in implemented_mappers:
         return map_method
     raise NotImplementedError(f"Mapping host transcriptomes with {map_method} is not yet an implemented option. Please use an option from {implemented_mappers}")
+
+
+def get_rule_extra_args(config, rule_name):
+    """
+    This looks for a config param named <rule_name>_extra.
+    If that exists, it's returned. 
+    Otherwise, a blank string is returned.
+    """
+    return config.get(f"r{rule_name}_extra", default="")

@@ -20,7 +20,7 @@ HOSTILE_DB_DWNLD_PATH = config["loc_for_hostile_db_download"]
 HOSTILE_DB_PATH = hostile_db_to_path(HOSTILE_DB_NAME, 
                                      HOSTILE_DB_DWNLD_PATH)
 
-trim_trunc_path = f"{config["PROJ"]}.f{config["trim_fwd"]}.{config["trunc_fwd"]}.r{config["trim_rev"]}.{config["trunc_rev"]}"
+trim_trunc_path = f"{config['PROJ']}.f{config['trim_fwd']}.{config['trunc_fwd']}.r{config['trim_rev']}.{config['trunc_rev']}"
 
 rule all:
   """

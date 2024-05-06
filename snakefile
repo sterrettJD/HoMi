@@ -1,26 +1,26 @@
 import pandas as pd
 from os.path import join as pj
 from os.path import split
-from src.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil_rmd_path, get_nonpareil_html_path, get_agg_script_path, get_mphlan_conv_script_path, get_taxa_barplot_rmd_path, get_sam2bam_path, get_func_barplot_rmd_path, get_partition, get_mem, get_runtime, get_threads, get_host_mapping_samples, get_slurm_extra, get_gmm_rmd_path, get_kraken_db_loc, get_tpm_converter_path, get_host_map_method
+from src.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil_rmd_path, get_nonpareil_html_path, get_agg_script_path, get_mphlan_conv_script_path, get_taxa_barplot_rmd_path, get_sam2bam_path, get_func_barplot_rmd_path, get_partition, get_mem, get_runtime, get_threads, get_host_mapping_samples, get_slurm_extra, get_gmm_rmd_path, get_kraken_db_loc, get_tpm_converter_path, get_host_map_method, get_rule_extra_args
 
 
 
 
-METADATA = pd.read_csv(config['METADATA'].strip())
+METADATA = pd.read_csv(config["METADATA"].strip())
 SAMPLES = METADATA["Sample"].tolist()
 HOST_MAP_SAMPLES = get_host_mapping_samples(METADATA, sample_column="Sample")
-RAW_FWD_READS = METADATA[config['fwd_reads_path']]
-RAW_REV_READS = METADATA[config['rev_reads_path']]
+RAW_FWD_READS = METADATA[config["fwd_reads_path"]]
+RAW_REV_READS = METADATA[config["rev_reads_path"]]
 
 READS = ["R1", "R2"]
-PROJ = config['PROJ'].strip()
+PROJ = config["PROJ"].strip()
 
-HOSTILE_DB_NAME = config['hostile_db']
-HOSTILE_DB_DWNLD_PATH = config['loc_for_hostile_db_download']
+HOSTILE_DB_NAME = config["hostile_db""]
+HOSTILE_DB_DWNLD_PATH = config["loc_for_hostile_db_download"]
 HOSTILE_DB_PATH = hostile_db_to_path(HOSTILE_DB_NAME, 
-                                                 HOSTILE_DB_DWNLD_PATH)
+                                     HOSTILE_DB_DWNLD_PATH)
 
-trim_trunc_path = f"{config['PROJ']}.f{config['trim_fwd']}.{config['trunc_fwd']}.r{config['trim_rev']}.{config['trunc_rev']}"
+trim_trunc_path = f"{config["PROJ"]}.f{config["trim_fwd"]}.{config["trunc_fwd"]}.r{config["trim_rev"]}.{config["trunc_rev"]}"
 
 rule all:
   """
@@ -100,8 +100,8 @@ rule symlink_fastqs:
     
     print(sample)
 
-    fwd = df.loc[df["Sample"]==sample, config['fwd_reads_path']].values[0]
-    rev = df.loc[df["Sample"]==sample, config['rev_reads_path']].values[0]
+    fwd = df.loc[df["Sample"]==sample, config["fwd_reads_path"]].values[0]
+    rev = df.loc[df["Sample"]==sample, config["rev_reads_path"]].values[0]
 
     fwd_full = pj(cwd, fwd)
     fwd_symlink = pj(cwd, proj,f"{sample}.R1.fq.gz")
@@ -144,9 +144,10 @@ rule remove_adapters:
   params:
     proj=PROJ,
     adpt=get_adapters_path(),
-    minlen=config['min_readlen'],
-    leading=config['readstart_qual_min'],
-    trailing=config['readend_qual_min']
+    minlen=config["min_readlen"],
+    leading=config["readstart_qual_min"],
+    trailing=config["readend_qual_min"],
+    extra=get_rule_extra_args(config, "remove_adapters")
   shell:
     """
     mkdir -p {params.proj}.noadpt/{wildcards.sample}

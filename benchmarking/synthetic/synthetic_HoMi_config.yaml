@@ -106,3 +106,10 @@ default_long_partition_name: long
 # map_host_slurm_extra: qos=long email=sample_email@colorado.edu
 # All rules would receive the email param, 
 # and the bbmap host rule would also receive the qos param
+
+
+###############################
+### Extra parameters ###
+# we aren't interested in coverage so I'm going to decrease the number of query reads in nonpareil, 
+# since nonpareil is throwing an error that we're querying too many reads relative to the file size
+nonpareil_extra: -X 200

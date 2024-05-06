@@ -1,24 +1,24 @@
 import pandas as pd
 from os.path import join as pj
 from os.path import split
-from src.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil_rmd_path, get_nonpareil_html_path, get_agg_script_path, get_mphlan_conv_script_path, get_taxa_barplot_rmd_path, get_sam2bam_path, get_func_barplot_rmd_path, get_partition, get_mem, get_runtime, get_threads, get_host_mapping_samples, get_slurm_extra, get_gmm_rmd_path, get_kraken_db_loc, get_tpm_converter_path, get_host_map_method
+from src.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil_rmd_path, get_nonpareil_html_path, get_agg_script_path, get_mphlan_conv_script_path, get_taxa_barplot_rmd_path, get_sam2bam_path, get_func_barplot_rmd_path, get_partition, get_mem, get_runtime, get_threads, get_host_mapping_samples, get_slurm_extra, get_gmm_rmd_path, get_kraken_db_loc, get_tpm_converter_path, get_host_map_method, get_rule_extra_args
 
 
 
 
-METADATA = pd.read_csv(config['METADATA'].strip())
+METADATA = pd.read_csv(config["METADATA"].strip())
 SAMPLES = METADATA["Sample"].tolist()
 HOST_MAP_SAMPLES = get_host_mapping_samples(METADATA, sample_column="Sample")
-RAW_FWD_READS = METADATA[config['fwd_reads_path']]
-RAW_REV_READS = METADATA[config['rev_reads_path']]
+RAW_FWD_READS = METADATA[config["fwd_reads_path"]]
+RAW_REV_READS = METADATA[config["rev_reads_path"]]
 
 READS = ["R1", "R2"]
-PROJ = config['PROJ'].strip()
+PROJ = config["PROJ"].strip()
 
-HOSTILE_DB_NAME = config['hostile_db']
-HOSTILE_DB_DWNLD_PATH = config['loc_for_hostile_db_download']
+HOSTILE_DB_NAME = config["hostile_db"]
+HOSTILE_DB_DWNLD_PATH = config["loc_for_hostile_db_download"]
 HOSTILE_DB_PATH = hostile_db_to_path(HOSTILE_DB_NAME, 
-                                                 HOSTILE_DB_DWNLD_PATH)
+                                     HOSTILE_DB_DWNLD_PATH)
 
 trim_trunc_path = f"{config['PROJ']}.f{config['trim_fwd']}.{config['trunc_fwd']}.r{config['trim_rev']}.{config['trunc_rev']}"
 
@@ -100,8 +100,8 @@ rule symlink_fastqs:
     
     print(sample)
 
-    fwd = df.loc[df["Sample"]==sample, config['fwd_reads_path']].values[0]
-    rev = df.loc[df["Sample"]==sample, config['rev_reads_path']].values[0]
+    fwd = df.loc[df["Sample"]==sample, config["fwd_reads_path"]].values[0]
+    rev = df.loc[df["Sample"]==sample, config["rev_reads_path"]].values[0]
 
     fwd_full = pj(cwd, fwd)
     fwd_symlink = pj(cwd, proj,f"{sample}.R1.fq.gz")
@@ -144,9 +144,10 @@ rule remove_adapters:
   params:
     proj=PROJ,
     adpt=get_adapters_path(),
-    minlen=config['min_readlen'],
-    leading=config['readstart_qual_min'],
-    trailing=config['readend_qual_min']
+    minlen=config["min_readlen"],
+    leading=config["readstart_qual_min"],
+    trailing=config["readend_qual_min"],
+    extra=get_rule_extra_args(config, "remove_adapters")
   shell:
     """
     mkdir -p {params.proj}.noadpt/{wildcards.sample}
@@ -156,7 +157,7 @@ rule remove_adapters:
         -validatePairs {input.FORWARD} {input.REVERSE} \
         -baseout {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed \
         ILLUMINACLIP:{params.adpt}:2:30:10 SLIDINGWINDOW:4:20 LEADING:{params.leading} TRAILING:{params.trailing} MINLEN:{params.minlen} \
-        -phred33
+        -phred33 {params.extra}
     
     mv {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed_1P {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed.R1.fq
     mv {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed_2P {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed.R2.fq
@@ -185,11 +186,12 @@ rule fastQC_pass1:
         slurm=get_slurm_extra(config, "fastQC_pass1")
   threads: get_threads(1, config, "fastQC_pass1")
   params:
-    proj=PROJ
+    proj=PROJ,
+    extra=get_rule_extra_args(config, "fastQC_pass1")
   shell:
     """
     mkdir -p {params.proj}.noadpt.fastqc
-    fastqc {input} -o {params.proj}.noadpt.fastqc
+    fastqc {input} -o {params.proj}.noadpt.fastqc {params.extra}
     """
 
 
@@ -212,10 +214,11 @@ rule multiqc_pass1:
         slurm=get_slurm_extra(config, "multiqc_pass1")
   threads: get_threads(1, config, "multiqc_pass1")
   params:
-    proj=PROJ
+    proj=PROJ,
+    extra=get_rule_extra_args(config, "multiqc_pass1")
   shell:
     """
-    multiqc {params.proj}.noadpt.fastqc -o {params.proj}.noadpt.fastqc/multiqc_report
+    multiqc {params.proj}.noadpt.fastqc -o {params.proj}.noadpt.fastqc/multiqc_report {params.extra}
     """
 
 
@@ -240,11 +243,12 @@ rule trim_forward:
   params:
     trim_trunc_path=trim_trunc_path,
     trim=config['trim_fwd'],
-    trunc={config['trunc_fwd']}
+    trunc={config['trunc_fwd']},
+    extra=get_rule_extra_args(config, "trim_forward")
   shell:
     """
     mkdir -p {params.trim_trunc_path}
-    seqtk trimfq -b {params.trim} -e {params.trunc} {input} > {output}
+    seqtk trimfq -b {params.trim} -e {params.trunc} {params.extra} {input} > {output} 
     """
 
 
@@ -269,11 +273,12 @@ rule trim_reverse:
   params:
     trim_trunc_path=trim_trunc_path,
     trim=config['trim_rev'],
-    trunc={config['trunc_rev']}
+    trunc={config['trunc_rev']},
+    extra=get_rule_extra_args(config, "trim_reverse")
   shell:
     """
     mkdir -p {params.trim_trunc_path}
-    seqtk trimfq -b {params.trim} -e {params.trunc} {input} > {output}
+    seqtk trimfq -b {params.trim} -e {params.trunc} {params.extra} {input} > {output}
     """
 
 
@@ -296,11 +301,12 @@ rule fastQC_pass2:
     slurm=get_slurm_extra(config, "fastQC_pass2")
   threads: get_threads(1, config, "fastQC_pass2")
   params:
-    trim_trunc_path=trim_trunc_path
+    trim_trunc_path=trim_trunc_path,
+    extra=get_rule_extra_args(config, "fastQC_pass2")
   shell:
     """
     mkdir -p {params.trim_trunc_path}.fastqc
-    fastqc {input} -o {params.trim_trunc_path}.fastqc
+    fastqc {input} -o {params.trim_trunc_path}.fastqc {params.extra}
     """
 
 
@@ -323,10 +329,11 @@ rule multiqc_pass2:
     slurm=get_slurm_extra(config, "multiqc_pass2")
   threads: get_threads(1, config, "multiqc_pass2")
   params:
-    trim_trunc_path=trim_trunc_path
+    trim_trunc_path=trim_trunc_path,
+    extra=get_rule_extra_args(config, "multiqc_pass2")
   shell:
     """
-    multiqc {params.trim_trunc_path}.fastqc -o {params.trim_trunc_path}.fastqc/multiqc_report
+    multiqc {params.trim_trunc_path}.fastqc -o {params.trim_trunc_path}.fastqc/multiqc_report {params.extra}
     """
 
 
@@ -391,7 +398,8 @@ rule host_filter:
   threads: get_threads(16, config, "host_filter")
   params:
     trim_trunc_path=trim_trunc_path,
-    hostile_db_path=HOSTILE_DB_PATH
+    hostile_db_path=HOSTILE_DB_PATH,
+    extra=get_rule_extra_args(config, "host_filter")
   shell:
     """
     hostile clean \
@@ -400,7 +408,8 @@ rule host_filter:
     --threads {threads} \
     --index {params.hostile_db_path} \
     --debug \
-    --aligner bowtie2
+    --aligner bowtie2 \
+    {params.extra}
 
     # cleanup filepaths
     mv {params.trim_trunc_path}.nonhost/{wildcards.sample}.R1.clean_1.fastq.gz {output.FWD}
@@ -424,10 +433,12 @@ rule setup_metaphlan:
     slurm=get_slurm_extra(config, "setup_metaphlan")
   threads: get_threads(8, config, "setup_metaphlan")
   conda: "conda_envs/humann.yaml"
+  params:
+    extra=get_rule_extra_args(config, "setup_metaphlan")
   shell:
     """
     mkdir -p {output}
-    metaphlan --install --nproc {threads} --bowtie2db {output}
+    metaphlan --install --nproc {threads} --bowtie2db {output} {params.extra}
     # Option to do it manually if --install doesn't seem to work
     # cd {output}
     # wget http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/bowtie2_indexes/mpa_vOct22_CHOCOPhlAnSGB_202212_bt2.tar
@@ -449,10 +460,12 @@ rule get_biobakery_chocophlan_db:
     slurm=get_slurm_extra(config, "get_biobakery_chocophlan_db")
   threads: get_threads(1, config, "get_biobakery_chocophlan_db")
   conda: "conda_envs/humann.yaml"
+  params:
+    extra=get_rule_extra_args(config, "get_biobakery_chocophlan_db")
   shell:
     """
     mkdir -p {output}
-    humann_databases --download chocophlan full {output} --update-config yes
+    humann_databases --download chocophlan full {output} --update-config yes {params.extra}
     """
 
 
@@ -469,10 +482,12 @@ rule get_biobakery_uniref_db:
     slurm=get_slurm_extra(config, "get_biobakery_uniref_db")
   threads: get_threads(1, config, "get_biobakery_uniref_db")
   conda: "conda_envs/humann.yaml"
+  params:
+    extra=get_rule_extra_args(config, "get_biobakery_uniref_db")
   shell:
     """
     mkdir -p {output}
-    humann_databases --download uniref uniref90_diamond {output} --update-config yes
+    humann_databases --download uniref uniref90_diamond {output} --update-config yes {params.extra}
     """
 
 
@@ -491,10 +506,12 @@ rule get_utility_mapping_db:
     slurm=get_slurm_extra(config, "get_utility_mapping_db")
   threads: get_threads(1, config, "get_utility_mapping_db")
   conda: "conda_envs/humann.yaml"
+  params:
+    extra=get_rule_extra_args(config, "get_utility_mapping_db")
   shell:
     """
     mkdir -p {output}
-    humann_databases --download utility_mapping full {output} --update-config yes
+    humann_databases --download utility_mapping full {output} --update-config yes {params.extra}
     """
 
 
@@ -554,13 +571,15 @@ rule run_humann_nonhost:
   conda: "conda_envs/humann.yaml"
   params:
     dirpath=f"{trim_trunc_path}.nonhost.humann",
-    metaphlan_bowtie_db=pj(config['metaphlan_bowtie_db'],"mpa_vOct22_CHOCOPhlAnSGB_202212_bt2")
+    metaphlan_bowtie_db=pj(config['metaphlan_bowtie_db'],"mpa_vOct22_CHOCOPhlAnSGB_202212_bt2"),
+    extra=get_rule_extra_args(config, "run_humann_nonhost")
   shell:
     """
     mkdir -p {params.dirpath}
     humann -i {input.NONHUMAN_READS} -o {params.dirpath}/{wildcards.sample} \
     --threads {threads} --search-mode uniref90 \
-    --metaphlan-options="--bowtie2db {params.metaphlan_bowtie_db}"
+    --metaphlan-options="--bowtie2db {params.metaphlan_bowtie_db}" \
+    {params.extra}
 
     """
 
@@ -791,10 +810,11 @@ rule get_kraken_db:
   threads: get_threads(64, config, "get_kraken_db")
   conda: "conda_envs/kraken.yaml"
   params:
-    database_dir=kraken_db_loc
+    database_dir=kraken_db_loc,
+    extra=get_rule_extra_args(config, "get_kraken_db")
   shell:
     """
-    kraken2-build --standard --db {params.database_dir} --threads {threads}
+    kraken2-build --standard --db {params.database_dir} --threads {threads} {params.extra}
     """
 
 
@@ -823,12 +843,14 @@ rule run_kraken:
   conda: "conda_envs/kraken.yaml"
   params:
     out_dir=f"{trim_trunc_path}.nonhost.kraken",
-    database=kraken_db_loc
+    database=kraken_db_loc,
+    extra=get_rule_extra_args(config, "run_kraken")
   shell:
     """
     mkdir -p {params.out_dir}
 
-    kraken2 --gzip-compressed --paired --db {params.database} --threads {threads} --output {output.OUTFILE} --report {output.REPORT} --classified-out {params.out_dir}/{wildcards.sample}_classified#.fq --unclassified-out {params.out_dir}/{wildcards.sample}_unclassified#.fq {input.FWD} {input.REV}
+    # This has to all be on one line due to the way kraken2 parses it...
+    kraken2 --gzip-compressed --paired --db {params.database} --threads {threads} --output {output.OUTFILE} --report {output.REPORT} --classified-out {params.out_dir}/{wildcards.sample}_classified#.fq --unclassified-out {params.out_dir}/{wildcards.sample}_unclassified#.fq {params.extra} {input.FWD} {input.REV}
 
     """
 
@@ -849,10 +871,11 @@ rule build_bracken:
   threads: get_threads(32, config, "build_bracken")
   conda: "conda_envs/kraken.yaml"
   params:
-    database=kraken_db_loc
+    database=kraken_db_loc,
+    extra=get_rule_extra_args(config, "build_bracken")
   shell:
     """
-    bracken-build -d {params.database} -t {threads} -l 150
+    bracken-build -d {params.database} -t {threads} -l 150 {params.extra}
     """
 
 
@@ -877,10 +900,11 @@ rule run_bracken:
   threads: get_threads(1, config, "run_bracken")
   conda: "conda_envs/kraken.yaml"
   params:
-    database=kraken_db_loc
+    database=kraken_db_loc,
+    extra=get_rule_extra_args(config, "run_bracken")
   shell:
     """
-    bracken -d {params.database} -i {input.REPORT} -o {output.REPORT} -r 150 -l S -t 10
+    bracken -d {params.database} -i {input.REPORT} -o {output.REPORT} -r 150 -l S -t 10 {params.extra}
     """
 
 
@@ -945,7 +969,8 @@ rule nonpareil:
   threads: get_threads(16, config, "nonpareil")
   conda: "conda_envs/nonpareil.yaml"
   params:
-    dirpath=f"{trim_trunc_path}.nonhost.nonpareil"
+    dirpath=f"{trim_trunc_path}.nonhost.nonpareil",
+    extra=get_rule_extra_args(config, "nonpareil")
   shell:
     """
     mkdir -p {params.dirpath}
@@ -956,7 +981,9 @@ rule nonpareil:
     # fastq is recommended for kmer algorithm, so defaulting to those
     nonpareil -s {params.dirpath}/{wildcards.sample}_temp_unzipped_input.fq \
     -b {params.dirpath}/{wildcards.sample} \
-    -T kmer -f fastq -t {threads}
+    -T kmer -f fastq -t {threads} \
+    {params.extra}
+
 
     # remove the temp file
     rm {params.dirpath}/{wildcards.sample}_temp_unzipped_input.fq
@@ -1046,15 +1073,16 @@ rule build_host_genome_index:
   threads: get_threads(8, config, "build_host_genome_index")
   params:
     ref_dir=f"{trim_trunc_path}.{get_host_map_method(config)}",
-    method=get_host_map_method(config)
+    method=get_host_map_method(config),
+    extra=get_rule_extra_args(config, "build_host_genome_index")
   shell:
     """
     mkdir -p {params.ref_dir}
     if [ "{params.method}" == "BBMap" ]; then
-        bbmap.sh ref={input} path={params.ref_dir} threads={threads} -Xmx{resources.mem_mb}m
+        bbmap.sh ref={input} path={params.ref_dir} threads={threads} -Xmx{resources.mem_mb}m {params.extra}
     elif [ "{params.method}" == "HISAT2" ]; then
         mkdir -p {output}/
-        hisat2-build {input} {output}/ -p {threads}
+        hisat2-build {input} {output}/ -p {threads} {params.extra}
     fi
     """
 
@@ -1083,7 +1111,8 @@ rule map_host:
   params:
     out_dir=f"{trim_trunc_path}.{get_host_map_method(config)}",
     sam2bam_path=get_sam2bam_path(),
-    method=get_host_map_method(config)
+    method=get_host_map_method(config),
+    extra=get_rule_extra_args(config, "map_host")
   shell:
     """
     cd {params.out_dir}
@@ -1093,13 +1122,15 @@ rule map_host:
       out={wildcards.sample}.sam \
       trimreaddescriptions=t \
       threads={threads} \
-      -Xmx{resources.mem_mb}m
+      -Xmx{resources.mem_mb}m \
+      {params.extra}
 
     elif [ "{params.method}" == "HISAT2" ]; then
         hisat2 -1 ../{input.FWD} -2 ../{input.REV} \
         -S {wildcards.sample}.sam \
         -x ref/ \
-        -p {threads} 
+        -p {threads} \
+        {params.extra}
     fi
     
     bash {params.sam2bam_path} {wildcards.sample}.sam
@@ -1148,6 +1179,8 @@ rule generate_feature_counts:
     runtime=get_runtime(int(2*60), config, "generate_feature_counts"), # min, or 2 hrs
     slurm=get_slurm_extra(config, "generate_feature_counts")
   threads: get_threads(16, config, "generate_feature_counts")
+  params:
+    extra=get_rule_extra_args(config, "generate_feature_counts")
   shell:
     """
     if [ -z {input.BAM} ]
@@ -1157,7 +1190,7 @@ rule generate_feature_counts:
       touch {output.SUMMARY}
     else
       featureCounts -T {threads} -p --countReadPairs \
-      -t exon -g gene_id -a {input.ANNOTATION} -o {output.COUNTS} {input.BAM}
+      -t exon -g gene_id -a {input.ANNOTATION} -o {output.COUNTS} {params.extra} {input.BAM}
     fi
     """
 

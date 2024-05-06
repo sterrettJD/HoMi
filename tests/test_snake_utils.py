@@ -64,7 +64,18 @@ def test_get_host_map_method_default():
     config = {"Nothing relevant": "is here"}
     assert su.get_host_map_method(config) == "HISAT2"
 
+
 def test_get_host_map_method_not_implemented():
     config = {"host_map_method": "A method that isn't implemented"}
     with pytest.raises(NotImplementedError):
         out = su.get_host_map_method(config)
+
+
+def test_get_rule_extra_args_default():
+    config = {"Nothing relevant": "is here"}
+    assert su.get_rule_extra_args(config, "run_nonpareil") == ""
+
+
+def test_get_rule_extra_args_nondefault():
+    config = {"run_nonpareil_extra": "-X 500"}
+    assert su.get_rule_extra_args(config, "run_nonpareil") == "-X 500"

@@ -15,7 +15,7 @@ RAW_REV_READS = METADATA[config["rev_reads_path"]]
 READS = ["R1", "R2"]
 PROJ = config["PROJ"].strip()
 
-HOSTILE_DB_NAME = config["hostile_db""]
+HOSTILE_DB_NAME = config["hostile_db"]
 HOSTILE_DB_DWNLD_PATH = config["loc_for_hostile_db_download"]
 HOSTILE_DB_PATH = hostile_db_to_path(HOSTILE_DB_NAME, 
                                      HOSTILE_DB_DWNLD_PATH)

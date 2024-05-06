@@ -157,7 +157,7 @@ rule remove_adapters:
         -validatePairs {input.FORWARD} {input.REVERSE} \
         -baseout {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed \
         ILLUMINACLIP:{params.adpt}:2:30:10 SLIDINGWINDOW:4:20 LEADING:{params.leading} TRAILING:{params.trailing} MINLEN:{params.minlen} \
-        -phred33
+        -phred33 {params.extra}
     
     mv {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed_1P {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed.R1.fq
     mv {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed_2P {params.proj}.noadpt/{wildcards.sample}/{wildcards.sample}.trimmed.R2.fq
@@ -186,11 +186,12 @@ rule fastQC_pass1:
         slurm=get_slurm_extra(config, "fastQC_pass1")
   threads: get_threads(1, config, "fastQC_pass1")
   params:
-    proj=PROJ
+    proj=PROJ,
+    extra=get_rule_extra_args(config, "fastQC_pass1")
   shell:
     """
     mkdir -p {params.proj}.noadpt.fastqc
-    fastqc {input} -o {params.proj}.noadpt.fastqc
+    fastqc {input} -o {params.proj}.noadpt.fastqc {params.extra}
     """
 
 
@@ -213,10 +214,11 @@ rule multiqc_pass1:
         slurm=get_slurm_extra(config, "multiqc_pass1")
   threads: get_threads(1, config, "multiqc_pass1")
   params:
-    proj=PROJ
+    proj=PROJ,
+    extra=get_rule_extra_args(config, "multiqc_pass1")
   shell:
     """
-    multiqc {params.proj}.noadpt.fastqc -o {params.proj}.noadpt.fastqc/multiqc_report
+    multiqc {params.proj}.noadpt.fastqc -o {params.proj}.noadpt.fastqc/multiqc_report {params.extra}
     """
 
 
@@ -241,11 +243,12 @@ rule trim_forward:
   params:
     trim_trunc_path=trim_trunc_path,
     trim=config['trim_fwd'],
-    trunc={config['trunc_fwd']}
+    trunc={config['trunc_fwd']},
+    extra=get_rule_extra_args(config, "trim_forward")
   shell:
     """
     mkdir -p {params.trim_trunc_path}
-    seqtk trimfq -b {params.trim} -e {params.trunc} {input} > {output}
+    seqtk trimfq -b {params.trim} -e {params.trunc} {params.extra} {input} > {output} 
     """
 
 
@@ -270,11 +273,12 @@ rule trim_reverse:
   params:
     trim_trunc_path=trim_trunc_path,
     trim=config['trim_rev'],
-    trunc={config['trunc_rev']}
+    trunc={config['trunc_rev']},
+    extra=get_rule_extra_args(config, "trim_reverse")
   shell:
     """
     mkdir -p {params.trim_trunc_path}
-    seqtk trimfq -b {params.trim} -e {params.trunc} {input} > {output}
+    seqtk trimfq -b {params.trim} -e {params.trunc} {params.extra} {input} > {output}
     """
 
 
@@ -297,11 +301,12 @@ rule fastQC_pass2:
     slurm=get_slurm_extra(config, "fastQC_pass2")
   threads: get_threads(1, config, "fastQC_pass2")
   params:
-    trim_trunc_path=trim_trunc_path
+    trim_trunc_path=trim_trunc_path,
+    extra=get_rule_extra_args(config, "fastQC_pass2")
   shell:
     """
     mkdir -p {params.trim_trunc_path}.fastqc
-    fastqc {input} -o {params.trim_trunc_path}.fastqc
+    fastqc {input} -o {params.trim_trunc_path}.fastqc {params.extra}
     """
 
 
@@ -324,10 +329,11 @@ rule multiqc_pass2:
     slurm=get_slurm_extra(config, "multiqc_pass2")
   threads: get_threads(1, config, "multiqc_pass2")
   params:
-    trim_trunc_path=trim_trunc_path
+    trim_trunc_path=trim_trunc_path,
+    extra=get_rule_extra_args(config, "multiqc_pass2")
   shell:
     """
-    multiqc {params.trim_trunc_path}.fastqc -o {params.trim_trunc_path}.fastqc/multiqc_report
+    multiqc {params.trim_trunc_path}.fastqc -o {params.trim_trunc_path}.fastqc/multiqc_report {params.extra}
     """
 
 

@@ -203,4 +203,4 @@ def get_rule_extra_args(config, rule_name):
     If that exists, it's returned. 
     Otherwise, a blank string is returned.
     """
-    return config.get(f"r{rule_name}_extra", default="")
+    return config.get(f"{rule_name}_extra", "")

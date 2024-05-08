@@ -1082,7 +1082,7 @@ rule build_host_genome_index:
         bbmap.sh ref={input} path={params.ref_dir} threads={threads} -Xmx{resources.mem_mb}m {params.extra}
     elif [ "{params.method}" == "HISAT2" ]; then
         mkdir -p {output}/
-        hisat2-build {input} {output}/ -p {threads} {params.extra}
+        hisat2-build {input} {output}/index -p {threads} {params.extra}
     fi
     """
 
@@ -1128,7 +1128,7 @@ rule map_host:
     elif [ "{params.method}" == "HISAT2" ]; then
         hisat2 -1 ../{input.FWD} -2 ../{input.REV} \
         -S {wildcards.sample}.sam \
-        -x ref/ \
+        -x ref/index \
         -p {threads} \
         {params.extra}
     fi

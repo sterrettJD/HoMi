@@ -32,26 +32,28 @@ filepaths <- paste0(params$npo_path, "/",
 
 np <- Nonpareil.set(filepaths, labels=metadata$Sample)
 
+np.summary <- apply(summary(np), FUN=as.numeric, MARGIN=2)
+
 # Show current coverage (as %)
-coverages <- summary(np)[,"C"]*100 
+coverages <- np.summary[,"C"]*100 
 summary(coverages)
 
 knitr::kable(coverages,
             col.names="Estimated coverage (based on sequence redundancy)")
 
 ggplot(mapping=aes(y=coverages,
-                   x=summary(np)[,"LR"]/1e9)) +
+                   x=np.summary[,"LR"]/1e9)) +
   geom_point(size=3) +
   labs(y="Estimated Percent Coverage",
        x="Effective Sequencing Effort (Gbp)")
 
 ggplot(mapping=aes(y=coverages,
-                   x=summary(np)[,"diversity"])) +
+                   x=np.summary[,"diversity"])) +
   geom_point(size=3) +
   labs(y="Estimated Percent Coverage",
        x="Sequence Diversity Index")
 
 hist(coverages)
-hist(summary(np)[,"diversity"])
-hist(summary(np)[,"LR"]/1e9)
+hist(np.summary[,"diversity"])
+hist(np.summary[,"LR"]/1e9)
 ```

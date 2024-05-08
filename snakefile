@@ -571,14 +571,17 @@ rule run_humann_nonhost:
   conda: "conda_envs/humann.yaml"
   params:
     dirpath=f"{trim_trunc_path}.nonhost.humann",
-    metaphlan_bowtie_db=get_metaphlan_db_loc(config),
+    metaphlan_bowtie_db=config["metaphlan_bowtie_db"],
     extra=get_rule_extra_args(config, "run_humann_nonhost")
   shell:
     """
+    # read the db name from mpa_latest file
+    metaphlan_db_name="$(<{params.metaphlan_bowtie_db}/mpa_latest)"
+    
     mkdir -p {params.dirpath}
     humann -i {input.NONHUMAN_READS} -o {params.dirpath}/{wildcards.sample} \
     --threads {threads} --search-mode uniref90 \
-    --metaphlan-options="--bowtie2db {params.metaphlan_bowtie_db}" \
+    --metaphlan-options="--bowtie2db {params.metaphlan_bowtie_db}/$metaphlan_db_name" \
     {params.extra}
 
     """

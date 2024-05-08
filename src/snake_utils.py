@@ -204,3 +204,13 @@ def get_rule_extra_args(config, rule_name):
     Otherwise, a blank string is returned.
     """
     return config.get(f"{rule_name}_extra", "")
+
+
+def get_metaphlan_db_loc(config):
+    """
+    This uses the mpa_latest file to get the database name for metaphlan.
+    """
+    name_file = path.join(config["metaphlan_bowtie_db"], "mpa_latest")
+    with open(name_file) as f:
+        db_name = f.readline()
+    return path.join(config["metaphlan_bowtie_db"], db_name)

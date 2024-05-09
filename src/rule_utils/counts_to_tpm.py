@@ -83,7 +83,7 @@ def main():
         Path(args.output).touch()  
         return
 
-    raw_data = pd.read_csv(args.readcounts)    
+    raw_data = pd.read_csv(args.readcounts, sep="\t", comment="#")
     tpm = convert_dataframe(raw_data)
     tpm.to_csv(args.output, sep="\t")
 

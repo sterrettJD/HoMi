@@ -576,12 +576,12 @@ rule run_humann_nonhost:
   shell:
     """
     # read the db name from mpa_latest file
-    metaphlan_db_name="$(<{params.metaphlan_bowtie_db}/mpa_latest)"
+    # metaphlan_db_name="$(<{params.metaphlan_bowtie_db}/mpa_latest)"
     
     mkdir -p {params.dirpath}
     humann -i {input.NONHUMAN_READS} -o {params.dirpath}/{wildcards.sample} \
     --threads {threads} --search-mode uniref90 \
-    --metaphlan-options="--bowtie2db {params.metaphlan_bowtie_db}/$metaphlan_db_name" \
+    --metaphlan-options="--bowtie2db {params.metaphlan_bowtie_db}" \
     {params.extra}
 
     """

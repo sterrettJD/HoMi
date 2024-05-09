@@ -7,3 +7,7 @@ channels:
 dependencies:
   - r-base
   - r-essentials
+  - r-tidyverse
+  - r-ape
+  - r-data.table
+  - r-ggplot2

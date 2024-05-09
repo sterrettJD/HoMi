@@ -214,3 +214,15 @@ def get_metaphlan_db_loc(config):
     with open(name_file) as f:
         db_name = f.readline()
     return path.join(config["metaphlan_bowtie_db"], db_name)
+
+
+def get_R_installation_path():
+    path_2_script = path.dirname(__file__)
+    r_path = path.join(path_2_script, "rule_utils", "R_packages.R")
+    # remove ".."
+    r_path = path.normpath(r_path)
+
+    if path.exists(r_path):
+        return r_path
+    else:
+        raise FileNotFoundError(f"R package installation script was not found at {r_path}.")

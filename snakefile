@@ -1,7 +1,7 @@
 import pandas as pd
 from os.path import join as pj
 from os.path import split
-from src.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil_rmd_path, get_nonpareil_html_path, get_agg_script_path, get_mphlan_conv_script_path, get_taxa_barplot_rmd_path, get_sam2bam_path, get_func_barplot_rmd_path, get_partition, get_mem, get_runtime, get_threads, get_host_mapping_samples, get_slurm_extra, get_gmm_rmd_path, get_kraken_db_loc, get_tpm_converter_path, get_host_map_method, get_rule_extra_args, get_metaphlan_db_loc
+from src.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil_rmd_path, get_nonpareil_html_path, get_agg_script_path, get_mphlan_conv_script_path, get_taxa_barplot_rmd_path, get_sam2bam_path, get_func_barplot_rmd_path, get_partition, get_mem, get_runtime, get_threads, get_host_mapping_samples, get_slurm_extra, get_gmm_rmd_path, get_kraken_db_loc, get_tpm_converter_path, get_host_map_method, get_rule_extra_args, get_metaphlan_db_loc, get_R_installation_path
 
 
 
@@ -416,7 +416,27 @@ rule host_filter:
     mv {params.trim_trunc_path}.nonhost/{wildcards.sample}.R2.clean_2.fastq.gz {output.REV}
     """
 
+############# INSTALL R PACKAGES NEEDED FOR NONHOST ANALYSIS #############
 
+rule install_R_packages:
+  """
+  This installs R packages needed 
+  """
+  output:
+    "R_packages_installed"
+  conda: "conda_envs/r_env.yaml"
+  resources:
+    partition=get_partition("short", config, "install_R_packages"),
+    mem_mb=get_mem(int(12*1000), config, "install_R_packages"), # MB, or 12 GB, hostile should max at 4 (under 8 thread example), but playing it safe
+    runtime=get_runtime(int(4*60), config, "install_R_packages"), # min, or 20 hours
+    slurm=get_slurm_extra(config, "install_R_packages")
+  threads: get_threads(1, config, "install_R_packages")
+  params:
+    installation_script=get_R_installation_path()
+  shell:
+    """
+    Rscript {params.installation_script}
+    """
 
 ############# RUN BIOBAKERY HUMANN PIPELINE ON NONHOST READS #############
 
@@ -696,7 +716,8 @@ rule taxa_barplot:
   """
   input:
     pj(f"{trim_trunc_path}.nonhost.humann", 
-                "all_bugs_list.tsv")
+                "all_bugs_list.tsv"),
+    "R_packages_installed"
   output:
     pj(f"{trim_trunc_path}.nonhost.humann", 
                 "Metaphlan_microshades.html")
@@ -729,7 +750,8 @@ rule func_barplot_rxn:
   """
   input:
     GENEFAMS_RXN=pj(f"{trim_trunc_path}.nonhost.humann", 
-                    "all_genefamilies_rxn_named.tsv")
+                    "all_genefamilies_rxn_named.tsv"),
+    INSTALLED="R_packages_installed"
   output:
     pj(f"{trim_trunc_path}.nonhost.humann", 
                 "HUMAnN_microshades.html")
@@ -761,7 +783,8 @@ rule calc_gut_metabolic_modules:
   """
   input:
     GENEFAMS_KO=pj(f"{trim_trunc_path}.nonhost.humann", 
-                    "all_genefamilies_ko_named.tsv")
+                    "all_genefamilies_ko_named.tsv"),
+    INSTALLED="R_packages_installed"
   output:
     HTML=pj(f"{trim_trunc_path}.nonhost.humann", 
                 "Gut_metabolic_modules.html"),
@@ -959,7 +982,8 @@ rule nonpareil:
     # Only with forward reads for now. 
     # Could also run separately with reverse, but not sure there's much reason to do so.
     FWD=pj(f"{trim_trunc_path}.nonhost",
-        "{sample}.R1.fq.gz")
+        "{sample}.R1.fq.gz"),
+    INSTALLED="R_packages_installed"
   output:
     pj(f"{trim_trunc_path}.nonhost.nonpareil", "{sample}.npl"),
     pj(f"{trim_trunc_path}.nonhost.nonpareil", "{sample}.npo"),

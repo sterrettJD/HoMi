@@ -25,7 +25,7 @@ rule simulate_synthetic_communities:
     input:
         sample_data=os.path.join(synthetic_work_dir, "sample_data.csv")
     output:
-        directory(os.path.join(synthetic_work_dir, synthetic_communities_dir)),
+        communities=directory(os.path.join(synthetic_work_dir, synthetic_communities_dir)),
         done="communities_created"
     threads: 1
     resources:

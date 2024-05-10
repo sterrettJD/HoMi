@@ -25,7 +25,8 @@ rule simulate_synthetic_communities:
     input:
         sample_data=os.path.join(synthetic_work_dir, "sample_data.csv")
     output:
-        directory(os.path.join(synthetic_work_dir, synthetic_communities_dir))
+        directory(os.path.join(synthetic_work_dir, synthetic_communities_dir)),
+        done="communities_created"
     threads: 1
     resources:
         partition="short",
@@ -38,6 +39,7 @@ rule simulate_synthetic_communities:
     shell:
         """
         python {params.script} {input.sample_data} --work_dir {params.work_dir} --output_dir {params.communities_dir}
+        touch {ouput.done}
         """
 
 
@@ -71,7 +73,8 @@ rule create_HoMi_metadata:
 rule run_HoMi_synthetic_communities:
     input:
         homi_metadata=os.path.join(synthetic_work_dir, "synthetic_homi_metadata.csv"),
-        homi_config=os.path.join(synthetic_work_dir, "synthetic_HoMi_config.yaml")        
+        homi_config=os.path.join(synthetic_work_dir, "synthetic_HoMi_config.yaml"),
+        communities_created="communities_created"  
     output:
         "HoMi_is_done_synthetic"
     threads: 1

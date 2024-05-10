@@ -207,9 +207,20 @@ phyla.otunames <- rownames(phylum_table)
 phylums <- taxonomy.table[phyla.otunames, "Phylum"]
 
 sorted_phylums <- phylums[order(rowSums(phylum_table), decreasing=T)]
+grab_phyla <- function(vector, n=5) {
+  if(length(vector) >= n) {
+    # return top n reversed
+    return(vector[n:1])
+  } 
+  else {
+    # unless it's shorter than n, then just return it reversed
+    return(rev(vector))
+  }
+}
+
 # create the colors object
 color_objs_GP <- create_color_dfs(mdf_prep,
-                                  selected_groups=sorted_phylums[5:1],
+                                  selected_groups=grab_phyla(sorted_phylums),
                                   cvd=TRUE)
 # Extract
 mdf_GP <- color_objs_GP$mdf

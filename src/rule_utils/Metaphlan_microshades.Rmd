@@ -266,7 +266,7 @@ sorted_phylums <- phylums[order(rowSums(phylum_table), decreasing=T)]
 # create the colors object
 color_objs_GP <- create_color_dfs(mdf_prep,
                                   subgroup_level="Family",
-                                  selected_groups=sorted_phylums[5:1],
+                                  selected_groups=grab_phyla(sorted_phylums),
                                   cvd=TRUE)
 # Extract
 mdf_GP <- color_objs_GP$mdf

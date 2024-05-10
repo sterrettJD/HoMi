@@ -23,8 +23,9 @@ if (!require("remotes")) {
 }
 
 if (!require("phyloseq")) {
-    remotes::install_github("joey711/phyloseq")
+    BiocManager::install("phyloseq")
 }
+
 if (!require("microshades")) {
     remotes::install_github("KarstensLab/microshades")
 }

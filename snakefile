@@ -388,7 +388,9 @@ rule host_filter:
     FWD=pj(f"{trim_trunc_path}.nonhost",
             "{sample}.R1.fq.gz"),
     REV=pj(f"{trim_trunc_path}.nonhost",
-            "{sample}.R2.fq.gz")
+            "{sample}.R2.fq.gz"),
+    REPORT=pj(f"{trim_trunc_path}.nonhost",
+            "{sample}.report")
   conda: "conda_envs/hostile.yaml"
   resources:
     partition=get_partition("short", config, "host_filter"),
@@ -409,7 +411,7 @@ rule host_filter:
     --index {params.hostile_db_path} \
     --debug \
     --aligner bowtie2 \
-    {params.extra}
+    {params.extra} > {output.REPORT}
 
     # cleanup filepaths
     mv {params.trim_trunc_path}.nonhost/{wildcards.sample}.R1.clean_1.fastq.gz {output.FWD}
@@ -879,6 +881,7 @@ rule run_kraken:
     kraken2 --gzip-compressed --paired --db {params.database} --threads {threads} --output {output.OUTFILE} --report {output.REPORT} --classified-out {params.out_dir}/{wildcards.sample}_classified#.fq --unclassified-out {params.out_dir}/{wildcards.sample}_unclassified#.fq {params.extra} {input.FWD} {input.REV}
 
     """
+
 
 rule build_bracken:
   """

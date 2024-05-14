@@ -40,4 +40,10 @@ def test_create_df_from_hostile_reports(metadata):
                             index=["hostile_report", "hostile_report_1"])
     equal = actual.values == expected.values
     assert equal.all()
+
+
+def test_get_unmapped_nonhost():
+    unmapped = rr.get_unmapped_nonhost_from_humann("tests/test_data/all_genefamilies.tsv")
+    expected = {"hostile_report": 4698.0, "hostile_report_1": 29696.0}
+    assert unmapped == expected
     

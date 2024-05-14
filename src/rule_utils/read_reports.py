@@ -33,6 +33,23 @@ def create_df_from_hostile_reports(metadata, hostile_directory, sample_col="Samp
     return df
 
 
+def get_unmapped_nonhost_from_humann(genefams_filepath):
+    df = pd.read_csv(genefams_filepath, sep="\t", index_col="# Gene Family")
+    
+    # trim off the unneeded end to each colname
+    chars_to_rm = len("_Abundance-RPKs")
+    df.columns = [col[:-chars_to_rm] for col in df.columns]
+
+    return df.loc["UNMAPPED", :].to_dict()
+    
+
+def add_unmapped_nonhost_to_hostile_reports(unmapped_nonhost: dict, hostile_reports_df: pd.DataFrame):
+    # it's a bit inefficient to cast the unmapped nonhost to a dict then back to pd.Series,
+    # but I think that get_unmapped_nonhost_from_humann() returning a dict makes more sense
+    # as a standalone func that may be used for other things
+    return hostile_reports_df.join(pd.Series(unmapped_nonhost, name="Unmapped nonhost RPK"))
+
+
 def main():
     print("Not yet implemented")
 

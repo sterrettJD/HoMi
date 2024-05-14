@@ -1,4 +1,5 @@
 import pytest
+import pandas as pd
 from src.rule_utils import read_reports as rr
 
 
@@ -22,3 +23,21 @@ def test_hostile_reads_nonhost(report):
 
 def test_hostile_percent_host(report):
     assert rr.get_percent_host(report) == 0.66136
+
+
+@pytest.fixture
+def metadata():
+    d = {"Sample": ["hostile_report"]}
+    return pd.DataFrame(d)
+
+
+def test_create_df_from_hostile_reports(metadata):
+    actual = rr.create_df_from_hostile_reports(metadata, 
+                                               hostile_directory="tests/test_data")
+    expected = pd.DataFrame({"Reads passing QC": [177014],
+                             "Nonhost reads": [59944],
+                             "Percent host": [0.66136]},
+                            index=["hostile_report"])
+    equal = actual.values == expected.values
+    assert equal.all()
+    

@@ -47,3 +47,22 @@ def test_get_unmapped_nonhost():
     expected = {"hostile_report": 4698.0, "hostile_report_1": 29696.0}
     assert unmapped == expected
     
+
+def test_add_unmapped_nonhost_to_hostile():
+    hostile = pd.DataFrame({"Reads passing QC": [177014, 59900],
+                             "Nonhost reads": [59944, 59900],
+                             "Percent host": [0.66136, 0]},
+                            index=["hostile_report", "hostile_report_1"])
+    # note that this is in "reverse" order just to make sure it is merging correctly 
+    # independent of dict order
+    unmapped_nonhost =  {"hostile_report_1": 29696.0, "hostile_report": 4698.0}
+    
+    actual = rr.add_unmapped_nonhost_to_hostile_reports(unmapped_nonhost, hostile)
+    
+    expected = pd.DataFrame({"Reads passing QC": [177014, 59900],
+                             "Nonhost reads": [59944, 59900],
+                             "Percent host": [0.66136, 0],
+                             "Unmapped nonhost RPK": [4698.0, 29696.0]},
+                            index=["hostile_report", "hostile_report_1"])
+    
+    assert (actual.values == expected.values).all()

@@ -27,17 +27,17 @@ def test_hostile_percent_host(report):
 
 @pytest.fixture
 def metadata():
-    d = {"Sample": ["hostile_report"]}
+    d = {"Sample": ["hostile_report", "hostile_report_1"]}
     return pd.DataFrame(d)
 
 
 def test_create_df_from_hostile_reports(metadata):
     actual = rr.create_df_from_hostile_reports(metadata, 
                                                hostile_directory="tests/test_data")
-    expected = pd.DataFrame({"Reads passing QC": [177014],
-                             "Nonhost reads": [59944],
-                             "Percent host": [0.66136]},
-                            index=["hostile_report"])
+    expected = pd.DataFrame({"Reads passing QC": [177014, 59900],
+                             "Nonhost reads": [59944, 59900],
+                             "Percent host": [0.66136, 0]},
+                            index=["hostile_report", "hostile_report_1"])
     equal = actual.values == expected.values
     assert equal.all()
     

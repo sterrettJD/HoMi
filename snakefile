@@ -1,7 +1,7 @@
 import pandas as pd
 from os.path import join as pj
 from os.path import split
-from src.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil_rmd_path, get_nonpareil_html_path, get_agg_script_path, get_mphlan_conv_script_path, get_taxa_barplot_rmd_path, get_sam2bam_path, get_func_barplot_rmd_path, get_partition, get_mem, get_runtime, get_threads, get_host_mapping_samples, get_slurm_extra, get_gmm_rmd_path, get_kraken_db_loc, get_tpm_converter_path, get_host_map_method, get_rule_extra_args, get_metaphlan_db_loc, get_R_installation_path
+from src.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil_rmd_path, get_nonpareil_html_path, get_agg_script_path, get_mphlan_conv_script_path, get_taxa_barplot_rmd_path, get_sam2bam_path, get_func_barplot_rmd_path, get_partition, get_mem, get_runtime, get_threads, get_host_mapping_samples, get_slurm_extra, get_gmm_rmd_path, get_kraken_db_loc, get_tpm_converter_path, get_host_map_method, get_rule_extra_args, get_metaphlan_db_loc, get_R_installation_path, get_read_reports_path
 
 
 
@@ -66,7 +66,10 @@ rule all:
 
     # Bracken combined out
     pj(f"{trim_trunc_path}.nonhost.kraken", "Combined-taxonomy.tsv"),
-    pj(f"{trim_trunc_path}.nonhost.humann", "Gut_metabolic_modules.csv")
+    pj(f"{trim_trunc_path}.nonhost.humann", "Gut_metabolic_modules.csv"),
+
+    # reads breakdown report
+    "reads_breakdown.csv"
 
 
 rule symlink_fastqs:
@@ -418,6 +421,7 @@ rule host_filter:
     mv {params.trim_trunc_path}.nonhost/{wildcards.sample}.R2.clean_2.fastq.gz {output.REV}
     """
 
+
 ############# INSTALL R PACKAGES NEEDED FOR NONHOST ANALYSIS #############
 
 rule install_R_packages:
@@ -429,8 +433,8 @@ rule install_R_packages:
   conda: "conda_envs/r_env.yaml"
   resources:
     partition=get_partition("short", config, "install_R_packages"),
-    mem_mb=get_mem(int(12*1000), config, "install_R_packages"), # MB, or 12 GB, hostile should max at 4 (under 8 thread example), but playing it safe
-    runtime=get_runtime(int(4*60), config, "install_R_packages"), # min, or 20 hours
+    mem_mb=get_mem(int(12*1000), config, "install_R_packages"), # MB, or 12 GB
+    runtime=get_runtime(int(4*60), config, "install_R_packages"), # min, or 4 hours
     slurm=get_slurm_extra(config, "install_R_packages")
   threads: get_threads(1, config, "install_R_packages")
   params:
@@ -1245,4 +1249,38 @@ rule feature_counts_to_tpm:
   shell:
     """
     python {params.converter_script} {input.COUNTS} --output {output.TPM}
+    """
+
+
+rule reads_breakdown:
+  """
+  This rule aggregates read counts at each step, including raw reads, post-QC reads, 
+  host reads, non-host reads, and non-host reads that were unmapped. 
+  It outputs a CSV report of this with data per sample.
+  """
+  input:
+    RAW=PROJ, # directory for symlinked raw reads
+    METADATA=config["METADATA"].strip(),
+    HOSTILE=f"{trim_trunc_path}.nonhost",
+    GENEFAMS=pj(f"{trim_trunc_path}.nonhost.humann", 
+                "all_genefamilies.tsv")
+  output:
+    REPORT="reads_breakdown.csv"
+  conda: "conda_envs/humann.yaml"
+  resources:
+    partition=get_partition("short", config, "reads_breakdown"),
+    mem_mb=get_mem(int(2*1000), config, "reads_breakdown"), # MB, or 2 GB
+    runtime=get_runtime(int(2*60), config, "reads_breakdown"), # min, should need much less
+    slurm=get_slurm_extra(config, "reads_breakdown")
+  threads: get_threads(1, config, "reads_breakdown")
+  params:
+    reporter_script=get_read_reports_path()
+  shell:
+    """
+    python {params.reporter_script} {input.METADATA} \
+    --raw_reads_dir {input.RAW} \
+    --hostile_dir {input.HOSTILE} \
+    --genefams_filepath {input.GENEFAMS} \
+    --output {output.REPORT}
+
     """

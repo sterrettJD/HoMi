@@ -66,3 +66,8 @@ def test_add_unmapped_nonhost_to_hostile():
                             index=["hostile_report", "hostile_report_1"])
     
     assert (actual.values == expected.values).all()
+
+
+def test_fastq_gz_read_counter():
+    n_reads = rr.count_reads_fastq_gz("tests/test_data/small.fastq.gz")
+    assert n_reads == 3

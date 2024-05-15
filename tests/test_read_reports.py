@@ -69,5 +69,5 @@ def test_add_unmapped_nonhost_to_hostile():
 
 
 def test_fastq_gz_read_counter():
-    n_reads = rr.count_reads_fastq_gz("tests/test_data/small.fastq.gz")
+    n_reads = rr.count_reads_fastq_gz("tests/test_data/small_R1.fq.gz")
     assert n_reads == 3

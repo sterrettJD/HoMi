@@ -90,8 +90,8 @@ def count_reads_fastq_gz(file_path) -> int:
 
 def add_original_read_counts_to_df(metadata, directory, df,
                                    sample_col="Sample", 
-                                   forward_extension="_R1.fq.gz",
-                                   reverse_extension="_R2.fq.gz") -> pd.DataFrame:
+                                   forward_extension=".R1.fq.gz",
+                                   reverse_extension=".R2.fq.gz") -> pd.DataFrame:
     reads_per_sample = dict()
     for sample in metadata[sample_col].to_list():
         forward_path = path.join(directory, f"{sample}{forward_extension}")

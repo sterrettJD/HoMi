@@ -226,3 +226,15 @@ def get_R_installation_path():
         return r_path
     else:
         raise FileNotFoundError(f"R package installation script was not found at {r_path}.")
+    
+
+def get_read_reports_path():
+    path_2_script = path.dirname(__file__)
+    reporter = path.join(path_2_script, "rule_utils", "read_reports.py")
+    # remove ".."
+    reporter = path.normpath(reporter)
+
+    if path.exists(reporter):
+        return reporter
+    else:
+        raise FileNotFoundError(f"Read reports script was not found at {reporter}.")

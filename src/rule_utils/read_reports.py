@@ -1,6 +1,21 @@
 import json
 import pandas as pd
+import subprocess
 from os import path
+
+def count_reads_fastq_gz(file_path) -> int:
+    try:
+        result = subprocess.run(f"gunzip -c {file_path} | wc -l", shell=True, capture_output=True, text=True, check=True)
+        line_count = int(result.stdout.strip())
+    
+        # Divide by 4 to get the number of reads (assuming FASTQ format with 4 lines per read)
+        read_count = line_count // 4
+        return read_count
+    
+    except subprocess.CalledProcessError as e:
+        raise ValueError(f"Error: {e}")
+        return None
+
 
 def read_hostile_report(filepath) -> dict:
     with open(filepath, 'r') as file:

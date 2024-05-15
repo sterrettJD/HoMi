@@ -44,7 +44,7 @@ def test_create_df_from_hostile_reports(metadata):
 
 def test_get_unmapped_nonhost():
     unmapped = rr.get_unmapped_nonhost_from_humann("tests/test_data/all_genefamilies.tsv")
-    expected = {"hostile_report": 4698.0, "hostile_report_1": 29696.0}
+    expected = {"hostile_report": (1/3)*(10**6), "hostile_report_1": (1/2)*(10**6)}
     assert unmapped == expected
     
 
@@ -55,14 +55,14 @@ def test_add_unmapped_nonhost_to_hostile():
                             index=["hostile_report", "hostile_report_1"])
     # note that this is in "reverse" order just to make sure it is merging correctly 
     # independent of dict order
-    unmapped_nonhost =  {"hostile_report_1": 29696.0, "hostile_report": 4698.0}
+    unmapped_nonhost =  {"hostile_report_1": (1/2)*(10**7), "hostile_report": (1/3)*(10**7)}
     
     actual = rr.add_unmapped_nonhost_to_hostile_reports(unmapped_nonhost, hostile)
     
     expected = pd.DataFrame({"Reads passing QC": [177014, 59900],
                              "Nonhost reads": [59944, 59900],
                              "Percent host": [0.66136, 0],
-                             "Unmapped nonhost RPK": [4698.0, 29696.0]},
+                             "Unmapped nonhost TPM": [(1/3)*(10**7), (1/2)*(10**7)]},
                             index=["hostile_report", "hostile_report_1"])
     
     assert (actual.values == expected.values).all()

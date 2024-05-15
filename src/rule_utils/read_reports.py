@@ -1,7 +1,24 @@
 import json
 import pandas as pd
 import subprocess
+import argparse
 from os import path
+
+
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("metadata", 
+                        help="A csv file with sample metadata")
+    parser.add_argument("--raw_reads_dir",
+                        help="Path to the directory containing the raw reads")
+    parser.add_argument("--hostile_dir",
+                       help="Path to the directory containing hostile output reports")
+    parser.add_argument("--genefams_filepath",
+                        help="Filepath containing the gene families output from HUMAnN")
+    parser.add_argument("--output", 
+                        help="Where should the output be stored?")
+    
+    return parser.parse_args()
 
 
 def read_hostile_report(filepath) -> dict:
@@ -34,7 +51,7 @@ def create_df_from_hostile_reports(metadata, hostile_directory, sample_col="Samp
     
     return df
 
-
+# TODO: NEEDS TO BE TSS SCALED TO TPM
 def get_unmapped_nonhost_from_humann(genefams_filepath):
     df = pd.read_csv(genefams_filepath, sep="\t", index_col="# Gene Family")
     
@@ -82,7 +99,18 @@ def add_original_read_counts_to_df(metadata, directory, df,
 
 
 def main():
-    print("Not yet implemented")
+    args = get_args()
+    metadata = pd.read_csv(args.metadata)
+    
+    df = create_df_from_hostile_reports(metadata, args.hostile_dir)
+    
+    unmapped_nonhost = get_unmapped_nonhost_from_humann(args.genefams_filepath)
+    df = add_unmapped_nonhost_to_hostile_reports(unmapped_nonhost, df)
+
+    df = add_original_read_counts_to_df(metadata, args.raw_reads_dir, df)
+
+    df.to_csv(args.output)
+
 
 
 if __name__ == "__main__":

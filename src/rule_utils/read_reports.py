@@ -51,7 +51,7 @@ def create_df_from_hostile_reports(metadata, hostile_directory, sample_col="Samp
     
     return df
 
-# TODO: NEEDS TO BE TSS SCALED TO TPM
+
 def get_unmapped_nonhost_from_humann(genefams_filepath):
     df = pd.read_csv(genefams_filepath, sep="\t", index_col="# Gene Family")
     
@@ -59,14 +59,19 @@ def get_unmapped_nonhost_from_humann(genefams_filepath):
     chars_to_rm = len("_Abundance-RPKs")
     df.columns = [col[:-chars_to_rm] for col in df.columns]
 
-    return df.loc["UNMAPPED", :].to_dict()
+    # Scale from unmapped RPK to TPM
+    sample_sums = df.sum(axis=0)
+    unmapped_per_sample = df.loc["UNMAPPED", :]
+    unmapped_tpm = (unmapped_per_sample/sample_sums)*1000000
+
+    return unmapped_tpm.to_dict()
     
 
 def add_unmapped_nonhost_to_hostile_reports(unmapped_nonhost: dict, hostile_reports_df: pd.DataFrame):
     # it's a bit inefficient to cast the unmapped nonhost to a dict then back to pd.Series,
     # but I think that get_unmapped_nonhost_from_humann() returning a dict makes more sense
     # as a standalone func that may be used for other things
-    return hostile_reports_df.join(pd.Series(unmapped_nonhost, name="Unmapped nonhost RPK"))
+    return hostile_reports_df.join(pd.Series(unmapped_nonhost, name="Unmapped nonhost TPM"))
 
 
 def count_reads_fastq_gz(file_path) -> int:
@@ -110,7 +115,6 @@ def main():
     df = add_original_read_counts_to_df(metadata, args.raw_reads_dir, df)
 
     df.to_csv(args.output)
-
 
 
 if __name__ == "__main__":

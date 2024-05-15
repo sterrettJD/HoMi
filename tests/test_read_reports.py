@@ -71,3 +71,21 @@ def test_add_unmapped_nonhost_to_hostile():
 def test_fastq_gz_read_counter():
     n_reads = rr.count_reads_fastq_gz("tests/test_data/small_R1.fq.gz")
     assert n_reads == 3
+
+
+def test_add_raw_counts_to_df():
+    metadata_raw_counts = pd.DataFrame({"Sample": ["small"]})
+    df = pd.DataFrame({"Reads passing QC": [177014],
+                       "Nonhost reads": [59944],
+                       "Percent host": [0.66136],
+                       "Unmapped nonhost RPK": [4698.0]},
+                       index=["small"])
+    actual = rr.add_original_read_counts_to_df(metadata_raw_counts, "tests/test_data", df)
+    expected = pd.DataFrame({"Reads passing QC": [177014],
+                             "Nonhost reads": [59944],
+                             "Percent host": [0.66136],
+                             "Unmapped nonhost RPK": [4698.0],
+                             "Raw reads": [6]},
+                             index=["small"])
+    
+    assert (actual.values == expected.values).all()

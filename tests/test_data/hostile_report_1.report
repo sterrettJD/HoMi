@@ -1,0 +1,20 @@
+[
+    {
+        "version": "1.1.0",
+        "aligner": "bowtie2",
+        "index": "synthetic/data/human-t2t-hla-argos985",
+        "options": [],
+        "fastq1_in_name": "0_perc_host_1.R1.fq",
+        "fastq1_in_path": "/scratch/Users/jost9358/HoMi/benchmarking/benchmarking_synthetic.f0.0.r0.0/0_perc_host_1.R1.fq",
+        "fastq1_out_name": "0_perc_host_1.R1.clean_1.fastq.gz",
+        "fastq1_out_path": "benchmarking_synthetic.f0.0.r0.0.nonhost/0_perc_host_1.R1.clean_1.fastq.gz",
+        "reads_in": 59900,
+        "reads_out": 59900,
+        "reads_removed": 0,
+        "reads_removed_proportion": 0.0,
+        "fastq2_in_name": "0_perc_host_1.R2.fq",
+        "fastq2_in_path": "/scratch/Users/jost9358/HoMi/benchmarking/benchmarking_synthetic.f0.0.r0.0/0_perc_host_1.R2.fq",
+        "fastq2_out_name": "0_perc_host_1.R2.clean_2.fastq.gz",
+        "fastq2_out_path": "benchmarking_synthetic.f0.0.r0.0.nonhost/0_perc_host_1.R2.clean_2.fastq.gz"
+    }
+]

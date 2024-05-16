@@ -31,7 +31,7 @@ rule simulate_synthetic_communities:
     resources:
         partition="short",
         mem_mb=int(16*1000), # MB
-        runtime=int(1*60) # min
+        runtime=int(2*60) # min
     params:
         script=os.path.join(synthetic_work_dir, "create_mock_community.py"),
         work_dir=synthetic_work_dir,
@@ -39,7 +39,7 @@ rule simulate_synthetic_communities:
     shell:
         """
         python {params.script} {input.sample_data} --work_dir {params.work_dir} --output_dir {params.communities_dir}
-        touch {ouput.done}
+        touch {output.done}
         """
 
 

@@ -1259,9 +1259,7 @@ rule reads_breakdown:
   It outputs a CSV report of this with data per sample.
   """
   input:
-    RAW=PROJ, # directory for symlinked raw reads
     METADATA=config["METADATA"].strip(),
-    HOSTILE=f"{trim_trunc_path}.nonhost",
     GENEFAMS=pj(f"{trim_trunc_path}.nonhost.humann", 
                 "all_genefamilies.tsv")
   output:
@@ -1274,12 +1272,17 @@ rule reads_breakdown:
     slurm=get_slurm_extra(config, "reads_breakdown")
   threads: get_threads(1, config, "reads_breakdown")
   params:
-    reporter_script=get_read_reports_path()
+    reporter_script=get_read_reports_path(),
+    proj=PROJ, # directory for symlinked raw reads
+    hostile=f"{trim_trunc_path}.nonhost"
+    # proj and hostile are more technically "inputs",
+    # but putting them as params here because it doesn't know which rules
+    # generate those
   shell:
     """
     python {params.reporter_script} {input.METADATA} \
-    --raw_reads_dir {input.RAW} \
-    --hostile_dir {input.HOSTILE} \
+    --raw_reads_dir {params.proj} \
+    --hostile_dir {params.hostile} \
     --genefams_filepath {input.GENEFAMS} \
     --output {output.REPORT}
 

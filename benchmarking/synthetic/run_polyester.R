@@ -107,8 +107,32 @@ fold_change_matrix <- matrix(fold_change_values, nrow=numtx, byrow=FALSE)
 
 
 simulate_experiment(fasta=transcriptome_filepath,
-                    reads_per_transcript=rnbinom(n=numtx, size=20, prob=0.5),
+                    reads_per_transcript=rnbinom(n=numtx, size=5, prob=0.5),
                     fold_changes=fold_change_matrix,
                     outdir=output_dir,
                     num_reps=size_per_group,
                     readlen=150)
+
+# rename samples aaccording to the provided IDs
+i <- 1
+for(sample in colnames(nonzero_depths)){
+    if (i < 10){
+        s1 <- paste0("sample_0", i, "_1.fasta")
+        s2 <- paste0("sample_0", i, "_2.fasta")
+    } else {
+        s1 <- paste0("sample_", i, "_1.fasta")
+        s2 <- paste0("sample_", i, "_2.fasta")
+    }
+
+    file.rename(s1, paste(sample, "_R1.fasta"))
+    file.rename(s2, paste(sample, "_R2.fasta"))
+
+    i <- i + 1
+}
+
+# create the 0 reads files
+zero_depths <- depths[depths == 0]
+for(sample in colnames(zero_depths)){
+    file.create(paste(sample, "_R1.fasta"))
+    file.create(paste(sample, "_R2.fasta"))
+}

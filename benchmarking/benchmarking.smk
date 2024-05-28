@@ -74,9 +74,9 @@ rule simulate_synthetic_host_transcriptomes:
     shell:
         """
         Rscript {params.script} \
-        -t data/host_transcriptome.fna.gz \
+        -t synthetic/data/host_transcriptome.fna.gz \
         --transcriptome_url https://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/annotation/GRCh38_latest/refseq_identifiers/GRCh38_latest_rna.fna.gz \
-        -g data/host_transcriptome.gff.gz \
+        -g synthetic/data/host_transcriptome.gff.gz \
         --gtf_url https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/GCA_000001405.15_GRCh38_genomic.gff.gz \
         -s {input.sample_data} \
         -n human \

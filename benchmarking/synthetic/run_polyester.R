@@ -69,7 +69,9 @@ option_list <- list(
     make_option(c("-s", "--sample_data"), 
                 help="A CSV file with the number of reads per sample belonging to the host. Samples are columns, and rows are organisms. A column labeled `genome` should denote the organisms, and a column `GCF_id` will be ignored."),
     make_option(c("-n", "--host_id"), 
-                help="A CSV file with the number of reads per sample belonging to the host.")
+                help="A CSV file with the number of reads per sample belonging to the host."),
+    make_option(c("-o", "--output_dir"), 
+                help="The output directory for reads.")
 
 )
 
@@ -85,6 +87,7 @@ gtf_filepath <- opt$gtf_filepath
 gtf_url <- opt$gtf_url
 sample_data <- opt$sample_data
 host_id <- opt$host_id
+output_dir <- opt$output_dir
 
 get_reference(transcriptome_filepath, transcriptome_url)
 get_reference(gtf_filepath, gtf_url)
@@ -106,5 +109,5 @@ fold_change_matrix <- matrix(fold_change_values, nrow=numtx, byrow=FALSE)
 simulate_experiment(fasta=transcriptome_filepath,
                     reads_per_transcript=rnbinom(n=numtx, size=20, prob=0.5),
                     fold_changes=fold_change_matrix,
-                    outdir='simulated_reads',
+                    outdir=output_dir,
                     num_reps=size_per_group)

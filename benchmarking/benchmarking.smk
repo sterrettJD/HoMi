@@ -5,6 +5,7 @@ from semisynthetic import simulate_semisynthetic as sss
 # some global vars here for now BUT NEED TO BE MIGRATED TO CONFIG
 synthetic_work_dir = "synthetic"
 synthetic_communities_dir = "synthetic_communities"
+synthetic_transcriptomes_dir = "synthetic_transcriptomes"
 homi_args = "--profile slurm"
 
 #colon_sample_htx="SRP127360"
@@ -18,7 +19,8 @@ rule all:
         # From create_HoMi_metadata
         os.path.join(synthetic_work_dir, "synthetic_homi_metadata.csv"),
         # From run_HoMi_synthetic_communities
-        "HoMi_is_done_synthetic"
+        "HoMi_is_done_synthetic",
+        "synthetic_transcriptomes_created"
 
 
 rule simulate_synthetic_communities:
@@ -41,6 +43,37 @@ rule simulate_synthetic_communities:
         python {params.script} {input.sample_data} --work_dir {params.work_dir} --output_dir {params.communities_dir}
         touch {output.done}
         """
+
+
+rule simulate_synthetic_host_transcriptomes:
+    input:
+        sample_data=os.path.join(synthetic_work_dir, "sample_data.csv")
+    output:
+        communities=directory(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir)),
+        done="synthetic_transcriptomes_created"
+    threads: 1
+    resources:
+        partition="short",
+        mem_mb=int(16*1000), # MB
+        runtime=int(4*60) # min
+    params:
+        script=os.path.join(synthetic_work_dir, "run_polyester.R"),
+        work_dir=synthetic_work_dir,
+        communities_dir=synthetic_communities_dir
+    shell:
+        """
+        Rscript {params.script} \
+        -t data/host_transcriptome.fna.gz \
+        --transcriptome_url https://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/annotation/GRCh38_latest/refseq_identifiers/GRCh38_latest_rna.fna.gz \
+        -g data/host_transcriptome.gff.gz \
+        --gtf_url https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/GCA_000001405.15_GRCh38_genomic.gff.gz \
+        -s {imput.sample_data} \
+        -n human \
+        -o {output.communities}
+        
+        touch {output.done}
+        """
+
 
 
 rule create_HoMi_metadata:
@@ -69,6 +102,7 @@ rule create_HoMi_metadata:
                                 for sample in df.index]
 
         df.to_csv(output.homi_metadata, index_label="Sample")
+
 
 rule run_HoMi_synthetic_communities:
     input:

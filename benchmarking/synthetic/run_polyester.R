@@ -10,7 +10,7 @@
 
 
 if(!require("optparse")){
-    install.packages("optparse")
+    install.packages("optparse", repos="http://cran.us.r-project.org")
 }
 
 if (!requireNamespace("BiocManager", quietly=TRUE)){

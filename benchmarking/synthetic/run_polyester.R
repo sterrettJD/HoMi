@@ -110,4 +110,5 @@ simulate_experiment(fasta=transcriptome_filepath,
                     reads_per_transcript=rnbinom(n=numtx, size=20, prob=0.5),
                     fold_changes=fold_change_matrix,
                     outdir=output_dir,
-                    num_reps=size_per_group)
+                    num_reps=size_per_group,
+                    readlen=150)

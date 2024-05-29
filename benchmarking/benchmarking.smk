@@ -70,7 +70,7 @@ rule simulate_synthetic_host_transcriptomes:
     params:
         script=os.path.join(synthetic_work_dir, "run_polyester.R"),
         work_dir=synthetic_work_dir,
-        communities_dir=synthetic_transcriptomes_dir
+        communities_dir=os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir)
     shell:
         """
         Rscript {params.script} \

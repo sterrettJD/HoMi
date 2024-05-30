@@ -113,7 +113,9 @@ simulate_experiment(fasta=transcriptome_filepath,
                     num_reps=size_per_group,
                     readlen=150)
 
-# rename samples aaccording to the provided IDs
+# rename samples according to the provided IDs
+start_wd <- getwd()
+setwd(output_dir)
 i <- 1
 for(sample in colnames(nonzero_depths)){
     if (i < 10){
@@ -136,3 +138,5 @@ for(sample in colnames(zero_depths)){
     file.create(paste(sample, "_R1.fasta"))
     file.create(paste(sample, "_R2.fasta"))
 }
+
+setwd(start_wd)

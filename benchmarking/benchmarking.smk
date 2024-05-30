@@ -66,7 +66,7 @@ rule simulate_synthetic_host_transcriptomes:
     resources:
         partition="short",
         mem_mb=int(16*1000), # MB
-        runtime=int(4*60) # min
+        runtime=int(12*60) # min
     params:
         script=os.path.join(synthetic_work_dir, "run_polyester.R"),
         work_dir=synthetic_work_dir,

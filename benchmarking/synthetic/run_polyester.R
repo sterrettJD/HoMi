@@ -117,7 +117,7 @@ simulate_experiment(fasta=transcriptome_filepath,
 start_wd <- getwd()
 setwd(output_dir)
 i <- 1
-for(sample in colnames(nonzero_depths)){
+for(sample in names(nonzero_depths)){
     if (i < 10){
         s1 <- paste0("sample_0", i, "_1.fasta")
         s2 <- paste0("sample_0", i, "_2.fasta")
@@ -125,18 +125,19 @@ for(sample in colnames(nonzero_depths)){
         s1 <- paste0("sample_", i, "_1.fasta")
         s2 <- paste0("sample_", i, "_2.fasta")
     }
+    print(paste(s1, "->", sample))
 
-    file.rename(s1, paste(sample, "_R1.fasta"))
-    file.rename(s2, paste(sample, "_R2.fasta"))
+    file.rename(s1, paste0(sample, "_R1.fasta"))
+    file.rename(s2, paste0(sample, "_R2.fasta"))
 
     i <- i + 1
 }
 
 # create the 0 reads files
 zero_depths <- depths[depths == 0]
-for(sample in colnames(zero_depths)){
-    file.create(paste(sample, "_R1.fasta"))
-    file.create(paste(sample, "_R2.fasta"))
+for(sample in names(zero_depths)){
+    file.create(paste0(sample, "_R1.fasta"))
+    file.create(paste0(sample, "_R2.fasta"))
 }
 
 setwd(start_wd)

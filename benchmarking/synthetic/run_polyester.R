@@ -43,7 +43,7 @@ get_reference <- function(file_path, url){
 
 
 get_sample_depths <- function(sample_data, host_id){
-    df <- read.csv(sample_data)
+    df <- read.csv(sample_data, check.names=FALSE)
     rownames(df) <- df$genome
     df$genome <- NULL
     

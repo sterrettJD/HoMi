@@ -58,9 +58,7 @@ rule simulate_synthetic_host_transcriptomes:
     input:
         sample_data=metadata_file
     output:
-        data=expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_{read}.fasta"),
-                    sample=samples,
-                    read=reads),
+        data=os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_{read}.fasta"),
         done="synthetic_transcriptomes_created"
     threads: 1
     resources:
@@ -88,13 +86,9 @@ rule simulate_synthetic_host_transcriptomes:
 
 rule transcriptome_fasta_to_fastq:
     input:
-        data=expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_{read}.fasta"),
-                    sample=samples,
-                    read=reads)
+        data=os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_{read}.fasta")
     output:
-        data=expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_{read}.fastq"),
-                    sample=samples,
-                    read=reads)
+        data=os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_{read}.fastq")
     threads: 1
     conda: "../conda_envs/bbmap.yaml"
     resources:

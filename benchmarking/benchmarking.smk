@@ -58,7 +58,9 @@ rule simulate_synthetic_host_transcriptomes:
     input:
         sample_data=metadata_file
     output:
-        data=os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_{read}.fasta"),
+        data=expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_{read}.fasta"),
+                    sample=samples,
+                    read=reads),
         done="synthetic_transcriptomes_created"
     threads: 1
     resources:

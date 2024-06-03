@@ -206,14 +206,19 @@ def get_rule_extra_args(config, rule_name):
     return config.get(f"{rule_name}_extra", "")
 
 
-def get_metaphlan_db_loc(config):
+def get_metaphlan_index_name(config):
     """
     This uses the mpa_latest file to get the database name for metaphlan.
     """
-    name_file = path.join(config["metaphlan_bowtie_db"], "mpa_latest")
-    with open(name_file) as f:
-        db_name = f.readline()
-    return path.join(config["metaphlan_bowtie_db"], db_name)
+    # See if one is provided
+    if config.get("metaphlan_index_name") is not None:
+        return config.get("metaphlan_index_name")
+    
+    # If one isn't provided, read it from mpa_latest
+    loc = config["metaphlan_bowtie_db"]
+    with open(path.join(loc, "mpa_latest")) as f:
+        name = f.read()
+    return name
 
 
 def get_R_installation_path():

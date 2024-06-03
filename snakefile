@@ -1,7 +1,7 @@
 import pandas as pd
 from os.path import join as pj
 from os.path import split
-from src.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil_rmd_path, get_nonpareil_html_path, get_agg_script_path, get_mphlan_conv_script_path, get_taxa_barplot_rmd_path, get_sam2bam_path, get_func_barplot_rmd_path, get_partition, get_mem, get_runtime, get_threads, get_host_mapping_samples, get_slurm_extra, get_gmm_rmd_path, get_kraken_db_loc, get_tpm_converter_path, get_host_map_method, get_rule_extra_args, get_metaphlan_db_loc, get_R_installation_path, get_read_reports_path
+from src.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil_rmd_path, get_nonpareil_html_path, get_agg_script_path, get_mphlan_conv_script_path, get_taxa_barplot_rmd_path, get_sam2bam_path, get_func_barplot_rmd_path, get_partition, get_mem, get_runtime, get_threads, get_host_mapping_samples, get_slurm_extra, get_gmm_rmd_path, get_kraken_db_loc, get_tpm_converter_path, get_host_map_method, get_rule_extra_args, get_metaphlan_index_name, get_R_installation_path, get_read_reports_path
 
 
 
@@ -598,16 +598,14 @@ rule run_humann_nonhost:
   params:
     dirpath=f"{trim_trunc_path}.nonhost.humann",
     metaphlan_bowtie_db=config["metaphlan_bowtie_db"],
+    metaphlan_index=get_metaphlan_index_name(config),
     extra=get_rule_extra_args(config, "run_humann_nonhost")
   shell:
     """
-    # read the db name from mpa_latest file
-    # metaphlan_db_name="$(<{params.metaphlan_bowtie_db}/mpa_latest)"
-    
     mkdir -p {params.dirpath}
     humann -i {input.NONHUMAN_READS} -o {params.dirpath}/{wildcards.sample} \
     --threads {threads} --search-mode uniref90 \
-    --metaphlan-options="--bowtie2db {params.metaphlan_bowtie_db}" \
+    --metaphlan-options "--bowtie2db {params.metaphlan_bowtie_db} --index {params.metaphlan_index}" \
     {params.extra}
 
     """

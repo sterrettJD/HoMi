@@ -100,6 +100,7 @@ rule transcriptome_fasta_to_fastq:
     shell:
         """
         reformat.sh in={input.data} out={output.data} qin=33 qout=33 qfake=40
+        rm {input.data}
         """
 
 

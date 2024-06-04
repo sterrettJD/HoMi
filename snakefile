@@ -468,7 +468,7 @@ rule setup_metaphlan:
     """
     mkdir -p {output.loc}
 
-    if [ {params.index_name} = "latest" ]; then
+    if [ "{params.index_name}" = "latest" ]; then
       metaphlan --install --nproc {threads} --bowtie2db {output.loc} {params.extra}
     
     else
@@ -615,11 +615,23 @@ rule run_humann_nonhost:
   shell:
     """
     mkdir -p {params.dirpath}
-    humann -i {input.NONHUMAN_READS} -o {params.dirpath}/{wildcards.sample} \
-    --threads {threads} --search-mode uniref90 \
-    --metaphlan-options "--bowtie2db {params.metaphlan_bowtie_db} --index {params.metaphlan_index}" \
-    {params.extra}
 
+    if [ "{params.metaphlan_index}" = "latest" ]; then
+      # read index name form the latest file
+      metaphlan_db_name="$(<{params.metaphlan_bowtie_db}/mpa_latest)"
+      
+      humann -i {input.NONHUMAN_READS} -o {params.dirpath}/{wildcards.sample} \
+      --threads {threads} --search-mode uniref90 \
+      --metaphlan-options "--bowtie2db {params.metaphlan_bowtie_db} --index $metaphlan_db_name" \
+      {params.extra}
+
+    else
+      humann -i {input.NONHUMAN_READS} -o {params.dirpath}/{wildcards.sample} \
+      --threads {threads} --search-mode uniref90 \
+      --metaphlan-options "--bowtie2db {params.metaphlan_bowtie_db} --index {params.metaphlan_index}" \
+      {params.extra}
+
+    fi
     """
 
 

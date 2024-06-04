@@ -448,10 +448,12 @@ rule install_R_packages:
 
 rule setup_metaphlan:
   """
-  This rule installs the metaphlan database.
+  This rule installs the metaphlan database. If the user specifies "latest" or nothing as metaphlan_index_name in the config, 
+  it will just download the default latest metaphlan database. Otherwise, users can specify specific versions. 
+  The database will be downloaded in the directory specified by metaphlan_bowtie_db in the config file.
   """
   output:
-    directory(config['metaphlan_bowtie_db'])
+    loc=directory(config['metaphlan_bowtie_db'])
   resources:
     partition=get_partition("short", config, "setup_metaphlan"),
     mem_mb=get_mem(int(32*1000), config, "setup_metaphlan"), # MB
@@ -460,13 +462,23 @@ rule setup_metaphlan:
   threads: get_threads(8, config, "setup_metaphlan")
   conda: "conda_envs/humann.yaml"
   params:
+    index_name=get_metaphlan_index_name(config),
     extra=get_rule_extra_args(config, "setup_metaphlan")
   shell:
     """
-    mkdir -p {output}
-    metaphlan --install --nproc {threads} --bowtie2db {output} {params.extra}
+    mkdir -p {output.loc}
+
+    if [ {params.index_name} = "latest" ]; then
+      metaphlan --install --nproc {threads} --bowtie2db {output.loc} {params.extra}
+    
+    else
+      metaphlan --install --nproc {threads} --bowtie2db {output.loc} --index {params.index_name} {params.extra}
+    
+    fi
+    
     # Option to do it manually if --install doesn't seem to work
     # cd {output}
+    # Can specify whatever version you want here
     # wget http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/bowtie2_indexes/mpa_vOct22_CHOCOPhlAnSGB_202212_bt2.tar
     # tar -xvf mpa_vOct22_CHOCOPhlAnSGB_202212_bt2.tar
     # rm mpa_vOct22_CHOCOPhlAnSGB_202212_bt2.tar

@@ -208,12 +208,19 @@ def get_rule_extra_args(config, rule_name):
 
 def get_metaphlan_index_name(config):
     """
-    This uses the mpa_latest file to get the database name for metaphlan.
+    Checks the config for the index name. If there isn't one, it returns "latest".
     """
     # See if one is provided
     if config.get("metaphlan_index_name") is not None:
         return config.get("metaphlan_index_name")
     
+    return "latest"
+    
+
+def read_latest_metaphlan_index_name(config):
+    """
+    This uses the mpa_latest file to get the database name for metaphlan.
+    """
     # If one isn't provided, read it from mpa_latest
     loc = config["metaphlan_bowtie_db"]
     with open(path.join(loc, "mpa_latest")) as f:

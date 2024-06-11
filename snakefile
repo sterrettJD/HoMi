@@ -622,13 +622,13 @@ rule run_humann_nonhost:
       
       humann -i {input.NONHUMAN_READS} -o {params.dirpath}/{wildcards.sample} \
       --threads {threads} --search-mode uniref90 \
-      --metaphlan-options "--bowtie2db {params.metaphlan_bowtie_db} --index $metaphlan_db_name" \
+      --metaphlan-options "--bowtie2db {params.metaphlan_bowtie_db}" \
       {params.extra}
 
     else
       humann -i {input.NONHUMAN_READS} -o {params.dirpath}/{wildcards.sample} \
       --threads {threads} --search-mode uniref90 \
-      --metaphlan-options "--bowtie2db {params.metaphlan_bowtie_db} --index {params.metaphlan_index}" \
+      --metaphlan-options "--bowtie2db {params.metaphlan_bowtie_db}" \
       {params.extra}
 
     fi

@@ -47,6 +47,8 @@ loc_for_hostile_db_download: data
 
 # Path to MetaPhlan bowtie database (step 1 of HUMAnN)
 metaphlan_bowtie_db: data/metaphlan_db/
+# OPTIONAL 
+# metaphlan_index_name: mpa_vJun23_CHOCOPhlAnSGB_202307
 
 # Paths to Chocophlan and UniRef databases for HUMAnN
 # If these aren't already downloaded, HoMi will download them
@@ -68,7 +70,7 @@ host_ref_fna: GRCh38/GRCh38_full_analysis_set.fna
 host_ref_gtf: GRCh38/GRCh38_full_analysis_set.refseq.gtf
 
 # Specifying the host mapping method here. options include BBMap and HISAT2
-host_map_method: BBMap
+host_map_method: HISAT2
 
 ################################
 ### Resources ###

@@ -1,7 +1,7 @@
 import pandas as pd
 from os.path import join as pj
 from os.path import split
-from src.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil_rmd_path, get_nonpareil_html_path, get_agg_script_path, get_mphlan_conv_script_path, get_taxa_barplot_rmd_path, get_sam2bam_path, get_func_barplot_rmd_path, get_partition, get_mem, get_runtime, get_threads, get_host_mapping_samples, get_slurm_extra, get_gmm_rmd_path, get_kraken_db_loc, get_tpm_converter_path, get_host_map_method, get_rule_extra_args, get_metaphlan_db_loc, get_R_installation_path, get_read_reports_path
+from src.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil_rmd_path, get_nonpareil_html_path, get_agg_script_path, get_mphlan_conv_script_path, get_taxa_barplot_rmd_path, get_sam2bam_path, get_func_barplot_rmd_path, get_partition, get_mem, get_runtime, get_threads, get_host_mapping_samples, get_slurm_extra, get_gmm_rmd_path, get_kraken_db_loc, get_tpm_converter_path, get_host_map_method, get_rule_extra_args, get_metaphlan_index_name, get_R_installation_path, get_read_reports_path
 
 
 
@@ -448,10 +448,12 @@ rule install_R_packages:
 
 rule setup_metaphlan:
   """
-  This rule installs the metaphlan database.
+  This rule installs the metaphlan database. If the user specifies "latest" or nothing as metaphlan_index_name in the config, 
+  it will just download the default latest metaphlan database. Otherwise, users can specify specific versions. 
+  The database will be downloaded in the directory specified by metaphlan_bowtie_db in the config file.
   """
   output:
-    directory(config['metaphlan_bowtie_db'])
+    loc=directory(config['metaphlan_bowtie_db'])
   resources:
     partition=get_partition("short", config, "setup_metaphlan"),
     mem_mb=get_mem(int(32*1000), config, "setup_metaphlan"), # MB
@@ -460,13 +462,23 @@ rule setup_metaphlan:
   threads: get_threads(8, config, "setup_metaphlan")
   conda: "conda_envs/humann.yaml"
   params:
+    index_name=get_metaphlan_index_name(config),
     extra=get_rule_extra_args(config, "setup_metaphlan")
   shell:
     """
-    mkdir -p {output}
-    metaphlan --install --nproc {threads} --bowtie2db {output} {params.extra}
+    mkdir -p {output.loc}
+
+    if [ "{params.index_name}" = "latest" ]; then
+      metaphlan --install --nproc {threads} --bowtie2db {output.loc} {params.extra}
+    
+    else
+      metaphlan --install --nproc {threads} --bowtie2db {output.loc} --index {params.index_name} {params.extra}
+    
+    fi
+    
     # Option to do it manually if --install doesn't seem to work
     # cd {output}
+    # Can specify whatever version you want here
     # wget http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/bowtie2_indexes/mpa_vOct22_CHOCOPhlAnSGB_202212_bt2.tar
     # tar -xvf mpa_vOct22_CHOCOPhlAnSGB_202212_bt2.tar
     # rm mpa_vOct22_CHOCOPhlAnSGB_202212_bt2.tar
@@ -598,18 +610,28 @@ rule run_humann_nonhost:
   params:
     dirpath=f"{trim_trunc_path}.nonhost.humann",
     metaphlan_bowtie_db=config["metaphlan_bowtie_db"],
+    metaphlan_index=get_metaphlan_index_name(config),
     extra=get_rule_extra_args(config, "run_humann_nonhost")
   shell:
     """
-    # read the db name from mpa_latest file
-    # metaphlan_db_name="$(<{params.metaphlan_bowtie_db}/mpa_latest)"
-    
     mkdir -p {params.dirpath}
-    humann -i {input.NONHUMAN_READS} -o {params.dirpath}/{wildcards.sample} \
-    --threads {threads} --search-mode uniref90 \
-    --metaphlan-options="--bowtie2db {params.metaphlan_bowtie_db}" \
-    {params.extra}
 
+    if [ "{params.metaphlan_index}" = "latest" ]; then
+      # read index name form the latest file
+      metaphlan_db_name="$(<{params.metaphlan_bowtie_db}/mpa_latest)"
+      
+      humann -i {input.NONHUMAN_READS} -o {params.dirpath}/{wildcards.sample} \
+      --threads {threads} --search-mode uniref90 \
+      --metaphlan-options "--bowtie2db {params.metaphlan_bowtie_db}" \
+      {params.extra}
+
+    else
+      humann -i {input.NONHUMAN_READS} -o {params.dirpath}/{wildcards.sample} \
+      --threads {threads} --search-mode uniref90 \
+      --metaphlan-options "--bowtie2db {params.metaphlan_bowtie_db}" \
+      {params.extra}
+
+    fi
     """
 
 

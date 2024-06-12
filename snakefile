@@ -1290,7 +1290,7 @@ rule reads_breakdown:
   resources:
     partition=get_partition("short", config, "reads_breakdown"),
     mem_mb=get_mem(int(2*1000), config, "reads_breakdown"), # MB, or 2 GB
-    runtime=get_runtime(int(2*60), config, "reads_breakdown"), # min, should need much less
+    runtime=get_runtime(int(6*60), config, "reads_breakdown"), # min, should need much less
     slurm=get_slurm_extra(config, "reads_breakdown")
   threads: get_threads(1, config, "reads_breakdown")
   params:

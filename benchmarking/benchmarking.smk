@@ -12,6 +12,8 @@ metadata_file = os.path.join(synthetic_work_dir, "sample_data.csv")
 metadata = pd.read_csv(metadata_file)
 samples = metadata.drop(columns=["genome", "GCF_id"]).columns
 reads = ["R1", "R2"]
+pereira_srr_ids = ["SRR25593833"]
+
 
 #colon_sample_htx="SRP127360"
 #colon_sample_htx="SRR6410603"
@@ -29,7 +31,10 @@ rule all:
         # From synthetic transcriptomes
         expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_{read}.fastq"),
                sample=samples,
-               read=reads)
+               read=reads),
+        expand(os.path.join("Pereira", f"{srr_id}_{{lane}}.fastq"),
+                srr_id=pereira_srr_ids,
+                lane=[1,2])
 
 
 rule simulate_synthetic_communities:
@@ -104,7 +109,7 @@ rule transcriptome_fasta_to_fastq:
         """
 
 
-rule create_HoMi_metadata:
+rule create_HoMi_metadata_synthetic:
     input:
         sample_data=metadata_file
     output:
@@ -152,3 +157,37 @@ rule run_HoMi_synthetic_communities:
         touch {output}
         """
 
+
+rule prefetch_Pereira:
+    output:
+        directory(os.path.join("Pereira", "{srr_id}"))
+    conda: "sra_tools.yaml"
+    threads: 8
+    resources:
+        partition="short",
+        mem_mb=int(8*1000), # MB
+        runtime=int(2*60) # min
+    shell:
+        """
+        mkdir -p Pereira
+        cd Pereira
+        prefetch {wildcards.srr_id}
+        cd ..
+        """
+
+rule fasterq_dump_Pereira:
+    input:
+        os.path.join("Pereira", "{srr_id}")
+    output:
+        os.path.join("Pereira", "{srr_id}_{lane}.fastq")
+    conda: "sra_tools.yaml"
+    threads: 8
+    resources:
+        partition="short",
+        mem_mb=int(8*1000), # MB
+        runtime=int(1*60) # min
+    shell:
+        """
+        cd Pereira
+        fasterq-dump -p {wildcards.srr_id} -e {threads}
+        """

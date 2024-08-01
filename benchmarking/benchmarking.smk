@@ -32,7 +32,7 @@ rule all:
         expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_{read}.fastq"),
                sample=samples,
                read=reads),
-        expand(os.path.join("Pereira", f"{srr_id}_{{lane}}.fastq"),
+        expand(os.path.join("Pereira", "{srr_id}_{lane}.fastq"),
                 srr_id=pereira_srr_ids,
                 lane=[1,2])
 

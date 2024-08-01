@@ -160,7 +160,7 @@ rule run_HoMi_synthetic_communities:
 
 rule prefetch_Pereira:
     output:
-        directory(os.path.join("Pereira", "{srr_id}"))
+        out_dir=directory(os.path.join("Pereira", "{srr_id}"))
     conda: "sra_tools.yaml"
     threads: 8
     resources:
@@ -177,17 +177,20 @@ rule prefetch_Pereira:
 
 rule fasterq_dump_Pereira:
     input:
-        os.path.join("Pereira", "{srr_id}")
+        sra_files=os.path.join("Pereira", "{srr_id}")
     output:
-        os.path.join("Pereira", "{srr_id}_{lane}.fastq")
+        fastq=os.path.join("Pereira", "{srr_id}_R{lane}.fastq")
     conda: "sra_tools.yaml"
     threads: 8
     resources:
         partition="short",
         mem_mb=int(8*1000), # MB
         runtime=int(1*60) # min
+    params:
+        tmp_name=os.path.join("Pereira", "{srr_id}_{lane}.fastq")
     shell:
         """
         cd Pereira
         fasterq-dump -p {wildcards.srr_id} -e {threads}
+        mv {params.tmp_name} {output.fastq}
         """

@@ -32,9 +32,10 @@ rule all:
         expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_{read}.fastq"),
                sample=samples,
                read=reads),
-        expand(os.path.join("Pereira", "{srr_id}_{lane}.fastq"),
-                srr_id=pereira_srr_ids,
-                lane=[1,2])
+        expand(os.path.join("Pereira", "{srr_id}_1.fastq"),
+                srr_id=pereira_srr_ids),
+        expand(os.path.join("Pereira", "{srr_id}_2.fastq"),
+                srr_id=pereira_srr_ids)
 
 
 rule simulate_synthetic_communities:
@@ -159,7 +160,8 @@ rule run_HoMi_synthetic_communities:
 
 rule fasterq_dump_Pereira:
     output:
-        fastq=os.path.join("Pereira", "{srr_id}_{lane}.fastq")
+        fwd=os.path.join("Pereira", "{srr_id}_1.fastq"),
+        rev=os.path.join("Pereira", "{srr_id}_2.fastq")
     conda: "conda_envs/sra_tools.yaml"
     threads: 4
     resources:

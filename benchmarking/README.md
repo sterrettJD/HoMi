@@ -33,4 +33,6 @@ docker run --platform linux/amd64 -v "$(pwd)":/workdir:rw -w /workdir snakemake/
 ## Semi-synthetic communities
 
 ## Mock communities
+Mock communities were pulled from the [Pereira-Marques et al. low biomass paper](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10913719/). These mock communities include 97%, 90%, 70%, 10%, and 0% host cells combined with a mock microbial community, then sequenced. 
 
+`Pereira/Pereira_data.csv` contains the sample host percents and SRR accession IDs. Running `benchmarking.smk` will pull these SRR runs using prefetch+fasterq-dump to the `Pereira/` directory.

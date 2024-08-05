@@ -47,14 +47,19 @@ get_sample_depths <- function(sample_data, host_id){
     df <- read.csv(sample_data, check.names=FALSE)
     rownames(df) <- df$genome
     df$genome <- NULL
-    
+
     index <- !grepl(pattern="GCF_id", x=colnames(df))
     vals <- df[host_id, index]
     return (unlist(vals))
 }
 
 
-
+check_reads_per_transcript <- function(reads, numtx){
+  if (reads < numtx){
+    warning("Number of reads per transcript is less than 1 in the baseline group. \
+            Please consider scaling up.")
+  }
+}
 
 
 #### MAIN #####
@@ -99,6 +104,7 @@ nonzero_depths <- depths[depths > 0]
 smallest_depth <- min(nonzero_depths)
 fold_changes <- nonzero_depths/smallest_depth
 groups <- unique(fold_changes)
+
 size_per_group <- as.numeric(table(as.factor(nonzero_depths)))
 
 numtx <- length(readDNAStringSet(transcriptome_filepath))
@@ -108,8 +114,11 @@ fold_change_matrix <- matrix(fold_change_values, nrow=numtx, byrow=FALSE)
 
 
 read_per_transcript <- smallest_depth/numtx
+check_reads_per_transcript(smallest_depth, numtx)
 print(paste("Reads per transcript (baseline group):", read_per_transcript))
 print(paste("Total reads (baseline group):", sum(rep(read_per_transcript, numtx))))
+print("Fold change matrix (head):")
+print(head(fold_change_matrix))
 
 simulate_experiment(fasta=transcriptome_filepath,
                     reads_per_transcript=rep(read_per_transcript, numtx),

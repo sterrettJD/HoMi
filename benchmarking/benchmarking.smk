@@ -34,9 +34,9 @@ rule all:
         expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_{read}.fastq"),
                sample=samples,
                read=reads),
-        expand(os.path.join("Pereira", "{srr_id}_1.fastq"),
+        expand(os.path.join("Pereira", "{srr_id}_R1.fastq.gz"),
                 srr_id=pereira_srr_ids),
-        expand(os.path.join("Pereira", "{srr_id}_2.fastq"),
+        expand(os.path.join("Pereira", "{srr_id}_R2.fastq.gz"),
                 srr_id=pereira_srr_ids)
 
 

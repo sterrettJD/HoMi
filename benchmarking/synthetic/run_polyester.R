@@ -2,11 +2,12 @@
 
 # example usage
 # Rscript run_polyester.R -t data/host_transcriptome.fna.gz \
-# -tu https://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/annotation/GRCh38_latest/refseq_identifiers/GRCh38_latest_rna.fna.gz \
+# --transcriptome_url https://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/annotation/GRCh38_latest/refseq_identifiers/GRCh38_latest_rna.fna.gz \
 # -g data/host_transcriptome.gff.gz \
-# -gu https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/GCA_000001405.15_GRCh38_genomic.gff.gz \
+# --gtf_url https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/GCA_000001405.15_GRCh38_genomic.gff.gz \
 # -s sample_data.csv \
-# -n human
+# -n human \
+# -o synthetic_transcriptomes
 
 
 if(!require("optparse")){
@@ -106,8 +107,12 @@ fold_change_values <- sapply(groups, function(group) rep(group, numtx))
 fold_change_matrix <- matrix(fold_change_values, nrow=numtx, byrow=FALSE)
 
 
+read_per_transcript <- smallest_depth/numtx
+print(paste("Reads per transcript (baseline group):", read_per_transcript))
+print(paste("Total reads (baseline group):", sum(rep(read_per_transcript, numtx))))
+
 simulate_experiment(fasta=transcriptome_filepath,
-                    reads_per_transcript=rnbinom(n=numtx, size=20, prob=0.5),
+                    reads_per_transcript=rep(read_per_transcript, numtx),
                     fold_changes=fold_change_matrix,
                     outdir=output_dir,
                     num_reps=size_per_group,

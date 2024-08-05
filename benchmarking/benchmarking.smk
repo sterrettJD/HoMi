@@ -162,8 +162,8 @@ rule run_HoMi_synthetic_communities:
 
 rule fastq_dump_Pereira:
     output:
-        fwd=os.path.join("Pereira", "{srr_id}_1.fastq"),
-        rev=os.path.join("Pereira", "{srr_id}_2.fastq")
+        fwd=os.path.join("Pereira", "{srr_id}_1.fastq.gz"),
+        rev=os.path.join("Pereira", "{srr_id}_2.fastq.gz")
     conda: "conda_envs/sra_tools.yaml"
     threads: 1
     resources:
@@ -175,4 +175,6 @@ rule fastq_dump_Pereira:
         mkdir -p Pereira
         cd Pereira
         fastq-dump --gzip --readids --read-filter pass --dumpbase --split-3 --clip {wildcards.srr_id}
+        mv {wildcards.srr_id}_pass_1.fastq.gz > {output.fwd}
+        mv {wildcards.srr_id}_pass_2.fastq.gz > {output.rev}
         """

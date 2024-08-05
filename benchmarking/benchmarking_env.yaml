@@ -9,3 +9,5 @@ dependencies:
   - numpy
   - pandas
   - pulp=2.7.0
+  - r-base=4.4.1
+  - r-openssl

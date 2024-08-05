@@ -3,7 +3,7 @@ import pandas as pd
 from semisynthetic import simulate_semisynthetic as sss
 
 
-# some global vars here for now BUT NEED TO BE MIGRATED TO CONFIG
+# some global vars here for now BUT SHOULD BE MIGRATED TO CONFIG
 synthetic_work_dir = "synthetic"
 synthetic_communities_dir = "synthetic_communities"
 synthetic_transcriptomes_dir = "synthetic_transcriptomes"
@@ -12,7 +12,9 @@ metadata_file = os.path.join(synthetic_work_dir, "sample_data.csv")
 metadata = pd.read_csv(metadata_file)
 samples = metadata.drop(columns=["genome", "GCF_id"]).columns
 reads = ["R1", "R2"]
-pereira_srr_ids = ["SRR25593833"]
+# mock community data
+pereira_df = pd.read_csv("Pereira/Pereira_data.csv")
+pereira_srr_ids = pereira_df["SRR"]
 
 
 #colon_sample_htx="SRP127360"

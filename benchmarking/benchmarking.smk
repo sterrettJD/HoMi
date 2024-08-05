@@ -162,8 +162,8 @@ rule run_HoMi_synthetic_communities:
 
 rule fastq_dump_Pereira:
     output:
-        fwd=os.path.join("Pereira", "{srr_id}_1.fastq.gz"),
-        rev=os.path.join("Pereira", "{srr_id}_2.fastq.gz")
+        fwd=os.path.join("Pereira", "{srr_id}_R1.fastq.gz"),
+        rev=os.path.join("Pereira", "{srr_id}_R2.fastq.gz")
     conda: "conda_envs/sra_tools.yaml"
     threads: 1
     resources:

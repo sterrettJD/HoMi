@@ -96,9 +96,9 @@ rule simulate_synthetic_host_transcriptomes:
 
 rule transcriptome_fasta_to_fastq:
     input:
-        data=os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_{read}.fasta")
+        data=os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_unsampled_{read}.fasta")
     output:
-        data=os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_{read}.fastq")
+        data=os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_unsampled_{read}.fastq")
     threads: 1
     conda: "../conda_envs/bbmap.yaml"
     resources:
@@ -111,6 +111,26 @@ rule transcriptome_fasta_to_fastq:
         rm {input.data}
         """
 
+
+rule subsample_fastq_to_correct_depth:
+    input:
+        data=os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_unsampled_{read}.fastq")
+    output:
+        data=os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_{read}.fastq")
+    threads: 1
+    conda: "../conda_envs/seqtk.yaml"
+    resources:
+        partition="short",
+        mem_mb=int(2*1000), # MB
+        runtime=int(1*60) # min
+    run:
+        import subprocess
+        import pandas as pd
+        metadata = pd.read_csv(metadata)
+        depth = metadata.loc["human", sample]
+        cmd = f"seqtk sample -s 123 {input.data} {depth} > {output.data}"
+        ran = subprocess.run(cmd)
+        
 
 rule create_HoMi_metadata_synthetic:
     input:

@@ -160,22 +160,19 @@ rule run_HoMi_synthetic_communities:
         touch {output}
         """
 
-rule fasterq_dump_Pereira:
+rule fastq_dump_Pereira:
     output:
         fwd=os.path.join("Pereira", "{srr_id}_1.fastq"),
         rev=os.path.join("Pereira", "{srr_id}_2.fastq")
     conda: "conda_envs/sra_tools.yaml"
-    threads: 4
+    threads: 1
     resources:
         partition="short",
         mem_mb=int(8*1000), # MB
-        runtime=int(3*60) # min
+        runtime=int(4*60) # min
     shell:
         """
         mkdir -p Pereira
         cd Pereira
-        prefetch {wildcards.srr_id}
-        fasterq-dump -p {wildcards.srr_id} -e {threads}
-        echo "deleting directory {wildcards.srr_id}"
-        rm {wildcards.srr_id}
+        fastq-dump --gzip --readids --read-filter pass --dumpbase --split-3 --clip {wildcards.srr_id}
         """

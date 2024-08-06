@@ -66,7 +66,7 @@ rule simulate_synthetic_host_transcriptomes:
     input:
         sample_data=metadata_file
     output:
-        data=expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_{read}.fasta"),
+        data=expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_unsampled_{read}.fasta"),
                     sample=samples,
                     read=reads),
         done="synthetic_transcriptomes_created"
@@ -118,18 +118,23 @@ rule subsample_fastq_to_correct_depth:
     output:
         data=os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_{read}.fastq")
     threads: 1
-    conda: "../conda_envs/seqtk.yaml"
     resources:
         partition="short",
         mem_mb=int(2*1000), # MB
         runtime=int(1*60) # min
+    params:
+        metadata=metadata_file
     run:
         import subprocess
         import pandas as pd
-        metadata = pd.read_csv(metadata)
-        depth = metadata.loc["human", sample]
-        cmd = f"seqtk sample -s 123 {input.data} {depth} > {output.data}"
-        ran = subprocess.run(cmd)
+        metadata = pd.read_csv(params.metadata, index_col="genome")
+        depth = metadata.loc["human", wildcards.sample]
+        if depth > 0:
+            cmd = f"seqtk sample -s 123 {input.data} {depth} > {output.data}"
+        else:
+            cmd = f"cp {input.data} {output.data}"
+        ran = subprocess.run(cmd, shell=True)
+        cleaned = subprocess.run(["rm", input.data])
         
 
 rule create_HoMi_metadata_synthetic:

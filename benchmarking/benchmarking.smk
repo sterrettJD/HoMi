@@ -66,7 +66,7 @@ rule simulate_synthetic_host_transcriptomes:
     input:
         sample_data=metadata_file
     output:
-        data=expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_{read}.fasta"),
+        data=expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_unsampled_{read}.fasta"),
                     sample=samples,
                     read=reads),
         done="synthetic_transcriptomes_created"
@@ -197,4 +197,25 @@ rule fastq_dump_Pereira:
         fastq-dump --gzip --readids --read-filter pass --dumpbase --split-3 --clip {wildcards.srr_id}
         mv {wildcards.srr_id}_pass_1.fastq.gz > {output.fwd}
         mv {wildcards.srr_id}_pass_2.fastq.gz > {output.rev}
+        """
+
+rule run_HoMi_mock_data:
+    input:
+        homi_metadata=os.path.join("Pereira", "sample_data.csv"),
+        homi_config=os.path.join("Pereira", "mock_community_HoMi_config.yaml"),
+        fwd=os.path.join("Pereira", "{srr_id}_R1.fastq.gz"),
+        rev=os.path.join("Pereira", "{srr_id}_R2.fastq.gz")
+    output:
+        "HoMi_is_done_Pereira"
+    threads: 1
+    resources:
+        partition="short",
+        mem_mb=int(8*1000), # MB
+        runtime=int(24*60) # min
+    params:
+        homi_args=homi_args
+    shell:
+        """
+        HoMi.py {input.homi_config} {params.homi_args}
+        touch {output}
         """

@@ -19,6 +19,8 @@ def get_args():
                                             "in each sample's column denotes how many reads should come "
                                             "from each genome. At least one genome should be 'human', "
                                             "and the GCF id for it does not matter.")
+    parser.add_argument("sample_id", help="The sample ID that should be created. "
+                                          "This should be a column in the sample_data file.")
     parser.add_argument("--work_dir", help="The working directory in which data should be downloaded and "
                                             "fastq files should be created. The <sample_data> path should "
                                             "NOT be relative to this path (it should be relative to where the)"
@@ -33,6 +35,11 @@ def get_args():
 def parse_sample_data(filepath):
     df = pd.read_csv(filepath)
     return df
+
+
+def check_sample_id_exists(sample_id, samples):
+    if sample_id not in samples:
+        raise ValueError(f"{sample_id} does not exist as a column in the sample data.")
 
 
 def download_microbial_genome(genome_name, accession_id, fpath):
@@ -212,9 +219,11 @@ def compress_fastq(fp, remove_unzipped=True):
 
 
 def main():
+    # get arguments
     args = get_args()
     sample_data = parse_sample_data(args.sample_data)
 
+    # prep working directory and output
     work_dir = args.work_dir
     os.makedirs(work_dir, exist_ok=True)
     os.chdir(work_dir)
@@ -253,39 +262,45 @@ def main():
     else:
         print("All genomes have already been downloaded.")
 
-    # sample some reads with replacement
-    random.seed(42)
-    
+    # Get the sample ID
     sample_columns = [col for col in sample_data.columns if (any(s in col for s in ["genome", "GCF_id"])==False)]
-    for sample in sample_columns:
-        genomes_read_num_dict = dict(zip(sample_data["genome"], sample_data[sample].astype(int)))
-        print(genomes_read_num_dict)
-        sampled_reads = get_sampled_reads_from_all_genomes(genomes_read_num_dict, genomes_paths)
-        sampled_reads_bio = [[SeqRecord(Seq(seq), '', '', '') 
-                            for seq_id, seq in genome_sampled_reads.items()] 
-                            for genome_sampled_reads in sampled_reads]
-        
-        # flatten the list of lists (reads per genome) to just a list (reads)
-        sampled_reads_flat = list(chain.from_iterable(sampled_reads_bio))
+    sample_id = args.sample_id
+    check_sample_id_exists(sample_id, sample_columns)
+    # Seed is set as a hash of the sample ID, which should be reproducible but is not 
+    # identical for each sample
+    random.seed(hash(sample_id))
 
-        # create the reverse reads
-        sampled_reads_flat_rev = [SeqRecord(Seq(''), '', '', '')] * len(sampled_reads_flat)
-        for i, sequence in enumerate(sampled_reads_flat):
-            sampled_reads_flat_rev[i].seq = sequence.seq[::-1] 
-        
-        sampled_reads_flat_mut = create_qual_scores_and_mutate(sampled_reads_flat, 
-                                            mean_phred=35, var_phred=5, min_phred=10)
-        
-        sampled_reads_flat_rev_mut = create_qual_scores_and_mutate(sampled_reads_flat_rev, 
-                                            mean_phred=35, var_phred=3, min_phred=10)
-        
-        
-        SeqIO.write(sampled_reads_flat_mut, os.path.join(output_dir, f"{sample}_R1.fastq"), "fastq")
-        SeqIO.write(sampled_reads_flat_rev_mut, os.path.join(output_dir, f"{sample}_R2.fastq"), "fastq")
+    # create a dictionary of the number of reads from each genome
+    genomes_read_num_dict = dict(zip(sample_data["genome"], sample_data[sample_id].astype(int)))
+    print(genomes_read_num_dict)
+    # Sample the reads from all genomes
+    sampled_reads = get_sampled_reads_from_all_genomes(genomes_read_num_dict, genomes_paths)
+    sampled_reads_bio = [[SeqRecord(Seq(seq), '', '', '') 
+                        for seq_id, seq in genome_sampled_reads.items()] 
+                        for genome_sampled_reads in sampled_reads]
+    
+    # flatten the list of lists (reads per genome) to just a list (reads)
+    sampled_reads_flat = list(chain.from_iterable(sampled_reads_bio))
 
-        remove_unzipped = args.leave_unzipped == False
-        compress_fastq(os.path.join(output_dir, f"{sample}_R1.fastq"), remove_unzipped=remove_unzipped)
-        compress_fastq(os.path.join(output_dir, f"{sample}_R2.fastq"), remove_unzipped=remove_unzipped)
+    # create the reverse reads
+    sampled_reads_flat_rev = [SeqRecord(Seq(''), '', '', '')] * len(sampled_reads_flat)
+    for i, sequence in enumerate(sampled_reads_flat):
+        sampled_reads_flat_rev[i].seq = sequence.seq[::-1] 
+    
+    # Create quality scores and mutate the reads
+    sampled_reads_flat_mut = create_qual_scores_and_mutate(sampled_reads_flat, 
+                                        mean_phred=35, var_phred=5, min_phred=10)
+    sampled_reads_flat_rev_mut = create_qual_scores_and_mutate(sampled_reads_flat_rev, 
+                                        mean_phred=35, var_phred=3, min_phred=10)
+    
+    # Write the reads
+    SeqIO.write(sampled_reads_flat_mut, os.path.join(output_dir, f"{sample_id}_R1.fastq"), "fastq")
+    SeqIO.write(sampled_reads_flat_rev_mut, os.path.join(output_dir, f"{sample_id}_R2.fastq"), "fastq")
+
+    # Zip the reads
+    remove_unzipped = args.leave_unzipped == False
+    compress_fastq(os.path.join(output_dir, f"{sample_id}_R1.fastq"), remove_unzipped=remove_unzipped)
+    compress_fastq(os.path.join(output_dir, f"{sample_id}_R2.fastq"), remove_unzipped=remove_unzipped)
 
 
 if __name__=="__main__":

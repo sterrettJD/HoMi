@@ -37,6 +37,7 @@ rule all:
         expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_{read}.fastq"),
                sample=samples,
                read=reads),
+        # From mock communities
         expand(os.path.join("Pereira", "{srr_id}_R1.fastq.gz"),
                 srr_id=pereira_srr_ids),
         expand(os.path.join("Pereira", "{srr_id}_R2.fastq.gz"),
@@ -70,11 +71,8 @@ rule simulate_synthetic_communities:
         sample_data=metadata_file,
         references_downloaded="reference_genomes_downloaded"
     output:
-        fwd=expand(os.path.join(synthetic_work_dir, synthetic_communities_dir, "{sample}_R1.fastq"),
-               sample=samples),
-        rev=expand(os.path.join(synthetic_work_dir, synthetic_communities_dir, "{sample}_R2.fastq"),
-               sample=samples),
-        done="communities_created"
+        fwd=os.path.join(synthetic_work_dir, synthetic_communities_dir, "{sample}_R1.fastq"),
+        rev=os.path.join(synthetic_work_dir, synthetic_communities_dir, "{sample}_R2.fastq")
     threads: 1
     resources:
         partition="short",
@@ -87,7 +85,6 @@ rule simulate_synthetic_communities:
     shell:
         """
         python {params.script} {input.sample_data} {wildcards.sample} --work_dir {params.work_dir} --output_dir {params.communities_dir}
-        touch {output.done}
         """
 
 
@@ -198,7 +195,10 @@ rule run_HoMi_synthetic_communities:
     input:
         homi_metadata=os.path.join(synthetic_work_dir, "synthetic_homi_metadata.csv"),
         homi_config=os.path.join(synthetic_work_dir, "synthetic_HoMi_config.yaml"),
-        communities_created="communities_created"  
+        fwd=expand(os.path.join(synthetic_work_dir, synthetic_communities_dir, "{sample}_R1.fastq"),
+               sample=samples),
+        rev=expand(os.path.join(synthetic_work_dir, synthetic_communities_dir, "{sample}_R2.fastq"),
+               sample=samples)
     output:
         "HoMi_is_done_synthetic"
     threads: 1
@@ -235,10 +235,12 @@ rule fastq_dump_Pereira:
 
 rule run_HoMi_mock_data:
     input:
-        homi_metadata=os.path.join("Pereira", "sample_data.csv"),
+        homi_metadata=os.path.join("Pereira", "Pereira_data.csv"),
         homi_config=os.path.join("Pereira", "mock_community_HoMi_config.yaml"),
-        fwd=os.path.join("Pereira", "{srr_id}_R1.fastq.gz"),
-        rev=os.path.join("Pereira", "{srr_id}_R2.fastq.gz")
+        fwd=expand(os.path.join("Pereira", "{srr_id}_R1.fastq.gz"),
+                srr_id=pereira_srr_ids),
+        rev=expand(os.path.join("Pereira", "{srr_id}_R2.fastq.gz"),
+                srr_id=pereira_srr_ids)
     output:
         "HoMi_is_done_Pereira"
     threads: 1

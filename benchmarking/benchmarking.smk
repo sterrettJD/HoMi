@@ -37,9 +37,9 @@ rule all:
         expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_{read}.fastq"),
                sample=samples,
                read=reads),
-        expand(os.path.join("Pereira", "{srr_id}_1.fastq"),
+        expand(os.path.join("Pereira", "{srr_id}_R1.fastq.gz"),
                 srr_id=pereira_srr_ids),
-        expand(os.path.join("Pereira", "{srr_id}_2.fastq"),
+        expand(os.path.join("Pereira", "{srr_id}_R2.fastq.gz"),
                 srr_id=pereira_srr_ids),
         "HoMi_is_done_Pereira"
 
@@ -147,18 +147,23 @@ rule subsample_fastq_to_correct_depth:
     output:
         data=os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_{read}.fastq")
     threads: 1
-    conda: "../conda_envs/seqtk.yaml"
     resources:
         partition="short",
         mem_mb=int(2*1000), # MB
         runtime=int(1*60) # min
+    params:
+        metadata=metadata_file
     run:
         import subprocess
         import pandas as pd
-        metadata = pd.read_csv(metadata)
-        depth = metadata.loc["human", sample]
-        cmd = f"seqtk sample -s 123 {input.data} {depth} > {output.data}"
-        ran = subprocess.run(cmd)
+        metadata = pd.read_csv(params.metadata, index_col="genome")
+        depth = metadata.loc["human", wildcards.sample]
+        if depth > 0:
+            cmd = f"seqtk sample -s 123 {input.data} {depth} > {output.data}"
+        else:
+            cmd = f"cp {input.data} {output.data}"
+        ran = subprocess.run(cmd, shell=True)
+        cleaned = subprocess.run(["rm", input.data])
         
 
 rule create_HoMi_metadata_synthetic:

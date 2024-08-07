@@ -24,7 +24,10 @@ pereira_srr_ids = pereira_df["SRR"]
 rule all:
     input:
         # From simulate_synthetic_communities
-        os.path.join(synthetic_work_dir, synthetic_communities_dir),
+        expand(os.path.join(synthetic_work_dir, synthetic_communities_dir, "{sample}_R1.fastq"),
+               sample=samples),
+        expand(os.path.join(synthetic_work_dir, synthetic_communities_dir, "{sample}_R2.fastq"),
+               sample=samples),
         # From create_HoMi_metadata
         os.path.join(synthetic_work_dir, "synthetic_homi_metadata.csv"),
         # From run_HoMi_synthetic_communities
@@ -45,7 +48,10 @@ rule simulate_synthetic_communities:
     input:
         sample_data=metadata_file
     output:
-        communities=directory(os.path.join(synthetic_work_dir, synthetic_communities_dir)),
+        fwd=expand(os.path.join(synthetic_work_dir, synthetic_communities_dir, "{sample}_R1.fastq"),
+               sample=samples),
+        rev=expand(os.path.join(synthetic_work_dir, synthetic_communities_dir, "{sample}_R2.fastq"),
+               sample=samples),
         done="communities_created"
     threads: 1
     resources:
@@ -58,7 +64,7 @@ rule simulate_synthetic_communities:
         communities_dir=synthetic_communities_dir
     shell:
         """
-        python {params.script} {input.sample_data} --work_dir {params.work_dir} --output_dir {params.communities_dir}
+        python {params.script} {input.sample_data} {wildcards.sample} --work_dir {params.work_dir} --output_dir {params.communities_dir}
         touch {output.done}
         """
 

@@ -44,9 +44,31 @@ rule all:
         "HoMi_is_done_Pereira"
 
 
-rule simulate_synthetic_communities:
+rule pull_reference_genomes:
     input:
         sample_data=metadata_file
+    output:
+        done="reference_genomes_downloaded"
+    threads: 1
+    resources:
+        partition="short",
+        mem_mb=int(4*1000), # MB
+        runtime=int(2*60) # min
+    params:
+        script=os.path.join(synthetic_work_dir, "pull_reference_genome.py"),
+        work_dir=synthetic_work_dir,
+        communities_dir=synthetic_communities_dir
+    shell:
+        """
+        python {params.script} {input.sample_data} --work_dir {params.work_dir}
+        touch {output.done}
+        """
+
+
+rule simulate_synthetic_communities:
+    input:
+        sample_data=metadata_file,
+        references_downloaded="reference_genomes_downloaded"
     output:
         fwd=expand(os.path.join(synthetic_work_dir, synthetic_communities_dir, "{sample}_R1.fastq"),
                sample=samples),

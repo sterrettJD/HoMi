@@ -37,7 +37,8 @@ rule all:
         expand(os.path.join("Pereira", "{srr_id}_1.fastq"),
                 srr_id=pereira_srr_ids),
         expand(os.path.join("Pereira", "{srr_id}_2.fastq"),
-                srr_id=pereira_srr_ids)
+                srr_id=pereira_srr_ids),
+        "HoMi_is_done_Pereira"
 
 
 rule simulate_synthetic_communities:

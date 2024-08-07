@@ -21,10 +21,10 @@ def get_args():
                                             "and the GCF id for it does not matter.")
     parser.add_argument("sample_id", help="The sample ID that should be created. "
                                           "This should be a column in the sample_data file.")
-    parser.add_argument("--work_dir", help="The working directory in which data should be downloaded and "
+    parser.add_argument("--work_dir", help="The working directory relative to which the data should be downloaded and "
                                             "fastq files should be created. The <sample_data> path should "
-                                            "NOT be relative to this path (it should be relative to where the)"
-                                            "script it run from.")
+                                            "NOT be relative to this path (it should be relative to where the"
+                                            "script is run from).")
     parser.add_argument("--leave_unzipped", help="Pass this flag if unzipped fastq files should be left. "
                                             "Otherwise, they will be deleted",
                         action="store_true")
@@ -40,46 +40,6 @@ def parse_sample_data(filepath):
 def check_sample_id_exists(sample_id, samples):
     if sample_id not in samples:
         raise ValueError(f"{sample_id} does not exist as a column in the sample data.")
-
-
-def download_microbial_genome(genome_name, accession_id, fpath):
-    start_dir = os.getcwd()
-    print(f"Moving out of {start_dir}")
-    os.chdir(fpath)
-    # make sure we're in the right place
-    print(f"Downloading genomes in: {os.getcwd()}")
-
-    # setup
-    os.makedirs(genome_name, exist_ok=True)
-    os.chdir(genome_name)
-
-    # Download and unzip
-    subprocess.run(["curl", "-OJX", "GET", f"https://api.ncbi.nlm.nih.gov/datasets/v2alpha/genome/accession/{accession_id}/download?include_annotation_type=GENOME_FASTA,GENOME_GFF,RNA_FASTA,CDS_FASTA,PROT_FASTA,SEQUENCE_REPORT&filename={accession_id}.zip", "-H", "Accept: application/zip"])
-    subprocess.run(["unzip", f"{accession_id}.zip"])
-    
-    # cleanup
-    subprocess.run(["rm", f"{accession_id}.zip"])
-    subprocess.run(["mv", f"ncbi_dataset/data/{accession_id}", "./genome"])
-    os.chdir(start_dir)
-
-
-def download_human_pangenome(fpath):
-    start_dir = os.getcwd()
-    print(f"Moving out of {start_dir}")
-    os.chdir(fpath)
-    # make sure we're in the right place
-    print(f"Downloading human pangenome in: {os.getcwd()}")
-
-    # setup
-    os.makedirs("human", exist_ok=True)
-    os.chdir("human")
-    
-    subprocess.run(["wget", "https://s3-us-west-2.amazonaws.com/human-pangenomics/pangenomes/freeze/freeze1/minigraph/CHM13v11Y.fa.gz"])
-    subprocess.run(["gunzip", "CHM13v11Y.fa.gz"])
-    
-    os.makedirs("genome", exist_ok=True)
-    subprocess.run(["mv", "CHM13v11Y.fa", "genome/"])
-    os.chdir(start_dir)
 
 
 def read_microbial_genome(filepath):
@@ -241,12 +201,6 @@ def main():
 
     # list of genomes to include
     genomes = sample_data["genome"].to_list()
-    accession_ids = sample_data["GCF_id"].to_list()
-
-    # Get non-host genomes and accession IDs
-    nh_genomes = [x for x in genomes if "human" not in x]
-    nh_accession_ids = [accession_ids[i] for i, x in enumerate(genomes) if "human" not in x]
-    
     genomes_paths = [os.path.join("data", g, "genome")
                      for g in genomes]
     # check if these genomes exist
@@ -254,11 +208,8 @@ def main():
                      for genome_path in genomes_paths]
     
     if sum(genomes_exist) < len(genomes):
-        print("At least one genome is missing. "
-             "Redownloading all genomes, as others might be incomplete or missing.")
-        for i, genome in enumerate(nh_genomes):
-           download_microbial_genome(genome, nh_accession_ids[i], fpath="data")
-        download_human_pangenome(fpath="data")
+        raise ValueError("At least one genome is missing. "
+             "Please redownload all genomes, as others might be incomplete or missing.")
     else:
         print("All genomes have already been downloaded.")
 

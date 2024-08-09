@@ -97,6 +97,7 @@ rule symlink_fastqs:
     cwd = getcwd()
     
     df = params.metadata
+    df["Sample"] = df["Sample"].astype(str)
     proj = params.proj
 
     sample = wildcards.sample

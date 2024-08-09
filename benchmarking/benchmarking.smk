@@ -24,9 +24,9 @@ pereira_srr_ids = pereira_df["SRR"]
 rule all:
     input:
         # From simulate_synthetic_communities
-        expand(os.path.join(synthetic_work_dir, synthetic_communities_dir, "{sample}_R1.fastq"),
+        expand(os.path.join(synthetic_work_dir, synthetic_communities_dir, "{sample}_R1.fastq.gz"),
                sample=samples),
-        expand(os.path.join(synthetic_work_dir, synthetic_communities_dir, "{sample}_R2.fastq"),
+        expand(os.path.join(synthetic_work_dir, synthetic_communities_dir, "{sample}_R2.fastq.gz"),
                sample=samples),
         # From create_HoMi_metadata
         os.path.join(synthetic_work_dir, "synthetic_homi_metadata.csv"),
@@ -34,9 +34,10 @@ rule all:
         "HoMi_is_done_synthetic",
         "synthetic_transcriptomes_created",
         # From synthetic transcriptomes
-        expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_{read}.fastq"),
-               sample=samples,
-               read=reads),
+        expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_R1.fastq"),
+               sample=samples),
+        expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_R2.fastq"),
+               sample=samples),
         # From mock communities
         expand(os.path.join("Pereira", "{srr_id}_R1.fastq.gz"),
                 srr_id=pereira_srr_ids),
@@ -56,7 +57,7 @@ rule pull_reference_genomes:
         mem_mb=int(4*1000), # MB
         runtime=int(2*60) # min
     params:
-        script=os.path.join(synthetic_work_dir, "pull_reference_genome.py"),
+        script=os.path.join(synthetic_work_dir, "pull_reference_genomes.py"),
         work_dir=synthetic_work_dir,
         communities_dir=synthetic_communities_dir
     shell:
@@ -71,13 +72,13 @@ rule simulate_synthetic_communities:
         sample_data=metadata_file,
         references_downloaded="reference_genomes_downloaded"
     output:
-        fwd=os.path.join(synthetic_work_dir, synthetic_communities_dir, "{sample}_R1.fastq"),
-        rev=os.path.join(synthetic_work_dir, synthetic_communities_dir, "{sample}_R2.fastq")
+        fwd=os.path.join(synthetic_work_dir, synthetic_communities_dir, "{sample}_R1.fastq.gz"),
+        rev=os.path.join(synthetic_work_dir, synthetic_communities_dir, "{sample}_R2.fastq.gz")
     threads: 1
     resources:
         partition="short",
         mem_mb=int(16*1000), # MB
-        runtime=int(2*60) # min
+        runtime=int(4*60) # min
     params:
         script=os.path.join(synthetic_work_dir, "create_mock_community.py"),
         work_dir=synthetic_work_dir,
@@ -195,9 +196,9 @@ rule run_HoMi_synthetic_communities:
     input:
         homi_metadata=os.path.join(synthetic_work_dir, "synthetic_homi_metadata.csv"),
         homi_config=os.path.join(synthetic_work_dir, "synthetic_HoMi_config.yaml"),
-        fwd=expand(os.path.join(synthetic_work_dir, synthetic_communities_dir, "{sample}_R1.fastq"),
+        fwd=expand(os.path.join(synthetic_work_dir, synthetic_communities_dir, "{sample}_R1.fastq.gz"),
                sample=samples),
-        rev=expand(os.path.join(synthetic_work_dir, synthetic_communities_dir, "{sample}_R2.fastq"),
+        rev=expand(os.path.join(synthetic_work_dir, synthetic_communities_dir, "{sample}_R2.fastq.gz"),
                sample=samples)
     output:
         "HoMi_is_done_synthetic"
@@ -210,7 +211,7 @@ rule run_HoMi_synthetic_communities:
         homi_args=homi_args
     shell:
         """
-        HoMi.py {input.homi_config} {params.homi_args}
+        HoMi.py {input.homi_config} {params.homi_args} --unlock
         touch {output}
         """
 
@@ -252,6 +253,6 @@ rule run_HoMi_mock_data:
         homi_args=homi_args
     shell:
         """
-        HoMi.py {input.homi_config} {params.homi_args}
+        HoMi.py {input.homi_config} {params.homi_args} --unlock
         touch {output}
         """

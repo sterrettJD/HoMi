@@ -1,6 +1,6 @@
 Sample,SRR,forward_reads,reverse_reads
-97,SRR25593833,Pereira/SRR25593833_1.fastq.gz,Pereira/SRR25593833_2.fastq.gz
-90,SRR25593834,Pereira/SRR25593834_1.fastq.gz,Pereira/SRR25593834_2.fastq.gz
-70,SRR25593835,Pereira/SRR25593835_1.fastq.gz,Pereira/SRR25593835_2.fastq.gz
-10,SRR25593836,Pereira/SRR25593836_1.fastq.gz,Pereira/SRR25593836_2.fastq.gz
-0,SRR25593837,Pereira/SRR25593837_1.fastq.gz,Pereira/SRR25593837_2.fastq.gz
+97,SRR25593833,Pereira/SRR25593833_R1.fastq.gz,Pereira/SRR25593833_R2.fastq.gz
+90,SRR25593834,Pereira/SRR25593834_R1.fastq.gz,Pereira/SRR25593834_R2.fastq.gz
+70,SRR25593835,Pereira/SRR25593835_R1.fastq.gz,Pereira/SRR25593835_R2.fastq.gz
+10,SRR25593836,Pereira/SRR25593836_R1.fastq.gz,Pereira/SRR25593836_R2.fastq.gz
+0,SRR25593837,Pereira/SRR25593837_R1.fastq.gz,Pereira/SRR25593837_R2.fastq.gz

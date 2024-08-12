@@ -26,6 +26,7 @@ if (!require("ggplot2")){
 # Curves
 ```{r}
 metadata <- data.table::fread(params$metadata)
+metadata$Sample <- as.character(metadata$Sample)
 filepaths <- paste0(params$npo_path, "/",
                     metadata$Sample, 
                     ".npo")

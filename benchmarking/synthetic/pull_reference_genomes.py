@@ -70,12 +70,6 @@ def main():
     os.makedirs(work_dir, exist_ok=True)
     os.chdir(work_dir)
 
-    if args.output_dir is None:
-        output_dir = "."
-    else:
-        output_dir = args.output_dir
-        os.makedirs(output_dir, exist_ok=True)
-
     if os.path.exists("data") == False:
         os.mkdir("data/")
         print(f"Creating directory {work_dir}/data")

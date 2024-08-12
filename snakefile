@@ -1232,10 +1232,10 @@ rule generate_feature_counts:
   conda: "conda_envs/featureCounts.yaml"
   resources:
     partition=get_partition("short", config, "generate_feature_counts"),
-    mem_mb=get_mem(int(8*1000), config, "generate_feature_counts"), # MB, or 8 GB
-    runtime=get_runtime(int(2*60), config, "generate_feature_counts"), # min, or 2 hrs
+    mem_mb=get_mem(int(16*1000), config, "generate_feature_counts"), # MB, or 8 GB
+    runtime=get_runtime(int(12*60), config, "generate_feature_counts"), # min, or 2 hrs
     slurm=get_slurm_extra(config, "generate_feature_counts")
-  threads: get_threads(16, config, "generate_feature_counts")
+  threads: get_threads(32, config, "generate_feature_counts")
   params:
     extra=get_rule_extra_args(config, "generate_feature_counts")
   shell:

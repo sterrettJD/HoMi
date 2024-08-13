@@ -32,18 +32,25 @@ rule all:
         os.path.join(synthetic_work_dir, "synthetic_homi_metadata.csv"),
         # From run_HoMi_synthetic_communities
         "HoMi_is_done_synthetic",
+        "synthetic_communities_benchmark.pdf",
+        "synthetic_communities_benchmark_lm_results.txt",
+
         "synthetic_transcriptomes_created",
+        
         # From synthetic transcriptomes
         expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_R1.fastq"),
                sample=samples),
         expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_R2.fastq"),
                sample=samples),
+               
         # From mock communities
         expand(os.path.join("Pereira", "{srr_id}_R1.fastq.gz"),
                 srr_id=pereira_srr_ids),
         expand(os.path.join("Pereira", "{srr_id}_R2.fastq.gz"),
                 srr_id=pereira_srr_ids),
-        "HoMi_is_done_Pereira"
+        "HoMi_is_done_Pereira",
+        "Pereira_benchmark.pdf",
+        "Pereira_benchmark_lm_results.txt"
 
 
 rule pull_reference_genomes:
@@ -215,6 +222,28 @@ rule run_HoMi_synthetic_communities:
         touch {output}
         """
 
+rule plot_expected_vs_actual_synthetic_communities:
+    input:
+        "HoMi_is_done_synthetic"
+    output:
+        plot="synthetic_communities_benchmark.pdf",
+        model="synthetic_communities_benchmark_lm_results.txt"
+    threads: 1
+    resources:
+        partition="short",
+        mem_mb=int(4*1000), # MB
+        runtime=int(1*60) # min
+    params:
+        script="Plot_benchmarked_reads_breakdown.R",
+        data="benchmarking_synthetic_reads_breakdown.csv"
+    shell:
+        """
+        Rscript {params.script} -i {params.data} -o {output.plot} > {output.model}
+        """
+
+
+#############################################################
+##### Mock communities #####
 rule fastq_dump_Pereira:
     output:
         fwd=os.path.join("Pereira", "{srr_id}_R1.fastq.gz"),
@@ -255,4 +284,23 @@ rule run_HoMi_mock_data:
         """
         HoMi.py {input.homi_config} {params.homi_args} --unlock
         touch {output}
+        """
+
+rule plot_expected_vs_actual_mock_data:
+    input:
+        "HoMi_is_done_Pereira"
+    output:
+        plot="Pereira_benchmark.pdf",
+        model="Pereira_benchmark_lm_results.txt"
+    threads: 1
+    resources:
+        partition="short",
+        mem_mb=int(4*1000), # MB
+        runtime=int(1*60) # min
+    params:
+        script="Plot_benchmarked_reads_breakdown.R",
+        data="benchmarking_Pereira_reads_breakdown.csv"
+    shell:
+        """
+        Rscript {params.script} -i {params.data} -o {output.plot} > {output.model}
         """

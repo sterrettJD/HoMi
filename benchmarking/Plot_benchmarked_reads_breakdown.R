@@ -1,6 +1,17 @@
-library(tidyverse)
-library(ggplot2)
-library(ggbeeswarm)
+if (!require("tidyverse")){
+  install.packages("tidyverse", repos="http://cran.us.r-project.org")
+  library("tidyverse")
+}
+
+if (!require("ggplot2")){
+  install.packages("ggplot2", repos="http://cran.us.r-project.org")
+  library("ggplot2")
+}
+
+if (!require("ggbeeswarm")){
+  install.packages("ggbeeswarm", repos="http://cran.us.r-project.org")
+  library("ggbeeswarm")
+}
 
 
 get_args <- function(){
@@ -34,7 +45,7 @@ main <- function(){
   args <- get_args()
   df <- read.csv(args$input_file)
   df <- clean_df
-  
+
   mod <- lm(Percent.host ~ true_perc_host, data=df)
   print(summary(mod))
 

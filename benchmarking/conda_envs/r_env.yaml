@@ -1,0 +1,15 @@
+name: r_env
+channels:
+  - biobakery
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - r-base
+  - r-essentials
+  - r-tidyverse
+  - r-data.table
+  - r-ggplot2
+  - r-biocmanager
+  - r-remotes
+  - r-ggbeeswarm

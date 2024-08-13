@@ -69,7 +69,7 @@ rule all:
     pj(f"{trim_trunc_path}.nonhost.humann", "Gut_metabolic_modules.csv"),
 
     # reads breakdown report
-    "reads_breakdown.csv"
+    f"{PROJ}_reads_breakdown.csv"
 
 
 rule symlink_fastqs:

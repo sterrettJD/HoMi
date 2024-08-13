@@ -42,7 +42,7 @@ rule all:
                sample=samples),
         expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_R2.fastq"),
                sample=samples),
-               
+
         # From mock communities
         expand(os.path.join("Pereira", "{srr_id}_R1.fastq.gz"),
                 srr_id=pereira_srr_ids),
@@ -228,6 +228,7 @@ rule plot_expected_vs_actual_synthetic_communities:
     output:
         plot="synthetic_communities_benchmark.pdf",
         model="synthetic_communities_benchmark_lm_results.txt"
+    conda: "../conda_envs/r_env.yaml"
     threads: 1
     resources:
         partition="short",
@@ -292,6 +293,7 @@ rule plot_expected_vs_actual_mock_data:
     output:
         plot="Pereira_benchmark.pdf",
         model="Pereira_benchmark_lm_results.txt"
+    conda: "../conda_envs/r_env.yaml"
     threads: 1
     resources:
         partition="short",

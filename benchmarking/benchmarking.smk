@@ -228,7 +228,7 @@ rule plot_expected_vs_actual_synthetic_communities:
     output:
         plot="synthetic_communities_benchmark.pdf",
         model="synthetic_communities_benchmark_lm_results.txt"
-    conda: "../conda_envs/r_env.yaml"
+    conda: "conda_envs/r_env.yaml"
     threads: 1
     resources:
         partition="short",
@@ -293,7 +293,7 @@ rule plot_expected_vs_actual_mock_data:
     output:
         plot="Pereira_benchmark.pdf",
         model="Pereira_benchmark_lm_results.txt"
-    conda: "../conda_envs/r_env.yaml"
+    conda: "conda_envs/r_env.yaml"
     threads: 1
     resources:
         partition="short",

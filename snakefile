@@ -1286,7 +1286,7 @@ rule reads_breakdown:
     GENEFAMS=pj(f"{trim_trunc_path}.nonhost.humann", 
                 "all_genefamilies.tsv")
   output:
-    REPORT="reads_breakdown.csv"
+    REPORT=f"{PROJ}_reads_breakdown.csv"
   conda: "conda_envs/humann.yaml"
   resources:
     partition=get_partition("short", config, "reads_breakdown"),

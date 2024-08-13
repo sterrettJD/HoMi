@@ -989,7 +989,7 @@ rule aggregate_bracken:
     
     # TODO: should probably put this in its own rule, but this works for now
     wget ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz
-    tar -xvf taxdump.tar.gz
+    tar -xzvf taxdump.tar.gz
 
     ( ls *.bracken ) > bracken-sample-name-map.tsv
 

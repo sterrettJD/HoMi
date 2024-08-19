@@ -2,11 +2,12 @@
 
 # example usage
 # Rscript run_polyester.R -t data/host_transcriptome.fna.gz \
-# -tu https://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/annotation/GRCh38_latest/refseq_identifiers/GRCh38_latest_rna.fna.gz \
+# --transcriptome_url https://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/annotation/GRCh38_latest/refseq_identifiers/GRCh38_latest_rna.fna.gz \
 # -g data/host_transcriptome.gff.gz \
-# -gu https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/GCA_000001405.15_GRCh38_genomic.gff.gz \
+# --gtf_url https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/GCA_000001405.15_GRCh38_genomic.gff.gz \
 # -s sample_data.csv \
-# -n human
+# -n human \
+# -o synthetic_transcriptomes
 
 
 if(!require("optparse")){
@@ -14,7 +15,7 @@ if(!require("optparse")){
 }
 
 if (!requireNamespace("BiocManager", quietly=TRUE)){
-    install.packages("BiocManager")
+    install.packages("BiocManager", repos="http://cran.us.r-project.org")
 }
 
 if (!require("polyester")){
@@ -46,14 +47,19 @@ get_sample_depths <- function(sample_data, host_id){
     df <- read.csv(sample_data, check.names=FALSE)
     rownames(df) <- df$genome
     df$genome <- NULL
-    
+
     index <- !grepl(pattern="GCF_id", x=colnames(df))
     vals <- df[host_id, index]
     return (unlist(vals))
 }
 
 
-
+check_reads_per_transcript <- function(reads, numtx){
+  if (reads < numtx){
+    warning("Number of reads per transcript is less than 1 in the baseline group. \
+            Please consider scaling up.")
+  }
+}
 
 
 #### MAIN #####
@@ -98,6 +104,7 @@ nonzero_depths <- depths[depths > 0]
 smallest_depth <- min(nonzero_depths)
 fold_changes <- nonzero_depths/smallest_depth
 groups <- unique(fold_changes)
+
 size_per_group <- as.numeric(table(as.factor(nonzero_depths)))
 
 numtx <- length(readDNAStringSet(transcriptome_filepath))
@@ -106,8 +113,15 @@ fold_change_values <- sapply(groups, function(group) rep(group, numtx))
 fold_change_matrix <- matrix(fold_change_values, nrow=numtx, byrow=FALSE)
 
 
+read_per_transcript <- smallest_depth/numtx
+check_reads_per_transcript(smallest_depth, numtx)
+print(paste("Reads per transcript (baseline group):", read_per_transcript))
+print(paste("Total reads (baseline group):", sum(rep(read_per_transcript, numtx))))
+print("Fold change matrix (head):")
+print(head(fold_change_matrix))
+
 simulate_experiment(fasta=transcriptome_filepath,
-                    reads_per_transcript=rnbinom(n=numtx, size=20, prob=0.5),
+                    reads_per_transcript=rep(read_per_transcript, numtx),
                     fold_changes=fold_change_matrix,
                     outdir=output_dir,
                     num_reps=size_per_group,
@@ -127,8 +141,8 @@ for(sample in names(nonzero_depths)){
     }
     print(paste(s1, "->", sample))
 
-    file.rename(s1, paste0(sample, "_R1.fasta"))
-    file.rename(s2, paste0(sample, "_R2.fasta"))
+    file.rename(s1, paste0(sample, "_unsampled_R1.fasta"))
+    file.rename(s2, paste0(sample, "_unsampled_R2.fasta"))
 
     i <- i + 1
 }
@@ -136,8 +150,8 @@ for(sample in names(nonzero_depths)){
 # create the 0 reads files
 zero_depths <- depths[depths == 0]
 for(sample in names(zero_depths)){
-    file.create(paste0(sample, "_R1.fasta"))
-    file.create(paste0(sample, "_R2.fasta"))
+    file.create(paste0(sample, "_unsampled_R1.fasta"))
+    file.create(paste0(sample, "_unsampled_R2.fasta"))
 }
 
 setwd(start_wd)

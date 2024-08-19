@@ -19,10 +19,12 @@ def get_args():
                                             "in each sample's column denotes how many reads should come "
                                             "from each genome. At least one genome should be 'human', "
                                             "and the GCF id for it does not matter.")
-    parser.add_argument("--work_dir", help="The working directory in which data should be downloaded and "
+    parser.add_argument("sample_id", help="The sample ID that should be created. "
+                                          "This should be a column in the sample_data file.")
+    parser.add_argument("--work_dir", help="The working directory relative to which the data should be downloaded and "
                                             "fastq files should be created. The <sample_data> path should "
-                                            "NOT be relative to this path (it should be relative to where the)"
-                                            "script it run from.")
+                                            "NOT be relative to this path (it should be relative to where the"
+                                            "script is run from).")
     parser.add_argument("--leave_unzipped", help="Pass this flag if unzipped fastq files should be left. "
                                             "Otherwise, they will be deleted",
                         action="store_true")
@@ -35,44 +37,9 @@ def parse_sample_data(filepath):
     return df
 
 
-def download_microbial_genome(genome_name, accession_id, fpath):
-    start_dir = os.getcwd()
-    print(f"Moving out of {start_dir}")
-    os.chdir(fpath)
-    # make sure we're in the right place
-    print(f"Downloading genomes in: {os.getcwd()}")
-
-    # setup
-    os.makedirs(genome_name, exist_ok=True)
-    os.chdir(genome_name)
-
-    # Download and unzip
-    subprocess.run(["curl", "-OJX", "GET", f"https://api.ncbi.nlm.nih.gov/datasets/v2alpha/genome/accession/{accession_id}/download?include_annotation_type=GENOME_FASTA,GENOME_GFF,RNA_FASTA,CDS_FASTA,PROT_FASTA,SEQUENCE_REPORT&filename={accession_id}.zip", "-H", "Accept: application/zip"])
-    subprocess.run(["unzip", f"{accession_id}.zip"])
-    
-    # cleanup
-    subprocess.run(["rm", f"{accession_id}.zip"])
-    subprocess.run(["mv", f"ncbi_dataset/data/{accession_id}", "./genome"])
-    os.chdir(start_dir)
-
-
-def download_human_pangenome(fpath):
-    start_dir = os.getcwd()
-    print(f"Moving out of {start_dir}")
-    os.chdir(fpath)
-    # make sure we're in the right place
-    print(f"Downloading human pangenome in: {os.getcwd()}")
-
-    # setup
-    os.makedirs("human", exist_ok=True)
-    os.chdir("human")
-    
-    subprocess.run(["wget", "https://s3-us-west-2.amazonaws.com/human-pangenomics/pangenomes/freeze/freeze1/minigraph/CHM13v11Y.fa.gz"])
-    subprocess.run(["gunzip", "CHM13v11Y.fa.gz"])
-    
-    os.makedirs("genome", exist_ok=True)
-    subprocess.run(["mv", "CHM13v11Y.fa", "genome/"])
-    os.chdir(start_dir)
+def check_sample_id_exists(sample_id, samples):
+    if sample_id not in samples:
+        raise ValueError(f"{sample_id} does not exist as a column in the sample data.")
 
 
 def read_microbial_genome(filepath):
@@ -212,9 +179,11 @@ def compress_fastq(fp, remove_unzipped=True):
 
 
 def main():
+    # get arguments
     args = get_args()
     sample_data = parse_sample_data(args.sample_data)
 
+    # prep working directory and output
     work_dir = args.work_dir
     os.makedirs(work_dir, exist_ok=True)
     os.chdir(work_dir)
@@ -232,12 +201,6 @@ def main():
 
     # list of genomes to include
     genomes = sample_data["genome"].to_list()
-    accession_ids = sample_data["GCF_id"].to_list()
-
-    # Get non-host genomes and accession IDs
-    nh_genomes = [x for x in genomes if "human" not in x]
-    nh_accession_ids = [accession_ids[i] for i, x in enumerate(genomes) if "human" not in x]
-    
     genomes_paths = [os.path.join("data", g, "genome")
                      for g in genomes]
     # check if these genomes exist
@@ -245,47 +208,50 @@ def main():
                      for genome_path in genomes_paths]
     
     if sum(genomes_exist) < len(genomes):
-        print("At least one genome is missing. "
-             "Redownloading all genomes, as others might be incomplete or missing.")
-        for i, genome in enumerate(nh_genomes):
-           download_microbial_genome(genome, nh_accession_ids[i], fpath="data")
-        download_human_pangenome(fpath="data")
+        raise ValueError("At least one genome is missing. "
+             "Please redownload all genomes, as others might be incomplete or missing.")
     else:
         print("All genomes have already been downloaded.")
 
-    # sample some reads with replacement
-    random.seed(42)
-    
+    # Get the sample ID
     sample_columns = [col for col in sample_data.columns if (any(s in col for s in ["genome", "GCF_id"])==False)]
-    for sample in sample_columns:
-        genomes_read_num_dict = dict(zip(sample_data["genome"], sample_data[sample].astype(int)))
-        print(genomes_read_num_dict)
-        sampled_reads = get_sampled_reads_from_all_genomes(genomes_read_num_dict, genomes_paths)
-        sampled_reads_bio = [[SeqRecord(Seq(seq), '', '', '') 
-                            for seq_id, seq in genome_sampled_reads.items()] 
-                            for genome_sampled_reads in sampled_reads]
-        
-        # flatten the list of lists (reads per genome) to just a list (reads)
-        sampled_reads_flat = list(chain.from_iterable(sampled_reads_bio))
+    sample_id = args.sample_id
+    check_sample_id_exists(sample_id, sample_columns)
+    # Seed is set as a hash of the sample ID, which should be reproducible but is not 
+    # identical for each sample
+    random.seed(hash(sample_id))
 
-        # create the reverse reads
-        sampled_reads_flat_rev = [SeqRecord(Seq(''), '', '', '')] * len(sampled_reads_flat)
-        for i, sequence in enumerate(sampled_reads_flat):
-            sampled_reads_flat_rev[i].seq = sequence.seq[::-1] 
-        
-        sampled_reads_flat_mut = create_qual_scores_and_mutate(sampled_reads_flat, 
-                                            mean_phred=35, var_phred=5, min_phred=10)
-        
-        sampled_reads_flat_rev_mut = create_qual_scores_and_mutate(sampled_reads_flat_rev, 
-                                            mean_phred=35, var_phred=3, min_phred=10)
-        
-        
-        SeqIO.write(sampled_reads_flat_mut, os.path.join(output_dir, f"{sample}_R1.fastq"), "fastq")
-        SeqIO.write(sampled_reads_flat_rev_mut, os.path.join(output_dir, f"{sample}_R2.fastq"), "fastq")
+    # create a dictionary of the number of reads from each genome
+    genomes_read_num_dict = dict(zip(sample_data["genome"], sample_data[sample_id].astype(int)))
+    print(genomes_read_num_dict)
+    # Sample the reads from all genomes
+    sampled_reads = get_sampled_reads_from_all_genomes(genomes_read_num_dict, genomes_paths)
+    sampled_reads_bio = [[SeqRecord(Seq(seq), '', '', '') 
+                        for seq_id, seq in genome_sampled_reads.items()] 
+                        for genome_sampled_reads in sampled_reads]
+    
+    # flatten the list of lists (reads per genome) to just a list (reads)
+    sampled_reads_flat = list(chain.from_iterable(sampled_reads_bio))
 
-        remove_unzipped = args.leave_unzipped == False
-        compress_fastq(os.path.join(output_dir, f"{sample}_R1.fastq"), remove_unzipped=remove_unzipped)
-        compress_fastq(os.path.join(output_dir, f"{sample}_R2.fastq"), remove_unzipped=remove_unzipped)
+    # create the reverse reads
+    sampled_reads_flat_rev = [SeqRecord(Seq(''), '', '', '')] * len(sampled_reads_flat)
+    for i, sequence in enumerate(sampled_reads_flat):
+        sampled_reads_flat_rev[i].seq = sequence.seq[::-1] 
+    
+    # Create quality scores and mutate the reads
+    sampled_reads_flat_mut = create_qual_scores_and_mutate(sampled_reads_flat, 
+                                        mean_phred=35, var_phred=5, min_phred=10)
+    sampled_reads_flat_rev_mut = create_qual_scores_and_mutate(sampled_reads_flat_rev, 
+                                        mean_phred=35, var_phred=3, min_phred=10)
+    
+    # Write the reads
+    SeqIO.write(sampled_reads_flat_mut, os.path.join(output_dir, f"{sample_id}_R1.fastq"), "fastq")
+    SeqIO.write(sampled_reads_flat_rev_mut, os.path.join(output_dir, f"{sample_id}_R2.fastq"), "fastq")
+
+    # Zip the reads
+    remove_unzipped = args.leave_unzipped == False
+    compress_fastq(os.path.join(output_dir, f"{sample_id}_R1.fastq"), remove_unzipped=remove_unzipped)
+    compress_fastq(os.path.join(output_dir, f"{sample_id}_R2.fastq"), remove_unzipped=remove_unzipped)
 
 
 if __name__=="__main__":

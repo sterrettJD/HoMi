@@ -1,0 +1,6 @@
+Sample,SRR,forward_reads,reverse_reads,Pereira_percent_microbial
+97,SRR25593833,Pereira/SRR25593833_R1.fastq.gz,Pereira/SRR25593833_R2.fastq.gz,0.16
+90,SRR25593834,Pereira/SRR25593834_R1.fastq.gz,Pereira/SRR25593834_R2.fastq.gz,0.52
+70,SRR25593835,Pereira/SRR25593835_R1.fastq.gz,Pereira/SRR25593835_R2.fastq.gz,1.81
+10,SRR25593836,Pereira/SRR25593836_R1.fastq.gz,Pereira/SRR25593836_R2.fastq.gz,28.5
+0,SRR25593837,Pereira/SRR25593837_R1.fastq.gz,Pereira/SRR25593837_R2.fastq.gz,89.6

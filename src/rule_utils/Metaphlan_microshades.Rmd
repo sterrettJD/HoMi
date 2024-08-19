@@ -57,9 +57,13 @@ kable.mod.cols <- c("Estimate", "Std. Error", "deg. freedom", "t value", "p")
 ```
 
 # Load data
-```{r, message=F, error=T}
+```{r, message=T, error=F}
 source("metaphlan_to_phyloseq_helper.R")
-bugslist <- data.table::fread(params$bugslist) %>% as.data.frame()
+
+# Need to specify header=TRUE here, which ensures that data.table uses the header.
+# If this is removed, it will not be robust to numeric sample IDs
+# which will trigger data table to not use this row as the column names
+bugslist <- data.table::fread(params$bugslist, header=TRUE) %>% as.data.frame()
 rownames(bugslist) <- bugslist$`#clade_name`
 bugslist <- bugslist %>% 
     dplyr::select(-c(`#clade_name`,
@@ -90,10 +94,10 @@ rownames(taxonomy.table) <- bugs
 
 # read metadata
 metadata <- fread(params$metadata) %>% as.data.frame()
-rownames(metadata) <- metadata$Sample
+rownames(metadata) <- as.character(metadata$Sample)
 
 # create phyloseq object
-pseq <- phyloseq(otu_table=otu_table(bugslist, taxa_are_rows=T),
+pseq <- phyloseq::phyloseq(otu_table=otu_table(bugslist, taxa_are_rows=T),
                  tax_table=tax_table(taxonomy.table),
                  sample_data=sample_data(metadata)
                  )
@@ -102,7 +106,7 @@ taxonomy.table <- as.data.frame(taxonomy.table)
 ```
 
 # Unclassified Reads
-```{r, error=T}
+```{r, error=F}
 sum(bugs %>% sapply(FUN=function(x) grepl(x, "Unassigned")))
 unique(taxonomy.table$Phylum)
 
@@ -113,7 +117,7 @@ rowSums(bugslist[eu_un,])/ncol(bugslist)
 
 # Taxa barplot {.tabset}
 ## Custom Microshades legend functions
-```{r}
+```{r, warning=F}
 individual_legend <- function (mdf,
                                cdf,
                                group_name,
@@ -199,6 +203,7 @@ custom_legend <- function (mdf, cdf,
 ### Phylum-Genus
 ```{r, warning=T, fig.height=8}
 # prep the microshades colors
+print(pseq)
 mdf_prep <- prep_mdf(pseq, subgroup_level="Genus")
 # sort the phylum names
 phylum_table <- tax_glom(pseq, taxrank="Phylum") %>% otu_table()

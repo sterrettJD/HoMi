@@ -69,7 +69,7 @@ rule all:
     pj(f"{trim_trunc_path}.nonhost.humann", "Gut_metabolic_modules.csv"),
 
     # reads breakdown report
-    "reads_breakdown.csv"
+    f"{PROJ}_reads_breakdown.csv"
 
 
 rule symlink_fastqs:
@@ -97,6 +97,7 @@ rule symlink_fastqs:
     cwd = getcwd()
     
     df = params.metadata
+    df["Sample"] = df["Sample"].astype(str)
     proj = params.proj
 
     sample = wildcards.sample
@@ -988,7 +989,7 @@ rule aggregate_bracken:
     
     # TODO: should probably put this in its own rule, but this works for now
     wget ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz
-    tar -xvf taxdump.tar.gz
+    tar -xzvf taxdump.tar.gz
 
     ( ls *.bracken ) > bracken-sample-name-map.tsv
 
@@ -1231,10 +1232,10 @@ rule generate_feature_counts:
   conda: "conda_envs/featureCounts.yaml"
   resources:
     partition=get_partition("short", config, "generate_feature_counts"),
-    mem_mb=get_mem(int(8*1000), config, "generate_feature_counts"), # MB, or 8 GB
-    runtime=get_runtime(int(2*60), config, "generate_feature_counts"), # min, or 2 hrs
+    mem_mb=get_mem(int(16*1000), config, "generate_feature_counts"), # MB, or 8 GB
+    runtime=get_runtime(int(12*60), config, "generate_feature_counts"), # min, or 2 hrs
     slurm=get_slurm_extra(config, "generate_feature_counts")
-  threads: get_threads(16, config, "generate_feature_counts")
+  threads: get_threads(32, config, "generate_feature_counts")
   params:
     extra=get_rule_extra_args(config, "generate_feature_counts")
   shell:
@@ -1285,7 +1286,7 @@ rule reads_breakdown:
     GENEFAMS=pj(f"{trim_trunc_path}.nonhost.humann", 
                 "all_genefamilies.tsv")
   output:
-    REPORT="reads_breakdown.csv"
+    REPORT=f"{PROJ}_reads_breakdown.csv"
   conda: "conda_envs/humann.yaml"
   resources:
     partition=get_partition("short", config, "reads_breakdown"),

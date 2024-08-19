@@ -23,6 +23,9 @@ get_args <- function(){
   option_list <- list( 
       make_option(c("-i", "--input_file"),
                   help="The reads breakdown CSV output by HoMi"),
+      make_option(c("-m", "--metadata_file"),
+                  help="The metadata file for HoMi",
+                  default=NULL),
       make_option(c("-c", "--column_to_use"),
                   help="The column to use in the plot",
                   default="X"),
@@ -58,6 +61,11 @@ clean_df <- function(df, col_to_use=X){
 main <- function(){
   args <- get_args()
   df <- read.csv(args$input_file)
+  if (!is.null(args$metadata_file)){
+    metadata <- read.csv(args$metadata_file)
+    df <- merge(df, metadata, by.x="X", by.y="Sample")
+  }
+  
   df <- clean_df(df, col_to_use=args$column_to_use)
 
   mod <- lm(Percent.host ~ true_perc_host, data=df)

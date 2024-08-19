@@ -18,6 +18,12 @@ get_args <- function(){
   option_list <- list( 
       make_option(c("-i", "--input_file"),
                   help="The reads breakdown CSV output by HoMi"),
+      make_option(c("-c", "--column_to_use"),
+                  help="The column to use in the plot",
+                  default="X"),
+      make_option(c("-n", "--name_for_plot"),
+                  help="What to title the specified column in the output plot",
+                  default="True percent host reads (jittered)")
       make_option(c("-o", "--output_plot"), 
                   help="The path to create the output plot")
 
@@ -27,9 +33,9 @@ get_args <- function(){
 }
 
 
-clean_df <- function(df){
+clean_df <- function(df, col_to_use=X){
   df <- dplyr::rename(df, 
-                      sample_name=X)
+                      sample_name=col_to_use)
 
   df$true_perc_host <- df$sample_name %>% 
     gsub(pattern="_perc_host_\\d", replacement="") %>%
@@ -53,7 +59,7 @@ main <- function(){
     geom_jitter(width=1, size=3, alpha=0.8) +
     geom_smooth(method="lm") +
     theme_bw(base_size=22) +
-    labs(x="True percent host reads (jittered)", y="Actual percent host reads")
+    labs(x=args$name_for_plot, y="Actual percent host reads")
 
   ggsave(args$output_plot)
 }

@@ -23,7 +23,10 @@ get_args <- function(){
                   default="X"),
       make_option(c("-n", "--name_for_plot"),
                   help="What to title the specified column in the output plot",
-                  default="True percent host reads (jittered)")
+                  default="True percent host reads (jittered)"),
+      make_option(c("-j", "--jitter_width"),
+                  help="The width to jitter the x axis. Should be an integer.",
+                  default=1, type="integer"),
       make_option(c("-o", "--output_plot"), 
                   help="The path to create the output plot")
 
@@ -56,7 +59,7 @@ main <- function(){
   print(summary(mod))
 
   ggplot(df, mapping=aes(x=true_perc_host, y=Percent.host)) +
-    geom_jitter(width=1, size=3, alpha=0.8) +
+    geom_jitter(width=args$jitter_width, size=3, alpha=0.8) +
     geom_smooth(method="lm") +
     theme_bw(base_size=22) +
     labs(x=args$name_for_plot, y="Actual percent host reads")

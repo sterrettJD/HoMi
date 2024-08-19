@@ -13,3 +13,4 @@ dependencies:
   - r-biocmanager
   - r-remotes
   - r-ggbeeswarm
+  - r-optparse

@@ -50,7 +50,9 @@ rule all:
                 srr_id=pereira_srr_ids),
         "HoMi_is_done_Pereira",
         "Pereira_benchmark.pdf",
-        "Pereira_benchmark_lm_results.txt"
+        "Pereira_benchmark_lm_results.txt",
+        "Pereira_benchmark_from_paper.pdf",
+        "Pereira_benchmark_from_paper_lm_results.txt"
 
 
 rule pull_reference_genomes:
@@ -287,6 +289,7 @@ rule run_HoMi_mock_data:
         touch {output}
         """
 
+
 rule plot_expected_vs_actual_mock_data:
     input:
         "HoMi_is_done_Pereira"
@@ -301,8 +304,32 @@ rule plot_expected_vs_actual_mock_data:
         runtime=int(1*60) # min
     params:
         script="Plot_benchmarked_reads_breakdown.R",
-        data="benchmarking_Pereira_reads_breakdown.csv"
+        data="benchmarking_Pereira_reads_breakdown.csv",
+        jitter=0
     shell:
         """
-        Rscript {params.script} -i {params.data} -o {output.plot} > {output.model}
+        Rscript {params.script} -i {params.data} -j {params.jitter} -o {output.plot} > {output.model}
+        """
+
+rule plot_expected_from_paper_vs_actual_mock_data:
+    input:
+        "HoMi_is_done_Pereira"
+    output:
+        plot="Pereira_benchmark_from_paper.pdf",
+        model="Pereira_benchmark_from_paper_lm_results.txt"
+    conda: "conda_envs/r_env.yaml"
+    threads: 1
+    resources:
+        partition="short",
+        mem_mb=int(4*1000), # MB
+        runtime=int(1*60) # min
+    params:
+        script="Plot_benchmarked_reads_breakdown.R",
+        data="benchmarking_Pereira_reads_breakdown.csv",
+        column_name="Pereira_percent_microbial",
+        axis_name="\"Paper-derived percent microbial\"",
+        jitter=0
+    shell:
+        """
+        Rscript {params.script} -i {params.data} -c {params.column_name} -n {params.axis_name} -j {params.jitter} -o {output.plot} > {output.model}
         """

@@ -326,10 +326,14 @@ rule plot_expected_from_paper_vs_actual_mock_data:
     params:
         script="Plot_benchmarked_reads_breakdown.R",
         data="benchmarking_Pereira_reads_breakdown.csv",
+        metadata="Pereira/Pereira_data.csv",
         column_name="Pereira_percent_microbial",
         axis_name="\"Paper-derived percent microbial\"",
         jitter=0
     shell:
         """
-        Rscript {params.script} -i {params.data} -c {params.column_name} -n {params.axis_name} -j {params.jitter} -o {output.plot} > {output.model}
+        Rscript {params.script} -i {params.data} -m {params.metadata} \
+        -c {params.column_name} -n {params.axis_name} \
+        -j {params.jitter} \
+        -o {output.plot} > {output.model}
         """

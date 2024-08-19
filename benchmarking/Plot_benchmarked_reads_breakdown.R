@@ -13,6 +13,11 @@ if (!require("ggbeeswarm")){
   library("ggbeeswarm")
 }
 
+if (!require("optparse")){
+  install.packages("optparse", repos="http://cran.us.r-project.org")
+  library("optparse")
+}
+
 
 get_args <- function(){
   option_list <- list( 
@@ -44,7 +49,7 @@ clean_df <- function(df){
 main <- function(){
   args <- get_args()
   df <- read.csv(args$input_file)
-  df <- clean_df
+  df <- clean_df(df)
 
   mod <- lm(Percent.host ~ true_perc_host, data=df)
   print(summary(mod))

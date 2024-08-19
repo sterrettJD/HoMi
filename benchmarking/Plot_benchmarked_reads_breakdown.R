@@ -58,7 +58,7 @@ clean_df <- function(df, col_to_use=X){
 main <- function(){
   args <- get_args()
   df <- read.csv(args$input_file)
-  df <- clean_df(df)
+  df <- clean_df(df, col_to_use=args$column_to_use)
 
   mod <- lm(Percent.host ~ true_perc_host, data=df)
   print(summary(mod))

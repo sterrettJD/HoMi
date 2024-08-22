@@ -12,6 +12,10 @@ metadata_file = os.path.join(synthetic_work_dir, "sample_data.csv")
 metadata = pd.read_csv(metadata_file)
 samples = metadata.drop(columns=["genome", "GCF_id"]).columns
 reads = ["R1", "R2"]
+organisms = metadata["genome"].to_list()
+microbial_organisms = [x for x in organisms if (x != "human")]
+
+
 # mock community data
 pereira_df = pd.read_csv("Pereira/Pereira_data.csv")
 pereira_srr_ids = pereira_df["SRR"]
@@ -42,6 +46,12 @@ rule all:
                sample=samples),
         expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_R2.fastq"),
                sample=samples),
+
+        "synthetic_microbial_transcriptomes_created",
+        expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{organism}", "{sample}_R1.fastq"),
+               organism=microbial_organisms, sample=samples),
+        expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{organism}", "{sample}_R2.fastq"),
+               organism=microbial_organisms, sample=samples),
 
         # From mock communities
         expand(os.path.join("Pereira", "{srr_id}_R1.fastq.gz"),
@@ -172,6 +182,80 @@ rule subsample_fastq_to_correct_depth:
         ran = subprocess.run(cmd, shell=True)
         cleaned = subprocess.run(["rm", input.data])
         
+
+rule simulate_synthetic_microbial_transcriptomes:
+    input:
+        sample_data=metadata_file
+    output:
+        rev=expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{organism}", "{sample}_unsampled_{read}.fasta"),
+                    organism=microbial_organisms,
+                    sample=samples,
+                    read=reads),
+        done="synthetic_microbial_transcriptomes_created"
+    threads: 1
+    resources:
+        partition="short",
+        mem_mb=int(16*1000), # MB
+        runtime=int(12*60) # min
+    params:
+        script=os.path.join(synthetic_work_dir, "run_polyester.R"),
+        work_dir=synthetic_work_dir,
+        communities_dir=os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir)
+    shell:
+        """
+        Rscript {params.script} \
+        -t synthetic/data/{wildcards.organism}/genome/cds_from_genomic.fna \
+        -g synthetic/data/{wildcards.organism}/genome/genomic.gff \
+        -s {input.sample_data} \
+        -n {wildcards.organism} \
+        -o {params.communities_dir}/{wildcards.organism}
+        
+        touch {output.done}
+        """
+
+
+rule transcriptome_fasta_to_fastq_microbial:
+    input:
+        data=os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{organism}", "{sample}_unsampled_{read}.fasta")
+    output:
+        data=os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{organism}", "{sample}_unsampled_{read}.fastq")
+    threads: 1
+    conda: "../conda_envs/bbmap.yaml"
+    resources:
+        partition="short",
+        mem_mb=int(16*1000), # MB
+        runtime=int(4*60) # min
+    shell:
+        """
+        reformat.sh in={input.data} out={output.data} qin=33 qout=33 qfake=40
+        rm {input.data}
+        """
+
+
+rule subsample_fastq_to_correct_depth_microbial:
+    input:
+        data=os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{organism}", "{sample}_unsampled_{read}.fastq")
+    output:
+        data=os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{organism}", "{sample}_{read}.fastq")
+    threads: 1
+    resources:
+        partition="short",
+        mem_mb=int(2*1000), # MB
+        runtime=int(1*60) # min
+    params:
+        metadata=metadata_file
+    run:
+        import subprocess
+        import pandas as pd
+        metadata = pd.read_csv(params.metadata, index_col="genome")
+        depth = metadata.loc[wildcards.organism, wildcards.sample]
+        if depth > 0:
+            cmd = f"seqtk sample -s 123 {input.data} {depth} > {output.data}"
+        else:
+            cmd = f"cp {input.data} {output.data}"
+        ran = subprocess.run(cmd, shell=True)
+        cleaned = subprocess.run(["rm", input.data])
+
 
 rule create_HoMi_metadata_synthetic:
     input:

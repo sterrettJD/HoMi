@@ -34,11 +34,20 @@ suppressPackageStartupMessages(library("Biostrings"))
 get_reference <- function(file_path, url){
     # Check if the file exists
     if (!file.exists(file_path)) {
-    # If file doesn't exist, download from URL
-    download.file(url=url, destfile=file_path, mode = "wb")
-    message(paste("File downloaded from", url, "to", file_path))
-    } else {
-    message("File already exists: ", file_path)
+        # If no url provided, stop the script
+        if (is.null(url)){
+            m <- paste(file_path, 
+                       "does not exist, and no URL has been provided to download it.")
+            stop(m)
+        }
+
+        # If file doesn't exist, download from URL
+        download.file(url=url, destfile=file_path, mode = "wb")
+        message(paste("File downloaded from", url, "to", file_path))
+    } 
+    
+    else {
+        message("File already exists: ", file_path)
     }
 }
 
@@ -67,11 +76,13 @@ option_list <- list(
     make_option(c("-t", "--transcriptome_filepath"),
                 help="Reference transcriptome filepath"),
     make_option(c("--transcriptome_url"), 
-                help="URL to download the reference transcriptome from if it isn't present."),
+                help="URL to download the reference transcriptome from if it isn't present.",
+                default=NULL),
     make_option(c("-g", "--gtf_filepath"), 
                 help="Reference gtf filepath"),
     make_option(c("--gtf_url"), 
-                help="URL to download the reference transcriptome from if it isn't present."),
+                help="URL to download the reference transcriptome from if it isn't present.",
+                default=NULL),
     make_option(c("-s", "--sample_data"), 
                 help="A CSV file with the number of reads per sample belonging to the host. Samples are columns, and rows are organisms. A column labeled `genome` should denote the organisms, and a column `GCF_id` will be ignored."),
     make_option(c("-n", "--host_id"), 

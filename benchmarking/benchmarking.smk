@@ -14,6 +14,8 @@ samples = metadata.drop(columns=["genome", "GCF_id"]).columns
 reads = ["R1", "R2"]
 organisms = metadata["genome"].to_list()
 microbial_organisms = [x for x in organisms if (x != "human")]
+#print(expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{organism}", "{sample}_{read}.fastq"),
+               #organism=microbial_organisms, sample=samples, read=reads))
 
 
 # mock community data
@@ -38,8 +40,6 @@ rule all:
         "HoMi_is_done_synthetic",
         "synthetic_communities_benchmark.pdf",
         "synthetic_communities_benchmark_lm_results.txt",
-
-        "synthetic_transcriptomes_created",
         
         # From synthetic transcriptomes
         expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_R1.fastq"),
@@ -47,11 +47,8 @@ rule all:
         expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_R2.fastq"),
                sample=samples),
 
-        "synthetic_microbial_transcriptomes_created",
-        expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{organism}", "{sample}_R1.fastq"),
-               organism=microbial_organisms, sample=samples),
-        expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{organism}", "{sample}_R2.fastq"),
-               organism=microbial_organisms, sample=samples),
+        expand(os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir}_{{organism}}_s", "{sample}_{read}.fastq"),
+               organism=microbial_organisms, sample=samples, read=reads),
 
         # From mock communities
         expand(os.path.join("Pereira", "{srr_id}_R1.fastq.gz"),
@@ -187,11 +184,7 @@ rule simulate_synthetic_microbial_transcriptomes:
     input:
         sample_data=metadata_file
     output:
-        rev=expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{organism}", "{sample}_unsampled_{read}.fasta"),
-                    organism=microbial_organisms,
-                    sample=samples,
-                    read=reads),
-        done="synthetic_microbial_transcriptomes_created"
+        done="synthetic_microbial_transcriptomes_created_{organism}"
     threads: 1
     resources:
         partition="short",
@@ -200,7 +193,7 @@ rule simulate_synthetic_microbial_transcriptomes:
     params:
         script=os.path.join(synthetic_work_dir, "run_polyester.R"),
         work_dir=synthetic_work_dir,
-        communities_dir=os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir)
+        communities_dir=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir}_{{organism}}_u")
     shell:
         """
         Rscript {params.script} \
@@ -208,7 +201,7 @@ rule simulate_synthetic_microbial_transcriptomes:
         -g synthetic/data/{wildcards.organism}/genome/genomic.gff \
         -s {input.sample_data} \
         -n {wildcards.organism} \
-        -o {params.communities_dir}/{wildcards.organism}
+        -o {params.communities_dir}
         
         touch {output.done}
         """
@@ -216,27 +209,29 @@ rule simulate_synthetic_microbial_transcriptomes:
 
 rule transcriptome_fasta_to_fastq_microbial:
     input:
-        data=os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{organism}", "{sample}_unsampled_{read}.fasta")
+        data_created="synthetic_microbial_transcriptomes_created_{organism}",
     output:
-        data=os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{organism}", "{sample}_unsampled_{read}.fastq")
+        data=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir}_{{organism}}_u", "{sample}_unsampled_{read}.fastq")
     threads: 1
     conda: "../conda_envs/bbmap.yaml"
     resources:
         partition="short",
         mem_mb=int(16*1000), # MB
         runtime=int(4*60) # min
+    params:
+        in_data=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir}_{{organism}}_u", "{sample}_unsampled_{read}.fastq")
     shell:
         """
-        reformat.sh in={input.data} out={output.data} qin=33 qout=33 qfake=40
-        rm {input.data}
+        reformat.sh in={params.in_data} out={output.data} qin=33 qout=33 qfake=40
+        rm {params.in_data}
         """
 
 
 rule subsample_fastq_to_correct_depth_microbial:
     input:
-        data=os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{organism}", "{sample}_unsampled_{read}.fastq")
+        data=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir}_{{organism}}_u", "{sample}_unsampled_{read}.fastq")
     output:
-        data=os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{organism}", "{sample}_{read}.fastq")
+        data=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir}_{{organism}}_s", "{sample}_{read}.fastq")
     threads: 1
     resources:
         partition="short",

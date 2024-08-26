@@ -219,7 +219,7 @@ rule transcriptome_fasta_to_fastq_microbial:
         mem_mb=int(16*1000), # MB
         runtime=int(4*60) # min
     params:
-        in_data=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir}_{{organism}}_u", "{sample}_unsampled_{read}.fastq")
+        in_data=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir}_{{organism}}_u", "{sample}_unsampled_{read}.fasta")
     shell:
         """
         reformat.sh in={params.in_data} out={output.data} qin=33 qout=33 qfake=40

@@ -257,7 +257,7 @@ rule combine_transcriptomes:
         expand(os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir}_{{organism}}_s", "{sample}_{read}.fastq"),
                organism=microbial_organisms, sample=samples, read=reads)
     output:
-        os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir}_combined", "{sample}_{read}.fastq")
+        data=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir}_combined", "{sample}_{read}.fastq")
     threads: 1
     resources:
         partition="short",
@@ -270,10 +270,14 @@ rule combine_transcriptomes:
     run:
         import subprocess
         import os
+	
+	out_dir = os.path.join(params.synthetic_work_dir, f"{params.synthetic_transcriptomes_dir}_combined")
+	os.makedirs(out_dir, exist_ok=True)
+
         # Find the paths to each organism's transcriptome
         in_paths = [os.path.join(params.synthetic_work_dir, 
                                 f"{params.synthetic_transcriptomes_dir}_{organism}_s", 
-                                f"{wilcards.sample}_{wildcards.read}.fastq") 
+                                f"{wildcards.sample}_{wildcards.read}.fastq") 
                     for organism in params.organisms]
     
         in_paths_string = " ".join(in_paths)

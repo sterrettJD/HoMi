@@ -109,7 +109,7 @@ rule simulate_synthetic_host_transcriptomes:
     input:
         sample_data=metadata_file
     output:
-        data=expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_unsampled_{read}.fasta"),
+        data=expand(os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir}_human", "{sample}_unsampled_{read}.fasta"),
                     sample=samples,
                     read=reads),
         done="synthetic_transcriptomes_created"
@@ -131,7 +131,7 @@ rule simulate_synthetic_host_transcriptomes:
         --gtf_url https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/GCA_000001405.15_GRCh38_genomic.gff.gz \
         -s {input.sample_data} \
         -n human \
-        -o {params.communities_dir}
+        -o {params.communities_dir}_human
         
         touch {output.done}
         """
@@ -139,9 +139,9 @@ rule simulate_synthetic_host_transcriptomes:
 
 rule transcriptome_fasta_to_fastq:
     input:
-        data=os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_unsampled_{read}.fasta")
+        data=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir}_human", "{sample}_unsampled_{read}.fasta")
     output:
-        data=os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_unsampled_{read}.fastq")
+        data=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir}_human", "{sample}_unsampled_{read}.fastq")
     threads: 1
     conda: "../conda_envs/bbmap.yaml"
     resources:
@@ -157,9 +157,9 @@ rule transcriptome_fasta_to_fastq:
 
 rule subsample_fastq_to_correct_depth:
     input:
-        data=os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_unsampled_{read}.fastq")
+        data=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir}_human", "{sample}_unsampled_{read}.fastq")
     output:
-        data=os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_{read}.fastq")
+        data=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir}_human", "{sample}_{read}.fastq")
     threads: 1
     resources:
         partition="short",
@@ -271,8 +271,8 @@ rule combine_transcriptomes:
         import subprocess
         import os
 	
-	out_dir = os.path.join(params.synthetic_work_dir, f"{params.synthetic_transcriptomes_dir}_combined")
-	os.makedirs(out_dir, exist_ok=True)
+        out_dir = os.path.join(params.synthetic_work_dir, f"{params.synthetic_transcriptomes_dir}_combined")
+        os.makedirs(out_dir, exist_ok=True)
 
         # Find the paths to each organism's transcriptome
         in_paths = [os.path.join(params.synthetic_work_dir, 

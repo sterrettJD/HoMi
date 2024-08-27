@@ -47,8 +47,8 @@ rule all:
         expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_R2.fastq"),
                sample=samples),
 
-        expand(os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir}_{{organism}}_s", "{sample}_{read}.fastq"),
-               organism=microbial_organisms, sample=samples, read=reads),
+        expand(os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir}_combined", "{sample}_{read}.fastq"),
+               sample=samples, read=reads),
 
         # From mock communities
         expand(os.path.join("Pereira", "{srr_id}_R1.fastq.gz"),
@@ -250,6 +250,36 @@ rule subsample_fastq_to_correct_depth_microbial:
             cmd = f"cp {input.data} {output.data}"
         ran = subprocess.run(cmd, shell=True)
         cleaned = subprocess.run(["rm", input.data])
+
+
+rule combine_transcriptomes:
+    input:
+        expand(os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir}_{{organism}}_s", "{sample}_{read}.fastq"),
+               organism=microbial_organisms, sample=samples, read=reads)
+    output:
+        os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir}_combined", "{sample}_{read}.fastq")
+    threads: 1
+    resources:
+        partition="short",
+        mem_mb=int(2*1000), # MB
+        runtime=int(1*60) # min
+    params:
+        organisms=organisms,
+        synthetic_work_dir=synthetic_work_dir,
+        synthetic_transcriptomes_dir=synthetic_transcriptomes_dir
+    run:
+        import subprocess
+        import os
+        # Find the paths to each organism's transcriptome
+        in_paths = [os.path.join(params.synthetic_work_dir, 
+                                f"{params.synthetic_transcriptomes_dir}_{organism}_s", 
+                                f"{wilcards.sample}_{wildcards.read}.fastq") 
+                    for organism in params.organisms]
+    
+        in_paths_string = " ".join(in_paths)
+
+        cmd = f"cat {in_paths_string} > {output.data}"
+        ran = subprocess.run(cmd, shell=True)       
 
 
 rule create_HoMi_metadata_synthetic:

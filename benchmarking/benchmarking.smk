@@ -42,9 +42,9 @@ rule all:
         "synthetic_communities_benchmark_lm_results.txt",
         
         # From synthetic transcriptomes
-        expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_R1.fastq"),
+        expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_R1.fastq.gz"),
                sample=samples),
-        expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_R2.fastq"),
+        expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_R2.fastq.gz"),
                sample=samples),
         "HoMi_is_done_synthetic_transcriptomes",
         "synthetic_transcriptomes_benchmark.pdf",
@@ -257,7 +257,7 @@ rule combine_transcriptomes:
         expand(os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir}_{{organism}}_s", "{sample}_{read}.fastq"),
                organism=microbial_organisms, sample=samples, read=reads)
     output:
-        data=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir}", "{sample}_{read}.fastq")
+        data=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir}", "{sample}_{read}.fastq.gz")
     threads: 1
     resources:
         partition="short",
@@ -282,8 +282,9 @@ rule combine_transcriptomes:
     
         in_paths_string = " ".join(in_paths)
 
-        cmd = f"cat {in_paths_string} > {output.data}"
-        ran = subprocess.run(cmd, shell=True)       
+        cmd = f"cat {in_paths_string} | gzip > {output.data}"
+        ran = subprocess.run(cmd, shell=True)
+        gzip_cmd = 
 
 
 ###################################
@@ -381,9 +382,9 @@ rule create_HoMi_metadata_synthetic_transcriptomes:
         df = df.drop(["genome", "GCF_id"], axis=1).transpose()
         df.columns = genome_names
 
-        df["forward_reads"] = [os.path.join(params.work_dir, params.communities_dir, f"{sample}_R1.fastq") 
+        df["forward_reads"] = [os.path.join(params.work_dir, params.communities_dir, f"{sample}_R1.fastq.gz") 
                                 for sample in df.index]
-        df["reverse_reads"] = [os.path.join(params.work_dir, params.communities_dir, f"{sample}_R2.fastq") 
+        df["reverse_reads"] = [os.path.join(params.work_dir, params.communities_dir, f"{sample}_R2.fastq.gz") 
                                 for sample in df.index]
 
         df.to_csv(output.homi_metadata, index_label="Sample")
@@ -393,9 +394,9 @@ rule run_HoMi_synthetic_transcriptomes:
     input:
         homi_metadata=os.path.join(synthetic_work_dir, "synthetic_transcriptomes_homi_metadata.csv"),
         homi_config=os.path.join(synthetic_work_dir, "synthetic_transcriptomes_HoMi_config.yaml"),
-        fwd=expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_R1.fastq"),
+        fwd=expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_R1.fastq.gz"),
                sample=samples),
-        rev=expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_R2.fastq"),
+        rev=expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_R2.fastq.gz"),
                sample=samples)
     output:
         "HoMi_is_done_synthetic_transcriptomes"

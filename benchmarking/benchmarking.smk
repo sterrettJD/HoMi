@@ -46,9 +46,9 @@ rule all:
                sample=samples),
         expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_R2.fastq"),
                sample=samples),
-
-        expand(os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir}_combined", "{sample}_{read}.fastq"),
-               sample=samples, read=reads),
+        "HoMi_is_done_synthetic_transcriptomes",
+        "synthetic_transcriptomes_benchmark.pdf",
+        "synthetic_transcriptomes_benchmark_lm_results.txt",
 
         # From mock communities
         expand(os.path.join("Pereira", "{srr_id}_R1.fastq.gz"),
@@ -257,7 +257,7 @@ rule combine_transcriptomes:
         expand(os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir}_{{organism}}_s", "{sample}_{read}.fastq"),
                organism=microbial_organisms, sample=samples, read=reads)
     output:
-        data=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir}_combined", "{sample}_{read}.fastq")
+        data=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir}", "{sample}_{read}.fastq")
     threads: 1
     resources:
         partition="short",
@@ -271,7 +271,7 @@ rule combine_transcriptomes:
         import subprocess
         import os
 	
-        out_dir = os.path.join(params.synthetic_work_dir, f"{params.synthetic_transcriptomes_dir}_combined")
+        out_dir = os.path.join(params.synthetic_work_dir, f"{params.synthetic_transcriptomes_dir}")
         os.makedirs(out_dir, exist_ok=True)
 
         # Find the paths to each organism's transcriptome
@@ -285,6 +285,9 @@ rule combine_transcriptomes:
         cmd = f"cat {in_paths_string} > {output.data}"
         ran = subprocess.run(cmd, shell=True)       
 
+
+###################################
+### HoMi on synthetic ###
 
 rule create_HoMi_metadata_synthetic:
     input:
@@ -308,7 +311,7 @@ rule create_HoMi_metadata_synthetic:
 
         df["forward_reads"] = [os.path.join(params.work_dir, params.communities_dir, f"{sample}_R1.fastq.gz") 
                                 for sample in df.index]
-        df["reverse_reads"] = [os.path.join(params.work_dir, params.communities_dir, f"{sample}_R1.fastq.gz") 
+        df["reverse_reads"] = [os.path.join(params.work_dir, params.communities_dir, f"{sample}_R2.fastq.gz") 
                                 for sample in df.index]
 
         df.to_csv(output.homi_metadata, index_label="Sample")
@@ -356,6 +359,79 @@ rule plot_expected_vs_actual_synthetic_communities:
         """
         Rscript {params.script} -i {params.data} -o {output.plot} > {output.model}
         """
+
+
+rule create_HoMi_metadata_synthetic_transcriptomes:
+    input:
+        sample_data=metadata_file
+    output:
+        homi_metadata=os.path.join(synthetic_work_dir, "synthetic_transcriptomes_homi_metadata.csv")
+    threads: 1
+    resources:
+        partition="short",
+        mem_mb=int(8*1000), # MB
+        runtime=int(10) # min
+    params:
+        work_dir=synthetic_work_dir,
+        communities_dir=synthetic_transcriptomes_dir
+    run:
+        import pandas as pd
+        df = pd.read_csv(input.sample_data)
+        genome_names = df["genome"].to_list()
+        df = df.drop(["genome", "GCF_id"], axis=1).transpose()
+        df.columns = genome_names
+
+        df["forward_reads"] = [os.path.join(params.work_dir, params.communities_dir, f"{sample}_R1.fastq") 
+                                for sample in df.index]
+        df["reverse_reads"] = [os.path.join(params.work_dir, params.communities_dir, f"{sample}_R2.fastq") 
+                                for sample in df.index]
+
+        df.to_csv(output.homi_metadata, index_label="Sample")
+    
+
+rule run_HoMi_synthetic_transcriptomes:
+    input:
+        homi_metadata=os.path.join(synthetic_work_dir, "synthetic_transcriptomes_homi_metadata.csv"),
+        homi_config=os.path.join(synthetic_work_dir, "synthetic_transcriptomes_HoMi_config.yaml"),
+        fwd=expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_R1.fastq"),
+               sample=samples),
+        rev=expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_R2.fastq"),
+               sample=samples)
+    output:
+        "HoMi_is_done_synthetic_transcriptomes"
+    threads: 1
+    resources:
+        partition="short",
+        mem_mb=int(8*1000), # MB
+        runtime=int(20*60) # min
+    params:
+        homi_args=homi_args
+    shell:
+        """
+        HoMi.py {input.homi_config} {params.homi_args} --unlock
+        touch {output}
+        """
+
+rule plot_expected_vs_actual_synthetic_transcriptomes:
+    input:
+        "HoMi_is_done_synthetic_transcriptomes"
+    output:
+        plot="synthetic_transcriptomes_benchmark.pdf",
+        model="synthetic_transcriptomes_benchmark_lm_results.txt"
+    conda: "conda_envs/r_env.yaml"
+    threads: 1
+    resources:
+        partition="short",
+        mem_mb=int(4*1000), # MB
+        runtime=int(1*60) # min
+    params:
+        script="Plot_benchmarked_reads_breakdown.R",
+        data="benchmarking_synthetic_transcriptomes_reads_breakdown.csv"
+    shell:
+        """
+        Rscript {params.script} -i {params.data} -o {output.plot} > {output.model}
+        """
+
 
 
 #############################################################

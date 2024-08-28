@@ -284,7 +284,6 @@ rule combine_transcriptomes:
 
         cmd = f"cat {in_paths_string} | gzip > {output.data}"
         ran = subprocess.run(cmd, shell=True)
-        gzip_cmd = 
 
 
 ###################################

@@ -6,6 +6,7 @@ params:
     metadata: "metadata.csv"
     bugslist: NULL
     directory: NULL
+    host_taxon_id: NULL
 ---
 
 ```{r setup, include=FALSE}
@@ -79,6 +80,25 @@ bugslist <- bugslist %>%
     select(-all_of(tax.columns)) %>%
     select(-c("tax_id", "tax_level"))
 
+# Filter host reads
+if (!is.null(params$host_taxon_id)){
+    # make sure it isn't numeric
+    params$host_taxon_id <- as.character(params$host_taxon_id)
+    
+    # print the taxonomy
+    host.tax <- paste0(taxonomy.table[rownames(taxonomy.table)==params$host_taxon_id],
+                 collapse=" ")
+    print(paste("Host taxonomy for", params$host_taxon_id, "is", host.tax))
+    # Show host reads per sample
+    host.abunds <- bugslist %>%
+        dplyr::filter(rownames(bugslist) == params$host_taxon_id)
+    host.abunds %>% 
+        knitr::kable(caption="Host reads per sample")
+    # filter the tables
+    bugslist <- bugslist[rownames(bugslist)!=params$host_taxon_id,]
+    taxonomy.table <- taxonomy.table[rownames(taxonomy.table)!=params$host_taxon_id,] 
+}
+
 # Split the bracken output into relative and absolute abundance columns    
 bugslist.rel <- bugslist %>%
     select(ends_with("_frac")) %>%
@@ -103,14 +123,6 @@ pseq.abs <- phyloseq::phyloseq(otu_table=otu_table(bugslist.abs, taxa_are_rows=T
                  )
 
 taxonomy.table <- as.data.frame(taxonomy.table)
-```
-
-# Unclassified Reads
-```{r, error=F}
-eu_un <- bugs[grepl(x=bugs, pattern="Eukaryota_unclassified")]
-homo.sapiens.taxid <- "9606"
-rowSums(bugslist[eu_un,])/ncol(bugslist)
-
 ```
 
 # Taxa barplot {.tabset}
@@ -251,7 +263,7 @@ plot_1 <- plot + scale_y_continuous(labels = scales::percent, expand = expansion
 
 multi <- plot_grid(plot_1, GP_legend,  rel_widths = c(1, .25))
 multi
-ggsave(paste0(params$directory, "taxa-bar-phyum-genus-microshades.pdf"),
+ggsave(paste0(params$directory, "/taxa-bar-phyum-genus-kraken-microshades.pdf"),
         plot=multi, height=10, width=10, 
         bg="transparent")
 
@@ -311,7 +323,7 @@ plot_1 <- plot + scale_y_continuous(labels = scales::percent, expand = expansion
 
 multi <- plot_grid(plot_1, GP_legend,  rel_widths = c(1, .25))
 multi
-ggsave(paste0(params$directory, "taxa-bar-phyum-family-microshades.pdf"),
+ggsave(paste0(params$directory, "/taxa-bar-phyum-family-kraken-microshades.pdf"),
         plot=multi, height=10, width=10, 
         bg="transparent")
 

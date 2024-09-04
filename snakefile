@@ -1008,7 +1008,7 @@ rule taxa_barplot_kraken:
   """
   input:
     data=pj(f"{trim_trunc_path}.nonhost.kraken", "Combined-taxonomy.tsv"),
-    "R_packages_installed"
+    r_installed="R_packages_installed"
   output:
     pj(f"{trim_trunc_path}.nonhost.kraken", 
                 "Kraken_microshades.html")

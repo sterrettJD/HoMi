@@ -81,22 +81,22 @@ bugslist <- bugslist %>%
     select(-c("tax_id", "tax_level"))
 
 # Filter host reads
-if (!is.null(params$host_taxon_id)){
+if ((!is.null(params$host_taxon_id)) && (params$host_taxon_id!="")){
     # make sure it isn't numeric
-    params$host_taxon_id <- as.character(params$host_taxon_id)
+    host.taxon.id <- as.character(params$host_taxon_id)
     
     # print the taxonomy
-    host.tax <- paste0(taxonomy.table[rownames(taxonomy.table)==params$host_taxon_id],
+    host.tax <- paste0(taxonomy.table[rownames(taxonomy.table)==host.taxon.id],
                  collapse=" ")
-    print(paste("Host taxonomy for", params$host_taxon_id, "is", host.tax))
+    print(paste("Host taxonomy for", host.taxon.id, "is", host.tax))
     # Show host reads per sample
     host.abunds <- bugslist %>%
-        dplyr::filter(rownames(bugslist) == params$host_taxon_id)
+        dplyr::filter(rownames(bugslist) == host.taxon.id)
     host.abunds %>% 
         knitr::kable(caption="Host reads per sample")
     # filter the tables
-    bugslist <- bugslist[rownames(bugslist)!=params$host_taxon_id,]
-    taxonomy.table <- taxonomy.table[rownames(taxonomy.table)!=params$host_taxon_id,] 
+    bugslist <- bugslist[rownames(bugslist)!=host.taxon.id,]
+    taxonomy.table <- taxonomy.table[rownames(taxonomy.table)!=host.taxon.id,] 
 }
 
 # Split the bracken output into relative and absolute abundance columns    

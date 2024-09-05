@@ -66,6 +66,7 @@ rule all:
 
     # Bracken combined out
     pj(f"{trim_trunc_path}.nonhost.kraken", "Combined-taxonomy.tsv"),
+    pj(f"{trim_trunc_path}.nonhost.kraken", "Kraken_microshades.html"),
     pj(f"{trim_trunc_path}.nonhost.humann", "Gut_metabolic_modules.csv"),
 
     # reads breakdown report
@@ -998,6 +999,37 @@ rule aggregate_bracken:
     rm *.dmp
     rm readme.txt
     rm taxdump.tar.gz
+    """
+
+
+rule taxa_barplot_kraken:
+  """
+  This rule runs a .Rmd file that creates microshaded taxa barplots using Kraken/Bracken taxonomic profiles. 
+  """
+  input:
+    data=pj(f"{trim_trunc_path}.nonhost.kraken", "Combined-taxonomy.tsv"),
+    r_installed="R_packages_installed"
+  output:
+    pj(f"{trim_trunc_path}.nonhost.kraken", 
+                "Kraken_microshades.html")
+  resources:
+    partition=get_partition("short", config, "taxa_barplot_kraken"),
+    mem_mb=get_mem(int(10*1000), config, "taxa_barplot_kraken"), # MB, or 10 GB
+    runtime=get_runtime(int(2*60), config, "taxa_barplot_kraken"), # min
+    slurm=get_slurm_extra(config, "taxa_barplot_kraken")
+  threads: get_threads(1, config, "taxa_barplot_kraken")
+  conda: "conda_envs/r_env.yaml"
+  params:
+    rmd_path=get_taxa_barplot_rmd_path(map_method="Kraken"),
+    bugslist=pj(os.getcwd(), f"{trim_trunc_path}.nonhost.kraken",
+                "Combined-taxonomy.tsv"),
+    host_taxon_id=config.get("host_tax_id", ""),
+    output_dir=pj(os.getcwd(), f"{trim_trunc_path}.nonhost.kraken"),
+    metadata=pj(os.getcwd(), config['METADATA'])
+  shell:
+    """
+    Rscript \
+    -e "rmarkdown::render('{params.rmd_path}', output_dir='{params.output_dir}', params=list(bugslist='{params.bugslist}', metadata='{params.metadata}', directory='{params.output_dir}', host_taxon_id='{params.host_taxon_id}'))"
     """
 
 

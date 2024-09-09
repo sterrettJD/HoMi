@@ -60,7 +60,7 @@ utility_mapping_db: synthetic/data/humann_dbs/utility_mapping
 # database location
 kraken_db: synthetic/data/kraken2_db
 # host taxon ID to not be plotted in microbial taxa barplot
-host_taxon_id: 9606
+host_tax_id: 9606
 
 
 #################################

@@ -5,4 +5,3 @@ channels:
   - defaults
 dependencies:
   - hostile
-prefix: /Users/johnsterrett/mambaforge/envs/hostile

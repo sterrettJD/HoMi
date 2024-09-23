@@ -6,4 +6,3 @@ channels:
 dependencies:
   - multiqc
   - fastqc
-prefix: /Users/johnsterrett/mambaforge/envs/fastqc

@@ -2,13 +2,13 @@ from setuptools import setup, find_packages
 from pathlib import Path
 
 __author__ = 'sterrettJD'
-__version__ = "1.0.2"
+__version__ = "1.0.3"
 
 this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
 
 setup(
-      name="HoMi",
+      name="HoMi-pipeline",
       version=__version__,
       python_requires='<3.12.0', # snakemake f-strings break in 3.12 (as of Nov 15, 2023)
       setup_requires=['pytest-runner'],

@@ -1,8 +1,11 @@
 from setuptools import setup, find_packages
-from src.init import __version__ as version
+from pathlib import Path
 
 __author__ = 'sterrettJD'
-__version__ = version
+__version__ = "1.0.2"
+
+this_directory = Path(__file__).parent
+long_description = (this_directory / "README.md").read_text()
 
 setup(
       name="HoMi",
@@ -19,6 +22,8 @@ setup(
       scripts=['src/HoMi.py', 'src/snake_utils.py', 'src/HoMi_cleanup.py', 'src/profile_setup.py', 'src/check_config.py'],
       packages=find_packages(),
       description="Pipeline for analysis of host-microbiome dual transcriptome data",
+      long_description=long_description,
+      long_description_content_type='text/markdown',
       author="John Sterrett",
       author_email='john.sterrett@colorado.edu',
       url="https://github.com/sterrettJD/HoMi",

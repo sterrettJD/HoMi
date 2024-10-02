@@ -1,0 +1,17 @@
+[project]
+name = "HoMi-pipeline"
+version = "1.0.4"
+authors = [
+  { name="John Sterrett", email="john.sterrett@colorado.edu" },
+]
+description = "Pipeline for analysis of host-microbiome dual transcriptome data"
+readme = "README.md"
+requires-python = "<3.12.0"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+]
+
+[project.urls]
+Homepage = "https://github.com/sterrettJD/HoMi"
+Issues = "https://github.com/sterrettJD/HoMi/issues"

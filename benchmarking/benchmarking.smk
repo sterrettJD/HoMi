@@ -1,30 +1,28 @@
 import os
 import pandas as pd
-from semisynthetic import simulate_semisynthetic as sss
 
 
-# some global vars here for now BUT SHOULD BE MIGRATED TO CONFIG
+######## CONFIG ########
+# some global vars here
 synthetic_work_dir = "synthetic"
 synthetic_communities_dir = "synthetic_communities"
 synthetic_transcriptomes_dir = "synthetic_transcriptomes"
+
+# to run this on a Slurm-managed cluster
 homi_args = "--profile slurm"
+
+# Metadata
 metadata_file = os.path.join(synthetic_work_dir, "sample_data.csv")
 metadata = pd.read_csv(metadata_file)
 samples = metadata.drop(columns=["genome", "GCF_id"]).columns
 reads = ["R1", "R2"]
 organisms = metadata["genome"].to_list()
 microbial_organisms = [x for x in organisms if (x != "human")]
-#print(expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{organism}", "{sample}_{read}.fastq"),
-               #organism=microbial_organisms, sample=samples, read=reads))
 
 
 # mock community data
 pereira_df = pd.read_csv("Pereira/Pereira_data.csv")
 pereira_srr_ids = pereira_df["SRR"]
-
-
-#colon_sample_htx="SRP127360"
-#colon_sample_htx="SRR6410603"
 
 
 rule all:

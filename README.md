@@ -13,11 +13,9 @@ HoMi is currently under development! Please feel free to raise an issue or contr
 
 ## Installation
 ```
-conda create -n HoMi python
+conda create -n HoMi python=3.11
 conda activate HoMi
-git clone git@github.com:sterrettJD/HoMi.git
-cd HoMi
-pip install -e .
+pip install homi-pipeline
 ```
 
 ## Usage

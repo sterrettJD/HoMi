@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 from pathlib import Path
 
 __author__ = 'sterrettJD'
-__version__ = "1.0.5"
+__version__ = "1.0.6"
 
 this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
@@ -20,7 +20,8 @@ setup(
                         'argparse', 'pyyaml', 
                         'cookiecutter'],
       scripts=['src/HoMi.py', 'src/snake_utils.py', 'src/HoMi_cleanup.py', 'src/profile_setup.py', 'src/check_config.py'],
-      packages=find_packages(),
+      packages=find_packages(where="src"),
+      package_dir={"": "src"},
       description="Pipeline for analysis of host-microbiome dual transcriptome data",
       long_description=long_description,
       long_description_content_type='text/markdown',

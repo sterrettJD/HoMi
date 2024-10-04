@@ -4,8 +4,8 @@ import subprocess
 import argparse
 import os
 from re import findall
-from src.check_config import run_checker
-from src.HoMi_cleanup import read_config
+from check_config import run_checker
+from HoMi_cleanup import read_config
 
 
 def get_args():

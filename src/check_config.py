@@ -1,6 +1,8 @@
+#!/usr/bin/env python3
+
 import argparse
 import pandas as pd
-from src.HoMi_cleanup import read_config
+from HoMi_cleanup import read_config
 
 
 def get_args():

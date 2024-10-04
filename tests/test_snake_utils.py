@@ -1,7 +1,7 @@
 import pytest
 import pandas as pd
 
-import src.snake_utils as su
+import snake_utils as su
 
 def test_get_host_mapping_samples_nocol():
     metadata = pd.DataFrame({"Sample": [1,2,3]})

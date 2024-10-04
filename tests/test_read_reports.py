@@ -1,6 +1,6 @@
 import pytest
 import pandas as pd
-from src.rule_utils import read_reports as rr
+from rule_utils import read_reports as rr
 
 
 def test_read_hostile():

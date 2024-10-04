@@ -3,7 +3,7 @@ import pandas as pd
 import os
 from pathlib import Path
 
-import src.HoMi_cleanup as hmc
+import HoMi_cleanup as hmc
 
 
 def test_config_read_correctly(filepath="tests/test_data/test_cleanup_config.yaml"):

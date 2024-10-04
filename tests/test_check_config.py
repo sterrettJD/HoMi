@@ -1,5 +1,5 @@
 import pytest
-import src.check_config as cc
+import check_config as cc
 
 @pytest.fixture
 def config():

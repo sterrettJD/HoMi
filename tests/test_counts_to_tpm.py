@@ -1,7 +1,7 @@
 import pytest
 import pandas as pd
 from pandas.testing import assert_frame_equal
-from src.rule_utils import counts_to_tpm as c2t
+from rule_utils import counts_to_tpm as c2t
 
 def test_tpm_conversion():
     counts = pd.DataFrame(data = {

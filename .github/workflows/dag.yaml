@@ -37,6 +37,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install pulp==2.7.0 # must < 2.8 for integration with Snakemake
+        pip install -e .
     
     - name: Build DAG
       run: snakemake --configfile tests/example_config.yaml --dag > dag.dot

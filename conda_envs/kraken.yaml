@@ -1,7 +1,7 @@
 name: kraken
 channels:
-  - bioconda
   - conda-forge
+  - bioconda
   - astrobiomike
   - defaults
 dependencies:

@@ -9,9 +9,7 @@ def hostile_db_to_path(HOSTILE_DB, parent):
 
 def get_adapters_path():
     path_2_script = path.dirname(__file__)
-    adapters_path = path.join(path_2_script, "..", "data", "adapters.fa")
-    # remove ".."
-    adapters_path = path.normpath(adapters_path)
+    adapters_path = path.join(path_2_script, "data", "adapters.fa")
 
     if path.exists(adapters_path):
         return adapters_path

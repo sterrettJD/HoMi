@@ -22,6 +22,8 @@ setup(
       scripts=['src/HoMi.py', 'src/snake_utils.py', 'src/HoMi_cleanup.py', 'src/profile_setup.py', 'src/check_config.py'],
       packages=find_packages(where="src"),
       package_dir={"": "src"},
+      include_package_data=True,
+      package_data={'data': ['adapters.fa']},
       description="Pipeline for analysis of host-microbiome dual transcriptome data",
       long_description=long_description,
       long_description_content_type='text/markdown',

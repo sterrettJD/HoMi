@@ -23,7 +23,7 @@ setup(
       packages=find_packages(where="src"),
       package_dir={"": "src"},
       include_package_data=True,
-      package_data={'data': ['adapters.fa']},
+      package_data={"": ["snakefile"], "data": ["adapters.fa"]},
       description="Pipeline for analysis of host-microbiome dual transcriptome data",
       long_description=long_description,
       long_description_content_type='text/markdown',

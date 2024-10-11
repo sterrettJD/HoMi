@@ -733,9 +733,9 @@ rule aggregate_humann_outs_nonhost:
     humann_regroup_table -i {output.GENEFAMS} -g uniref90_pfam -o {output.GENEFAMS_GROUPED_PFAM}
     humann_rename_table -i {output.GENEFAMS_GROUPED_PFAM} -n pfam -o {output.GENEFAMS_GROUPED_NAMED_PFAM}
 
-    python {params.agg_bugslists} -i {params.dirpath} -o {output.BUGSLIST}
+    {params.agg_bugslists} -i {params.dirpath} -o {output.BUGSLIST}
 
-    python {params.mphlan_conv} -i {params.dirpath} 
+    {params.mphlan_conv} -i {params.dirpath} 
     """
 
 
@@ -1302,7 +1302,7 @@ rule feature_counts_to_tpm:
     converter_script=get_tpm_converter_path()
   shell:
     """
-    python {params.converter_script} {input.COUNTS} --output {output.TPM}
+    {params.converter_script} {input.COUNTS} --output {output.TPM}
     """
 
 
@@ -1334,7 +1334,7 @@ rule reads_breakdown:
     # generate those
   shell:
     """
-    python {params.reporter_script} {input.METADATA} \
+    {params.reporter_script} {input.METADATA} \
     --raw_reads_dir {params.proj} \
     --hostile_dir {params.hostile} \
     --genefams_filepath {input.GENEFAMS} \

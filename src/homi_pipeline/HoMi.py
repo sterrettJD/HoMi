@@ -5,8 +5,8 @@ import argparse
 import os
 from importlib.resources import files
 from re import findall
-from check_config import run_checker
-from HoMi_cleanup import read_config
+from homi_pipeline.check_config import run_checker
+from homi_pipeline.HoMi_cleanup import read_config
 
 
 def get_args():

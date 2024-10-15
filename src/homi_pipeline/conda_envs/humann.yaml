@@ -1,0 +1,13 @@
+name: humann
+channels:
+  - biobakery
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.7
+  - humann=3.9
+  - ca-certificates
+  - openssl
+  - metaphlan=4.0.3
+  - certifi

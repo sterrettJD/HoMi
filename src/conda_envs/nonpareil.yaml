@@ -1,8 +1,0 @@
-name: nonpareil
-channels:
-  - biobakery
-  - conda-forge
-  - bioconda
-  - defaults
-dependencies:
-  - nonpareil

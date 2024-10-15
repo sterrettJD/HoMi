@@ -2,7 +2,7 @@
 
 import argparse
 import pandas as pd
-from homi_pipeline.HoMi_cleanup import read_config
+from HoMi_cleanup import read_config
 
 
 def get_args():

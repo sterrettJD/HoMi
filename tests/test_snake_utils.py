@@ -1,7 +1,7 @@
 import pytest
 import pandas as pd
 
-import snake_utils as su
+import homi_pipeline.snake_utils as su
 
 def test_get_host_mapping_samples_nocol():
     metadata = pd.DataFrame({"Sample": [1,2,3]})
@@ -82,5 +82,5 @@ def test_get_rule_extra_args_nondefault():
 
 
 def test_get_taxa_bar_rmd():
-    assert su.get_taxa_barplot_rmd_path().endswith("Metaphlan_microshades.Rmd")
-    assert su.get_taxa_barplot_rmd_path("Kraken").endswith("Kraken_microshades.Rmd")
+    assert str(su.get_taxa_barplot_rmd_path()).endswith("Metaphlan_microshades.Rmd")
+    assert str(su.get_taxa_barplot_rmd_path("Kraken")).endswith("Kraken_microshades.Rmd")

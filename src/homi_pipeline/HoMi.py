@@ -3,9 +3,10 @@
 import subprocess
 import argparse
 import os
+from importlib.resources import files
 from re import findall
-from check_config import run_checker
-from HoMi_cleanup import read_config
+from homi_pipeline.check_config import run_checker
+from homi_pipeline.HoMi_cleanup import read_config
 
 
 def get_args():
@@ -39,10 +40,7 @@ def get_args():
 
 
 def get_snakefile_path():
-    path_2_script = os.path.dirname(__file__)
-    snakepath = os.path.join(path_2_script, "../snakefile")
-    # remove ".."
-    return os.path.normpath(snakepath)
+    return files("homi_pipeline").joinpath("snakefile")
 
 
 def make_prebuilt_conda_snakefile_name(old_snakepath):

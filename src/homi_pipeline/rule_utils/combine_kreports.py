@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 ################################################################
 # SCRIPT SOURCED FROM JENNIFER LU
 # https://github.com/jenniferlu717/KrakenTools/blob/master/combine_kreports.py

@@ -40,7 +40,7 @@ def get_args():
 
 
 def get_snakefile_path():
-    return files("").joinpath("snakefile")
+    return files("homi_pipeline").joinpath("snakefile")
 
 
 def make_prebuilt_conda_snakefile_name(old_snakepath):

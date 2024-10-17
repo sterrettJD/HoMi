@@ -10,7 +10,7 @@ def hostile_db_to_path(HOSTILE_DB, parent):
 
 
 def get_adapters_path():
-    adapters_path = files("data").joinpath("adapters.fa")
+    adapters_path = files("homi_pipeline").joinpath("data/adapters.fa")
     if path.exists(adapters_path):
         return adapters_path
     else:
@@ -27,7 +27,7 @@ def get_nonpareil_rmd_path():
 
 
 def get_nonpareil_html_path():
-    html_path = files("rule_utils").joinpath("nonpareil_curves.html")
+    html_path = files("homi_pipeline").joinpath("rule_utils/nonpareil_curves.html")
     return html_path
 
 
@@ -49,7 +49,7 @@ def get_mphlan_conv_script_path():
 
 
 def get_taxa_barplot_rmd_path(map_method="Metaphlan"):
-    rmd_path = files("rule_utils").joinpath(f"{map_method}_microshades.Rmd")
+    rmd_path = files("homi_pipeline").joinpath(f"rule_utils/{map_method}_microshades.Rmd")
     
     if path.exists(rmd_path):
         return rmd_path
@@ -58,7 +58,7 @@ def get_taxa_barplot_rmd_path(map_method="Metaphlan"):
 
 
 def get_func_barplot_rmd_path():
-    rmd_path = files("rule_utils").joinpath("HUMAnN_microshades.Rmd")
+    rmd_path = files("homi_pipeline").joinpath("rule_utils/HUMAnN_microshades.Rmd")
 
     if path.exists(rmd_path):
         return rmd_path
@@ -67,7 +67,7 @@ def get_func_barplot_rmd_path():
 
 
 def get_gmm_rmd_path():
-    rmd_path = files("rule_utils").joinpath("Gut_metabolic_modules.Rmd")
+    rmd_path = files("homi_pipeline").joinpath("rule_utils/Gut_metabolic_modules.Rmd")
 
     if path.exists(rmd_path):
         return rmd_path
@@ -201,7 +201,7 @@ def read_latest_metaphlan_index_name(config):
 
 
 def get_R_installation_path():
-    r_path = files("rule_utils").joinpath("R_packages.R")
+    r_path = files("homi_pipeline").joinpath("rule_utils/R_packages.R")
     
     if path.exists(r_path):
         return r_path

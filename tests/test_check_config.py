@@ -1,5 +1,5 @@
 import pytest
-import check_config as cc
+import homi_pipeline.check_config as cc
 
 @pytest.fixture
 def config():

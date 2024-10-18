@@ -13,7 +13,6 @@ build:
   jobs:
     pre_build:
       - python docs/scripts/rule_descriptions.py src/homi_pipeline/snakefile
-      - pip install --upgrade m2r2
       - mkdir -p docs/figures
       - cp figures/dag.svg docs/figures/dag.svg
 

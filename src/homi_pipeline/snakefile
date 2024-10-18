@@ -138,7 +138,7 @@ rule remove_adapters:
     pj(f"{PROJ}.noadpt", "{sample}", "{sample}.trimmed.R2.fq"), # reverse unpaired
     pj(f"{PROJ}.noadpt", "{sample}", "{sample}.trimmed_2U")     # reverse unpaired (discard)
 
-  conda: files("conda_envs").joinpath("trimmomatic.yaml")
+  conda: files("homi_pipeline").joinpath("conda_envs", "trimmomatic.yaml")
   resources:
     partition=get_partition("short", config, "remove_adapters"),
     mem_mb=get_mem(int(8*1000), config, "remove_adapters"), # 8 GB
@@ -182,7 +182,7 @@ rule fastQC_pass1:
     pj(f"{PROJ}.noadpt.fastqc",
         "{sample}.trimmed.{read}_fastqc.zip")
 
-  conda: files("conda_envs").joinpath("fastqc.yaml")
+  conda: files("homi_pipeline").joinpath("conda_envs", "fastqc.yaml")
   resources:
         partition=get_partition("short", config, "fastQC_pass1"),
         mem_mb=get_mem(int(2*1000), config, "fastQC_pass1"), # MB, or 2 GB
@@ -210,7 +210,7 @@ rule multiqc_pass1:
   output:
     directory(pj(f"{PROJ}.noadpt.fastqc",
                 "multiqc_report"))
-  conda: files("conda_envs").joinpath("fastqc.yaml")
+  conda: files("homi_pipeline").joinpath("conda_envs", "fastqc.yaml")
   resources:
         partition=get_partition("short", config, "multiqc_pass1"),
         mem_mb=get_mem(int(2*1000), config, "multiqc_pass1"), # MB, or 2 GB
@@ -237,7 +237,7 @@ rule trim_forward:
     pj(trim_trunc_path,
        "{sample}.R1.fq")
 
-  conda: files("conda_envs").joinpath("seqtk.yaml")
+  conda: files("homi_pipeline").joinpath("conda_envs", "seqtk.yaml")
   resources:
         partition=get_partition("short", config, "trim_forward"),
         mem_mb=get_mem(int(12*1000), config, "trim_forward"), # MB, or 12 GB
@@ -267,7 +267,7 @@ rule trim_reverse:
     pj(trim_trunc_path,
        "{sample}.R2.fq")
 
-  conda: files("conda_envs").joinpath("seqtk.yaml")
+  conda: files("homi_pipeline").joinpath("conda_envs", "seqtk.yaml")
   resources:
     partition=get_partition("short", config, "trim_reverse"),
     mem_mb=get_mem(int(12*1000), config, "trim_reverse"), # MB, or 12 GB
@@ -297,7 +297,7 @@ rule fastQC_pass2:
     pj(f"{trim_trunc_path}.fastqc",
         "{sample}.{read}_fastqc.zip")
 
-  conda: files("conda_envs").joinpath("fastqc.yaml")
+  conda: files("homi_pipeline").joinpath("conda_envs", "fastqc.yaml")
   resources:
     partition=get_partition("short", config, "fastQC_pass2"),
     mem_mb=get_mem(int(2*1000), config, "fastQC_pass2"), # MB, or 2 GB
@@ -325,7 +325,7 @@ rule multiqc_pass2:
   output:
     directory(pj(f"{trim_trunc_path}.fastqc",
                   "multiqc_report"))
-  conda: files("conda_envs").joinpath("fastqc.yaml")
+  conda: files("homi_pipeline").joinpath("conda_envs", "fastqc.yaml")
   resources:
     partition=get_partition("short", config, "multiqc_pass2"),
     mem_mb=get_mem(int(2*1000), config, "multiqc_pass2"), # MB, or 2 GB
@@ -395,7 +395,7 @@ rule host_filter:
             "{sample}.R2.fq.gz"),
     REPORT=pj(f"{trim_trunc_path}.nonhost",
             "{sample}.report")
-  conda: files("conda_envs").joinpath("hostile.yaml")
+  conda: files("homi_pipeline").joinpath("conda_envs", "hostile.yaml")
   resources:
     partition=get_partition("short", config, "host_filter"),
     mem_mb=get_mem(int(12*1000), config, "host_filter"), # MB, or 12 GB, hostile should max at 4 (under 8 thread example), but playing it safe
@@ -431,7 +431,7 @@ rule install_R_packages:
   """
   output:
     "R_packages_installed"
-  conda: files("conda_envs").joinpath("r_env.yaml")
+  conda: files("homi_pipeline").joinpath("conda_envs", "r_env.yaml")
   resources:
     partition=get_partition("short", config, "install_R_packages"),
     mem_mb=get_mem(int(12*1000), config, "install_R_packages"), # MB, or 12 GB
@@ -461,7 +461,7 @@ rule setup_metaphlan:
     runtime=get_runtime(int(8*60), config, "setup_metaphlan"), # min
     slurm=get_slurm_extra(config, "setup_metaphlan")
   threads: get_threads(8, config, "setup_metaphlan")
-  conda: files("conda_envs").joinpath("humann.yaml")
+  conda: files("homi_pipeline").joinpath("conda_envs", "humann.yaml")
   params:
     index_name=get_metaphlan_index_name(config),
     extra=get_rule_extra_args(config, "setup_metaphlan")
@@ -498,7 +498,7 @@ rule get_biobakery_chocophlan_db:
     runtime=get_runtime(int(4*60), config, "get_biobakery_chocophlan_db"), # min
     slurm=get_slurm_extra(config, "get_biobakery_chocophlan_db")
   threads: get_threads(1, config, "get_biobakery_chocophlan_db")
-  conda: files("conda_envs").joinpath("humann.yaml")
+  conda: files("homi_pipeline").joinpath("conda_envs", "humann.yaml")
   params:
     extra=get_rule_extra_args(config, "get_biobakery_chocophlan_db")
   shell:
@@ -520,7 +520,7 @@ rule get_biobakery_uniref_db:
     runtime=get_runtime(int(4*60), config, "get_biobakery_uniref_db"), # min
     slurm=get_slurm_extra(config, "get_biobakery_uniref_db")
   threads: get_threads(1, config, "get_biobakery_uniref_db")
-  conda: files("conda_envs").joinpath("humann.yaml")
+  conda: files("homi_pipeline").joinpath("conda_envs", "humann.yaml")
   params:
     extra=get_rule_extra_args(config, "get_biobakery_uniref_db")
   shell:
@@ -544,7 +544,7 @@ rule get_utility_mapping_db:
     runtime=get_runtime(int(1*60), config, "get_utility_mapping_db"), # min
     slurm=get_slurm_extra(config, "get_utility_mapping_db")
   threads: get_threads(1, config, "get_utility_mapping_db")
-  conda: files("conda_envs").joinpath("humann.yaml")
+  conda: files("homi_pipeline").joinpath("conda_envs", "humann.yaml")
   params:
     extra=get_rule_extra_args(config, "get_utility_mapping_db")
   shell:
@@ -607,7 +607,7 @@ rule run_humann_nonhost:
     runtime=get_runtime(int(23.9*60), config, "run_humann_nonhost"), # min, or 23 hours
     slurm=get_slurm_extra(config, "run_humann_nonhost")
   threads: get_threads(32, config, "run_humann_nonhost")
-  conda: files("conda_envs").joinpath("humann.yaml")
+  conda: files("homi_pipeline").joinpath("conda_envs", "humann.yaml")
   params:
     dirpath=f"{trim_trunc_path}.nonhost.humann",
     metaphlan_bowtie_db=config["metaphlan_bowtie_db"],
@@ -699,7 +699,7 @@ rule aggregate_humann_outs_nonhost:
     runtime=get_runtime(int(1*60), config, "aggregate_humann_outs_nonhost"), # min
     slurm=get_slurm_extra(config, "aggregate_humann_outs_nonhost")
   threads: get_threads(1, config, "aggregate_humann_outs_nonhost")
-  conda: files("conda_envs").joinpath("humann.yaml")
+  conda: files("homi_pipeline").joinpath("conda_envs", "humann.yaml")
   params:
     dirpath=f"{trim_trunc_path}.nonhost.humann",
     agg_bugslists=get_agg_script_path(),
@@ -756,7 +756,7 @@ rule taxa_barplot:
     runtime=get_runtime(int(2*60), config, "taxa_barplot"), # min
     slurm=get_slurm_extra(config, "taxa_barplot")
   threads: get_threads(1, config, "taxa_barplot")
-  conda: files("conda_envs").joinpath("r_env.yaml")
+  conda: files("homi_pipeline").joinpath("conda_envs", "r_env.yaml")
   params:
     rmd_path=get_taxa_barplot_rmd_path(),
     bugslist=pj(os.getcwd(), f"{trim_trunc_path}.nonhost.humann",
@@ -790,7 +790,7 @@ rule func_barplot_rxn:
     runtime=get_runtime(int(2*60), config, "func_barplot_rxn"), # min
     slurm=get_slurm_extra(config, "func_barplot_rxn")
   threads: get_threads(1, config, "func_barplot_rxn")
-  conda: files("conda_envs").joinpath("r_env.yaml")
+  conda: files("homi_pipeline").joinpath("conda_envs", "r_env.yaml")
   params:
     rmd_path=get_func_barplot_rmd_path(),
     gene_table_rxn=pj(os.getcwd(), f"{trim_trunc_path}.nonhost.humann", 
@@ -825,7 +825,7 @@ rule calc_gut_metabolic_modules:
     runtime=get_runtime(int(2*60), config, "calc_gut_metabolic_modules"), # min
     slurm=get_slurm_extra(config, "calc_gut_metabolic_modules")
   threads: get_threads(1, config, "calc_gut_metabolic_modules")
-  conda: files("conda_envs").joinpath("r_env.yaml")
+  conda: files("homi_pipeline").joinpath("conda_envs", "r_env.yaml")
   params:
     rmd_path=get_gmm_rmd_path(),
     gene_table_ko=pj(os.getcwd(), f"{trim_trunc_path}.nonhost.humann", 
@@ -863,7 +863,7 @@ rule get_kraken_db:
     runtime=get_runtime(int(23.9*60), config, "get_kraken_db"), # min 
     slurm=get_slurm_extra(config, "get_kraken_db")
   threads: get_threads(64, config, "get_kraken_db")
-  conda: files("conda_envs").joinpath("kraken.yaml")
+  conda: files("homi_pipeline").joinpath("conda_envs", "kraken.yaml")
   params:
     database_dir=kraken_db_loc,
     extra=get_rule_extra_args(config, "get_kraken_db")
@@ -895,7 +895,7 @@ rule run_kraken:
     runtime=get_runtime(int(2*60), config, "run_kraken"), # min 
     slurm=get_slurm_extra(config, "run_kraken")
   threads: get_threads(16, config, "run_kraken")
-  conda: files("conda_envs").joinpath("kraken.yaml")
+  conda: files("homi_pipeline").joinpath("conda_envs", "kraken.yaml")
   params:
     out_dir=f"{trim_trunc_path}.nonhost.kraken",
     database=kraken_db_loc,
@@ -925,7 +925,7 @@ rule build_bracken:
     runtime=get_runtime(int(4*60), config, "build_bracken"), # min
     slurm=get_slurm_extra(config, "build_bracken")
   threads: get_threads(32, config, "build_bracken")
-  conda: files("conda_envs").joinpath("kraken.yaml")
+  conda: files("homi_pipeline").joinpath("conda_envs", "kraken.yaml")
   params:
     database=kraken_db_loc,
     extra=get_rule_extra_args(config, "build_bracken")
@@ -954,7 +954,7 @@ rule run_bracken:
     runtime=get_runtime(int(2*60), config, "run_bracken"), # min
     slurm=get_slurm_extra(config, "run_bracken")
   threads: get_threads(1, config, "run_bracken")
-  conda: files("conda_envs").joinpath("kraken.yaml")
+  conda: files("homi_pipeline").joinpath("conda_envs", "kraken.yaml")
   params:
     database=kraken_db_loc,
     extra=get_rule_extra_args(config, "run_bracken")
@@ -980,7 +980,7 @@ rule aggregate_bracken:
     runtime=get_runtime(int(4*60), config, "aggregate_bracken"), # min
     slurm=get_slurm_extra(config, "aggregate_bracken")
   threads: get_threads(1, config, "aggregate_bracken")
-  conda: files("conda_envs").joinpath("kraken.yaml")
+  conda: files("homi_pipeline").joinpath("conda_envs", "kraken.yaml")
   params:
     dirpath=f"{trim_trunc_path}.nonhost.kraken"
   shell:
@@ -1017,7 +1017,7 @@ rule taxa_barplot_kraken:
     runtime=get_runtime(int(2*60), config, "taxa_barplot_kraken"), # min
     slurm=get_slurm_extra(config, "taxa_barplot_kraken")
   threads: get_threads(1, config, "taxa_barplot_kraken")
-  conda: files("conda_envs").joinpath("r_env.yaml")
+  conda: files("homi_pipeline").joinpath("conda_envs", "r_env.yaml")
   params:
     rmd_path=get_taxa_barplot_rmd_path(map_method="Kraken"),
     bugslist=pj(os.getcwd(), f"{trim_trunc_path}.nonhost.kraken",
@@ -1055,7 +1055,7 @@ rule nonpareil:
     runtime=get_runtime(int(3*60), config, "nonpareil"), # min
     slurm=get_slurm_extra(config, "nonpareil")
   threads: get_threads(16, config, "nonpareil")
-  conda: files("conda_envs").joinpath("nonpareil.yaml")
+  conda: files("homi_pipeline").joinpath("conda_envs", "nonpareil.yaml")
   params:
     dirpath=f"{trim_trunc_path}.nonhost.nonpareil",
     extra=get_rule_extra_args(config, "nonpareil")
@@ -1092,7 +1092,7 @@ rule nonpareil_curves:
     mem_mb=get_mem(int(8*1000), config, "nonpareil_curves"), # MB
     runtime=get_runtime(int(1*60), config, "nonpareil_curves"), # min
     slurm=get_slurm_extra(config, "nonpareil_curves")
-  conda: files("conda_envs").joinpath("r_env.yaml")
+  conda: files("homi_pipeline").joinpath("conda_envs", "r_env.yaml")
   threads: get_threads(1, config, "nonpareil_curves")
   params:
     rmd_path=get_nonpareil_rmd_path(),
@@ -1152,7 +1152,7 @@ rule build_host_genome_index:
     config['host_ref_fna']
   output:
     directory(pj(f"{trim_trunc_path}.{get_host_map_method(config)}", "ref/"))
-  conda: ffiles("conda_envs").joinpath(f"{get_host_map_method(config).lower()}.yaml")
+  conda: files("homi_pipline").joinpath("conda_envs", f"{get_host_map_method(config).lower()}.yaml")
   resources:
     partition=get_partition("short", config, "build_host_genome_index"),
     mem_mb=get_mem(int(32*1000), config, "build_host_genome_index"), # MB, or 30 GB
@@ -1189,7 +1189,7 @@ rule map_host:
   output:
     SAM=pj(f"{trim_trunc_path}.{get_host_map_method(config)}", "{sample}.sam"),
     BAM=pj(f"{trim_trunc_path}.{get_host_map_method(config)}", "{sample}.bam")
-  conda: ffiles("conda_envs").joinpath(f"{get_host_map_method(config).lower()}.yaml")
+  conda: files("homi_pipeline").joinpath("conda_envs", f"{get_host_map_method(config).lower()}.yaml")
   resources:
     partition=get_partition("short", config, "map_host"),
     mem_mb=get_mem(int(210*1000), config, "map_host"), # MB, or 210 GB, can cut to ~100 for 16 threads
@@ -1233,7 +1233,7 @@ rule validate_bams:
     BAM=pj(f"{trim_trunc_path}.{get_host_map_method(config)}", "{sample}.bam")
   output:
     BAM_VALID=pj(f"{trim_trunc_path}.{get_host_map_method(config)}", "{sample}_bam_valid.tsv")
-  conda: files("conda_envs").joinpath("featureCounts.yaml")
+  conda: files("homi_pipeline").joinpath("conda_envs", "featureCounts.yaml")
   resources:
     partition=get_partition("short", config, "validate_bams"),
     mem_mb=get_mem(int(2*1000), config, "validate_bams"), # MB, or 2 GB
@@ -1260,7 +1260,7 @@ rule generate_feature_counts:
   output:
     COUNTS=pj(f"{trim_trunc_path}.{get_host_map_method(config)}", "counts.txt"),
     SUMMARY=pj(f"{trim_trunc_path}.{get_host_map_method(config)}", "counts.txt.summary")
-  conda: files("conda_envs").joinpath("featureCounts.yaml")
+  conda: files("homi_pipeline").joinpath("conda_envs","featureCounts.yaml")
   resources:
     partition=get_partition("short", config, "generate_feature_counts"),
     mem_mb=get_mem(int(16*1000), config, "generate_feature_counts"), # MB, or 8 GB
@@ -1291,7 +1291,7 @@ rule feature_counts_to_tpm:
     COUNTS=pj(f"{trim_trunc_path}.{get_host_map_method(config)}", "counts.txt")
   output:
     TPM=pj(f"{trim_trunc_path}.{get_host_map_method(config)}", "counts_tpm.tsv")
-  conda: files("conda_envs").joinpath("humann.yaml")
+  conda: files("homi_pipeline").joinpath("conda_envs", "humann.yaml")
   resources:
     partition=get_partition("short", config, "feature_counts_to_tpm"),
     mem_mb=get_mem(int(2*1000), config, "feature_counts_to_tpm"), # MB, or 2 GB
@@ -1318,7 +1318,7 @@ rule reads_breakdown:
                 "all_genefamilies.tsv")
   output:
     REPORT=f"{PROJ}_reads_breakdown.csv"
-  conda: files("conda_envs").joinpath("humann.yaml")
+  conda: files("homi_pipeline").joinpath("conda_envs", "humann.yaml")
   resources:
     partition=get_partition("short", config, "reads_breakdown"),
     mem_mb=get_mem(int(2*1000), config, "reads_breakdown"), # MB, or 2 GB

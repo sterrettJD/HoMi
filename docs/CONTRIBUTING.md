@@ -63,15 +63,15 @@ python -m pytest
 # Submitting Pull Requests
 When you're ready, push your changes to your forked repository and submit a pull request to the main branch of the original repository. Provide a detailed description of your changes and reference any related issues.
 
-## Code Reviews
+# Code Reviews
 All contributions go through a code review process. Please be responsive to feedback and be prepared to make changes to your code if necessary.
 
-## Documentation
+# Documentation
 Update the documentation if your changes affect the usage or configuration of the HoMi pipeline. Documentation is as important as code!
 
 # Code of Conduct
 Please see the Contributor Covenant, version 2.0, available at https://www.contributor-covenant.org/version/2/0/code_of_conduct.html.
 
 
-### Acknowledgments
+# Acknowledgments
 Thank you for contributing to HoMi! Your time and effort make this project better for everyone.

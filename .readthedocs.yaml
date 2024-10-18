@@ -13,8 +13,7 @@ build:
   jobs:
     pre_build:
       - python docs/scripts/rule_descriptions.py src/homi_pipeline/snakefile
-      # The README.md looks for some static files but it can't find them because the filepath isn't updated.
-      # Could try updating any paths in the readme but not sure that's the most reliable
+      - pip install --upgrade m2r2
       - mkdir -p docs/figures
       - cp figures/dag.svg docs/figures/dag.svg
 

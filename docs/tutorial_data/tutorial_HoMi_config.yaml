@@ -1,11 +1,8 @@
-# Root directory for the project
-ROOT: .
-
 # Project name
 PROJ: tutorial
 
 # Metadata file
-METADATA: Pereira/Pereira_data.csv
+METADATA: tutorial_metadata.csv
 fwd_reads_path: forward_reads
 rev_reads_path: reverse_reads
 

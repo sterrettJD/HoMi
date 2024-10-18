@@ -1152,7 +1152,7 @@ rule build_host_genome_index:
     config['host_ref_fna']
   output:
     directory(pj(f"{trim_trunc_path}.{get_host_map_method(config)}", "ref/"))
-  conda: files("homi_pipline").joinpath("conda_envs", f"{get_host_map_method(config).lower()}.yaml")
+  conda: files("homi_pipeline").joinpath("conda_envs", f"{get_host_map_method(config).lower()}.yaml")
   resources:
     partition=get_partition("short", config, "build_host_genome_index"),
     mem_mb=get_mem(int(32*1000), config, "build_host_genome_index"), # MB, or 30 GB

@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 from pathlib import Path
 
 __author__ = 'sterrettJD'
-__version__ = '1.0.9'
+__version__ = '1.0.10'
 
 this_directory = Path(__file__).parent
 long_description = (this_directory / 'README.md').read_text()
@@ -35,7 +35,7 @@ setup(
                                    'rule_utils/HUMAnN_to_phyloseq_helper.R', 'rule_utils/HUMAnN_microshades.Rmd', 
                                    'rule_utils/Kraken_microshades.Rmd',
                                    'rule_utils/metaphlan_to_phyloseq_helper.R','rule_utils/Metaphlan_microshades.Rmd', 
-                                   'rule_utils/nonpareil_curvces.Rmd',
+                                   'rule_utils/nonpareil_curves.Rmd',
                                    'rule_utils/bracken_to_phyloseq_helper.R',
                                    'rule_utils/R_packages.R',
                                    'conda_envs/*.yaml']

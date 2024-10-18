@@ -40,7 +40,7 @@ jobs:
         pip install -e .
     
     - name: Build DAG
-      run: snakemake --configfile tests/example_config.yaml --dag > dag.dot
+      run: snakemake -s src/homi_pipeline/snakefile --configfile tests/example_config.yaml --dag > dag.dot
     
     - name: Make figures directory
       run: mkdir -p figures

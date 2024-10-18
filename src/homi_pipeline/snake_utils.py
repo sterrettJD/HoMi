@@ -1,3 +1,5 @@
+from importlib.resources import files
+import shutil
 from os import path
 
 def hostile_db_to_path(HOSTILE_DB, parent):
@@ -8,9 +10,7 @@ def hostile_db_to_path(HOSTILE_DB, parent):
 
 
 def get_adapters_path():
-    path_2_script = path.dirname(__file__)
-    adapters_path = path.join(path_2_script, "data", "adapters.fa")
-
+    adapters_path = files("homi_pipeline").joinpath("data/adapters.fa")
     if path.exists(adapters_path):
         return adapters_path
     else:
@@ -18,10 +18,7 @@ def get_adapters_path():
 
 
 def get_nonpareil_rmd_path():
-    path_2_script = path.dirname(__file__)
-    rmd_path = path.join(path_2_script, "rule_utils", "nonpareil_curves.Rmd")
-    # remove ".."
-    rmd_path = path.normpath(rmd_path)
+    rmd_path = files("rule_utils").joinpath("nonpareil_curves.Rmd")
 
     if path.exists(rmd_path):
         return rmd_path
@@ -30,20 +27,12 @@ def get_nonpareil_rmd_path():
 
 
 def get_nonpareil_html_path():
-    path_2_script = path.dirname(__file__)
-    html_path = path.join(path_2_script, "rule_utils", "nonpareil_curves.html")
-    # remove ".."
-    html_path = path.normpath(html_path)
-
+    html_path = files("homi_pipeline").joinpath("rule_utils/nonpareil_curves.html")
     return html_path
 
 
 def get_agg_script_path():
-    path_2_script = path.dirname(__file__)
-    agg_path = path.join(path_2_script, "rule_utils", "aggregate_metaphlan_bugslists.py")
-    # remove ".."
-    agg_path = path.normpath(agg_path)
-
+    agg_path = shutil.which("aggregate_metaphlan_bugslists.py")
     if path.exists(agg_path):
         return agg_path
     else:
@@ -51,10 +40,7 @@ def get_agg_script_path():
 
 
 def get_mphlan_conv_script_path():
-    path_2_script = path.dirname(__file__)
-    conv_path = path.join(path_2_script, "rule_utils", "convert_mphlan_v4_to_v3.py")
-    # remove ".."
-    conv_path = path.normpath(conv_path)
+    conv_path = shutil.which("convert_mphlan_v4_to_v3.py")
 
     if path.exists(conv_path):
         return conv_path
@@ -63,11 +49,8 @@ def get_mphlan_conv_script_path():
 
 
 def get_taxa_barplot_rmd_path(map_method="Metaphlan"):
-    path_2_script = path.dirname(__file__)
-    rmd_path = path.join(path_2_script, "rule_utils", f"{map_method}_microshades.Rmd")
-    # remove ".."
-    rmd_path = path.normpath(rmd_path)
-
+    rmd_path = files("homi_pipeline").joinpath(f"rule_utils/{map_method}_microshades.Rmd")
+    
     if path.exists(rmd_path):
         return rmd_path
     else:
@@ -75,10 +58,7 @@ def get_taxa_barplot_rmd_path(map_method="Metaphlan"):
 
 
 def get_func_barplot_rmd_path():
-    path_2_script = path.dirname(__file__)
-    rmd_path = path.join(path_2_script, "rule_utils", "HUMAnN_microshades.Rmd")
-    # remove ".."
-    rmd_path = path.normpath(rmd_path)
+    rmd_path = files("homi_pipeline").joinpath("rule_utils/HUMAnN_microshades.Rmd")
 
     if path.exists(rmd_path):
         return rmd_path
@@ -87,10 +67,7 @@ def get_func_barplot_rmd_path():
 
 
 def get_gmm_rmd_path():
-    path_2_script = path.dirname(__file__)
-    rmd_path = path.join(path_2_script, "rule_utils", "Gut_metabolic_modules.Rmd")
-    # remove ".."
-    rmd_path = path.normpath(rmd_path)
+    rmd_path = files("homi_pipeline").joinpath("rule_utils/Gut_metabolic_modules.Rmd")
 
     if path.exists(rmd_path):
         return rmd_path
@@ -175,10 +152,7 @@ def get_kraken_db_loc(default, config):
     return default
 
 def get_tpm_converter_path():
-    path_2_script = path.dirname(__file__)
-    converter = path.join(path_2_script, "rule_utils", "counts_to_tpm.py")
-    # remove ".."
-    converter = path.normpath(converter)
+    converter = shutil.which("counts_to_tpm.py")
 
     if path.exists(converter):
         return converter
@@ -227,11 +201,8 @@ def read_latest_metaphlan_index_name(config):
 
 
 def get_R_installation_path():
-    path_2_script = path.dirname(__file__)
-    r_path = path.join(path_2_script, "rule_utils", "R_packages.R")
-    # remove ".."
-    r_path = path.normpath(r_path)
-
+    r_path = files("homi_pipeline").joinpath("rule_utils/R_packages.R")
+    
     if path.exists(r_path):
         return r_path
     else:
@@ -239,11 +210,8 @@ def get_R_installation_path():
     
 
 def get_read_reports_path():
-    path_2_script = path.dirname(__file__)
-    reporter = path.join(path_2_script, "rule_utils", "read_reports.py")
-    # remove ".."
-    reporter = path.normpath(reporter)
-
+    reporter = shutil.which("read_reports.py")
+    
     if path.exists(reporter):
         return reporter
     else:

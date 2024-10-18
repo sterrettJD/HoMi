@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import argparse
 from aggregate_metaphlan_bugslists import get_filepaths
 

@@ -1,6 +1,6 @@
 import pytest
 import pandas as pd
-from rule_utils import read_reports as rr
+from homi_pipeline.rule_utils import read_reports as rr
 
 
 def test_read_hostile():

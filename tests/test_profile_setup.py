@@ -2,7 +2,7 @@ import pytest
 import os
 from cookiecutter.main import cookiecutter
 
-import profile_setup as ps
+import homi_pipeline.profile_setup as ps
 
 def test_check_name_loc(tmpdir):
     cookiecutter("gh:Snakemake-Profiles/slurm", 

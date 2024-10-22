@@ -93,9 +93,13 @@ genefams <- genefams %>% filter(rownames(genefams) %in% c("UNMAPPED", "UNGROUPED
 genes <- rownames(genefams)
 hier.tab <- make_pseq_tax_table_from_genefams(genes)
 
+# Make sure the metadata sample names align with the original sample IDs
+samp.data <- sample_data(metadata)
+sample_names(samp.data) <- metadata$Sample
+
 ecs.pseq <- phyloseq(otu_table=otu_table(genefams, taxa_are_rows=T), 
                      tax_table=tax_table(hier.tab),
-                     sample_data=sample_data(metadata))
+                     sample_data=samp.data)
 
 genefams.withtax <- filter_only_genes(gn, with_taxa=T)
 ```

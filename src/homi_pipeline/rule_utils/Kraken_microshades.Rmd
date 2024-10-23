@@ -112,14 +112,18 @@ bugslist.abs <- bugslist %>%
 metadata <- fread(params$metadata) %>% as.data.frame()
 rownames(metadata) <- as.character(metadata$Sample)
 
+# Make sure we get the right sample names
+samp.data <- sample_data(metadata)
+sample_names(samp.data) <- metadata$Sample
+
 # create phyloseq object
 pseq.rel <- phyloseq::phyloseq(otu_table=otu_table(bugslist.rel, taxa_are_rows=T),
                  tax_table=tax_table(taxonomy.table),
-                 sample_data=sample_data(metadata)
+                 sample_data=samp.data
                  )
 pseq.abs <- phyloseq::phyloseq(otu_table=otu_table(bugslist.abs, taxa_are_rows=T),
                  tax_table=tax_table(taxonomy.table),
-                 sample_data=sample_data(metadata)
+                 sample_data=samp.data
                  )
 
 taxonomy.table <- as.data.frame(taxonomy.table)

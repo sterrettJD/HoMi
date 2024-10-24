@@ -96,10 +96,14 @@ rownames(taxonomy.table) <- bugs
 metadata <- fread(params$metadata) %>% as.data.frame()
 rownames(metadata) <- as.character(metadata$Sample)
 
+# create sample data
+samp.data <- sample_data(metadata)
+sample_names(samp.data) <- metadata$Sample
+
 # create phyloseq object
 pseq <- phyloseq::phyloseq(otu_table=otu_table(bugslist, taxa_are_rows=T),
                  tax_table=tax_table(taxonomy.table),
-                 sample_data=sample_data(metadata)
+                 sample_data=samp.data
                  )
 
 taxonomy.table <- as.data.frame(taxonomy.table)

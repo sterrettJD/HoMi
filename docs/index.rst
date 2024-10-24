@@ -8,5 +8,6 @@
    :maxdepth: 2
    :hidden:
 
+   tutorial.md
    content/all_rules.md
    CONTRIBUTING.md

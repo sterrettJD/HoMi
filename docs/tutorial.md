@@ -2,9 +2,9 @@
 
 ## Tutorial data
 
-Data for this tutorial are found in the `docs/tutorial_data/` directory of the HoMi repo (https://github.com/sterrettJD/HoMi/tree/main/docs/tutorial_data). 
+Data for this tutorial are found in the `docs/tutorial_data/` directory of the HoMi repo ([here](https://github.com/sterrettJD/HoMi/tree/main/docs/tutorial_data)). 
 
-In this directory, we have a `raw_data` folder with the fastq files for 2 samples (paired end reads).
+In this directory, we have a `raw_data` folder with the fastq files for 2 samples (paired end reads). There is also an example config file and an example metadata file. Below are steps to get these files.
 
 ### Get data from the cloned HoMi repo (preferred)
 
@@ -56,7 +56,8 @@ cd HoMi_tutorial
 
 ### Set up your profile
 
-You can use the provided profile setup script to setup a cookiecutter Slurm profile for snakemake, using the following command.
+You can use the provided profile setup script to setup a cookiecutter Slurm profile for Snakemake, using the following command. This profile interfaces with Snakemake within HoMi to schedule the jobs for each step of the pipeline with a job scheduler system on a compute cluster.
+
 ```
 profile_setup.py --cluster_type slurm-smt --output_dir ./tutorial_slurm_profile
 ```
@@ -93,7 +94,7 @@ For example, if we didn't care about host gene counts in our previous metadata f
 | sample_2 | raw_data/tutorial_sample_2.R1.fq.gz | raw_data/tutorial_sample_2.R2.fq.gz | False |
 
 #### Tutorial metadata
-The tutorial metadata file should be found in your `HoMi_tutorial` that you've copied the tutorial data into, as `HoMi_tutorial/tutorial_metadata.csv`.
+The tutorial metadata file should be found in your `HoMi_tutorial` directory that you've copied the tutorial data into, as `HoMi_tutorial/tutorial_metadata.csv`.
 
 ### Set up the config file
 
@@ -190,7 +191,7 @@ utility_mapping_db: data/humann_dbs/utility_mapping
 ########################
 ### Kraken + Bracken ###
 # database location
-kraken_db: synthetic/data/kraken2_db
+kraken_db: data/kraken2_db
 # host taxon ID to not be plotted in microbial taxa barplot
 host_tax_id: 9606
 
@@ -205,10 +206,9 @@ host_ref_gtf: data/GRCh38/GRCh38_full_analysis_set.refseq.gtf
 
 #### Host map method
 
-A host mapping method should be specified, even if `map_host` is `False` for all samples (just pick one arbitrarily in that case).Options include BBMap and HISAT2. 
+A host mapping method should be specified, even if `map_host` is `False` for all samples (just pick one arbitrarily in that case). Options include BBMap and HISAT2. 
 
 ```
-# Specifying the host mapping method here. options include BBMap and HISAT2
 host_map_method: HISAT2
 ```
 

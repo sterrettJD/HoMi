@@ -247,3 +247,5 @@ You can run HoMi with the following command. This should do everything for you.
 ```
 HoMi.py tutorial_HoMi_config.yaml --profile tutorial_slurm_profile/slurm
 ```
+
+NOTE: Expect the rules for creating stacked taxa barplots to fail in this example - there is not enough data, so they won't work. This is expected.

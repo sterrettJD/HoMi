@@ -917,39 +917,12 @@ rule run_kraken:
 
     """
 
-
-rule build_bracken:
-  """
-  This rule downloads and builds the Bracken database for taxonomic abundance estimation.
-  """
-  input:
-    pj(kraken_db_loc, "hash.k2d")
-  output:
-    pj(kraken_db_loc, "database150mers.kraken"),
-    pj(kraken_db_loc, "database150mers.kmer_distrib")
-  resources:
-    partition=get_partition("short", config, "build_bracken"),
-    mem_mb=get_mem(int(128*1000), config, "build_bracken"), # MB
-    runtime=get_runtime(int(4*60), config, "build_bracken"), # min
-    slurm=get_slurm_extra(config, "build_bracken")
-  threads: get_threads(32, config, "build_bracken")
-  conda: files("homi_pipeline").joinpath("conda_envs", "kraken.yaml")
-  params:
-    database=kraken_db_loc,
-    extra=get_rule_extra_args(config, "build_bracken")
-  shell:
-    """
-    bracken-build -d {params.database} -t {threads} -l 150 {params.extra}
-    """
-
-
 rule run_bracken:
   """
   This rule runs Bracken to estimate taxonomic abundance for each sample.
   """
   input:
     KRAKEN_HASH=pj(kraken_db_loc, "hash.k2d"),
-    LMERS=pj(kraken_db_loc, "database150mers.kraken"),
     LMERS_DIST=pj(kraken_db_loc, "database150mers.kmer_distrib"),
     REPORT=pj(f"{trim_trunc_path}.nonhost.kraken", 
               "{sample}.kreport2")

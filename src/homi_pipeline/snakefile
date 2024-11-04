@@ -862,15 +862,13 @@ rule get_kraken_db:
     mem_mb=get_mem(int(188*1000), config, "get_kraken_db"), # MB
     runtime=get_runtime(int(23.9*60), config, "get_kraken_db"), # min 
     slurm=get_slurm_extra(config, "get_kraken_db")
-  threads: get_threads(64, config, "get_kraken_db")
+  threads: get_threads(1, config, "get_kraken_db")
   conda: files("homi_pipeline").joinpath("conda_envs", "kraken.yaml")
   params:
     database_dir=kraken_db_loc,
     extra=get_rule_extra_args(config, "get_kraken_db")
   shell:
     """
-    # kraken2-build --standard --db {params.database_dir} --threads {threads} {params.extra}
-
     # Setup directory
     mkdir -p {params.database_dir}
     cd {params.database_dir}

@@ -850,6 +850,7 @@ rule get_kraken_db:
   """
   This rule downloads the Kraken2 database for taxonomic classification. 
   It also downloads the kmer distribution files used for bracken's abundance estimation.
+  More databases can be found here: https://benlangmead.github.io/aws-indexes/k2
   """
   output: 
     HASH=pj(kraken_db_loc, "hash.k2d"),
@@ -923,7 +924,7 @@ rule run_bracken:
   """
   input:
     KRAKEN_HASH=pj(kraken_db_loc, "hash.k2d"),
-    LMERS_DIST=pj(kraken_db_loc, "database150mers.kmer_distrib"),
+    KMERS_DIST=pj(kraken_db_loc, "database150mers.kmer_distrib"),
     REPORT=pj(f"{trim_trunc_path}.nonhost.kraken", 
               "{sample}.kreport2")
   output:

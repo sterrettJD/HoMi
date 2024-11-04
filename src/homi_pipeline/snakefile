@@ -848,15 +848,15 @@ kraken_db_loc = get_kraken_db_loc(default=pj("data", "kraken2_db"), config=confi
 
 rule get_kraken_db:
   """
-  This rule downloads and builds the Kraken2 database for taxonomic classification.
+  This rule downloads the Kraken2 database for taxonomic classification. 
+  It also downloads the kmer distribution files used for bracken's abundance estimation.
   """
   output: 
     HASH=pj(kraken_db_loc, "hash.k2d"),
     OPTS=pj(kraken_db_loc, "opts.k2d"),
     SEQ2ID=pj(kraken_db_loc, "seqid2taxid.map"),
     TAXO=pj(kraken_db_loc, "taxo.k2d"),
-    LIB=directory(pj(kraken_db_loc, "library")),
-    TAX=directory(pj(kraken_db_loc, "taxonomy"))
+    KMERS=pj(kraken_db_loc, "database150mers.kmer_distrib")
   resources:
     partition=get_partition("short", config, "get_kraken_db"),
     mem_mb=get_mem(int(188*1000), config, "get_kraken_db"), # MB
@@ -869,7 +869,17 @@ rule get_kraken_db:
     extra=get_rule_extra_args(config, "get_kraken_db")
   shell:
     """
-    kraken2-build --standard --db {params.database_dir} --threads {threads} {params.extra}
+    # kraken2-build --standard --db {params.database_dir} --threads {threads} {params.extra}
+
+    # Setup directory
+    mkdir -p {params.database_dir}
+    cd {params.database_dir}
+    
+    # Pull and extract prebuilt index
+    wget https://genome-idx.s3.amazonaws.com/kraken/k2_core_nt_20240904.tar.gz
+    tar -xzvf k2_core_nt_20240904.tar.gz
+
+    rm k2_core_nt_20240904.tar.gz
     """
 
 

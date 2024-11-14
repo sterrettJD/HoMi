@@ -242,6 +242,17 @@ default_slurm_extra: email=sample_email@colorado.edu
 map_host_slurm_extra: qos=long email=sample_email@colorado.edu
 ```
 
+#### Rule-specific extra arguments
+
+Sometimes, you'll need to provide extra arguments to a specific rule. This can be done with a `<rule_name>_extra` parameter.
+
+For example, if you are RAM-limited and don't want to load the full Kraken database into memory, you can pass the argument `--memory-mapping` to kraken2, you should include the following line in your config file:
+
+```
+run_kraken_extra: " --memory-mapping "
+```
+
+
 ### Running HoMi
 You can run HoMi with the following command. This should do everything for you. 
 ```

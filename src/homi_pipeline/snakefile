@@ -861,7 +861,7 @@ rule get_kraken_db:
   resources:
     partition=get_partition("short", config, "get_kraken_db"),
     mem_mb=get_mem(int(188*1000), config, "get_kraken_db"), # MB
-    runtime=get_runtime(int(23.9*60), config, "get_kraken_db"), # min 
+    runtime=get_runtime(int(12*60), config, "get_kraken_db"), # min 
     slurm=get_slurm_extra(config, "get_kraken_db")
   threads: get_threads(1, config, "get_kraken_db")
   conda: files("homi_pipeline").joinpath("conda_envs", "kraken.yaml")

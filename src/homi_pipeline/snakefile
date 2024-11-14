@@ -1215,7 +1215,7 @@ rule validate_bams:
     BAM=pj(f"{trim_trunc_path}.{get_host_map_method(config)}", "{sample}.bam")
   output:
     BAM_VALID=pj(f"{trim_trunc_path}.{get_host_map_method(config)}", "{sample}_bam_valid.tsv")
-  conda: files("homi_pipeline").joinpath("conda_envs", "featureCounts.yaml")
+  conda: files("homi_pipeline").joinpath("conda_envs", "hisat2.yaml")
   resources:
     partition=get_partition("short", config, "validate_bams"),
     mem_mb=get_mem(int(2*1000), config, "validate_bams"), # MB, or 2 GB

@@ -138,10 +138,7 @@ make_simple_microshades <- function(pseq, group_level, subgroup_level){
     plot_1 <- plot + scale_y_continuous(labels = scales::percent, 
                                         expand = expansion(0)) +
       theme(legend.position = "none")  +
-      theme(axis.text.x = element_text(size= 7)) # +
-      # facet_grid(~(factor(Risk_Status, levels=c("Low", "High", "Positive"))), 
-      #          scales = "free_x", space="free_x"
-      #        )
+      theme(axis.text.x = element_text(size= 7))
     
     multi <- plot_grid(plot_1, GP_legend,  rel_widths = c(1, .4))
     multi

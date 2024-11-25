@@ -146,7 +146,7 @@ rule transcriptome_fasta_to_fastq:
     output:
         data=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir}_human", "{sample}_unsampled_{read}.fastq")
     threads: 1
-    conda: "../conda_envs/bbmap.yaml"
+    conda: "conda_envs/bbmap.yaml"
     resources:
         partition="short",
         mem_mb=int(16*1000), # MB
@@ -220,7 +220,7 @@ rule transcriptome_fasta_to_fastq_microbial:
     output:
         data=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir}_{{organism}}_u", "{sample}_unsampled_{read}.fastq")
     threads: 1
-    conda: "../conda_envs/bbmap.yaml"
+    conda: "conda_envs/bbmap.yaml"
     resources:
         partition="short",
         mem_mb=int(16*1000), # MB

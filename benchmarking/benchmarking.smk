@@ -24,6 +24,9 @@ microbial_organisms = [x for x in organisms if (x != "human")]
 pereira_df = pd.read_csv("Pereira/Pereira_data.csv")
 pereira_srr_ids = pereira_df["SRR"]
 
+# Per nucleotide quality score for Polyester-simulated reads
+polyester_error_rate=0.001
+polyester_phred=30
 
 rule all:
     input:
@@ -119,7 +122,8 @@ rule simulate_synthetic_host_transcriptomes:
     params:
         script=os.path.join(synthetic_work_dir, "run_polyester.R"),
         work_dir=synthetic_work_dir,
-        communities_dir=os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir)
+        communities_dir=os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir),
+        polyester_error_rate=polyester_error_rate
     shell:
         """
         Rscript {params.script} \
@@ -127,6 +131,7 @@ rule simulate_synthetic_host_transcriptomes:
         --transcriptome_url https://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/annotation/GRCh38_latest/refseq_identifiers/GRCh38_latest_rna.fna.gz \
         -g synthetic/data/host_transcriptome.gff.gz \
         --gtf_url https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/GCA_000001405.15_GRCh38_genomic.gff.gz \
+        -e {params.polyester_error_rate} \
         -s {input.sample_data} \
         -n human \
         -o {params.communities_dir}_human
@@ -146,9 +151,11 @@ rule transcriptome_fasta_to_fastq:
         partition="short",
         mem_mb=int(16*1000), # MB
         runtime=int(4*60) # min
+    params:
+        polyester_phred=polyester_phred
     shell:
         """
-        reformat.sh in={input.data} out={output.data} qin=33 qout=33 qfake=40
+        reformat.sh in={input.data} out={output.data} qin={params.polyester_phred} qout={params.polyester_phred} qfake={params.polyester_phred}
         rm {input.data}
         """
 
@@ -191,12 +198,14 @@ rule simulate_synthetic_microbial_transcriptomes:
     params:
         script=os.path.join(synthetic_work_dir, "run_polyester.R"),
         work_dir=synthetic_work_dir,
-        communities_dir=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir}_{{organism}}_u")
+        communities_dir=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir}_{{organism}}_u"),
+        polyester_error_rate=polyester_error_rate
     shell:
         """
         Rscript {params.script} \
         -t synthetic/data/{wildcards.organism}/genome/cds_from_genomic.fna \
         -g synthetic/data/{wildcards.organism}/genome/genomic.gff \
+        -e {params.polyester_error_rate} \
         -s {input.sample_data} \
         -n {wildcards.organism} \
         -o {params.communities_dir}
@@ -217,10 +226,11 @@ rule transcriptome_fasta_to_fastq_microbial:
         mem_mb=int(16*1000), # MB
         runtime=int(4*60) # min
     params:
-        in_data=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir}_{{organism}}_u", "{sample}_unsampled_{read}.fasta")
+        in_data=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir}_{{organism}}_u", "{sample}_unsampled_{read}.fasta"),
+        polyester_phred=polyester_phred
     shell:
         """
-        reformat.sh in={params.in_data} out={output.data} qin=33 qout=33 qfake=40
+        reformat.sh in={params.in_data} out={output.data} qin={params.polyester_phred} qout={params.polyester_phred} qfake={params.polyester_phred}
         rm {params.in_data}
         """
 

@@ -355,10 +355,11 @@ rule plot_expected_vs_actual_synthetic_communities:
         runtime=int(1*60) # min
     params:
         script="Plot_benchmarked_reads_breakdown.R",
-        data="benchmarking_synthetic_reads_breakdown.csv"
+        data="benchmarking_synthetic_reads_breakdown.csv",
+        label="True percent host reads (pangenome, jittered)" 
     shell:
         """
-        Rscript {params.script} -i {params.data} -o {output.plot} > {output.model}
+        Rscript {params.script} -i {params.data} -o {output.plot} -n {params.label} > {output.model}
         """
 
 
@@ -427,10 +428,11 @@ rule plot_expected_vs_actual_synthetic_transcriptomes:
         runtime=int(1*60) # min
     params:
         script="Plot_benchmarked_reads_breakdown.R",
-        data="benchmarking_synthetic_transcriptomes_reads_breakdown.csv"
+        data="benchmarking_synthetic_transcriptomes_reads_breakdown.csv",
+        label="True percent host reads (GRCh38, jittered)"
     shell:
         """
-        Rscript {params.script} -i {params.data} -o {output.plot} > {output.model}
+        Rscript {params.script} -i {params.data} -o {output.plot}  -n {params.label} > {output.model}
         """
 
 
@@ -495,10 +497,11 @@ rule plot_expected_vs_actual_mock_data:
     params:
         script="Plot_benchmarked_reads_breakdown.R",
         data="benchmarking_Pereira_reads_breakdown.csv",
-        jitter=0
+        jitter=0,
+        label="Pereira-Marques percent microbial reads"
     shell:
         """
-        Rscript {params.script} -i {params.data} -j {params.jitter} -o {output.plot} > {output.model}
+        Rscript {params.script} -i {params.data} -j {params.jitter} -o {output.plot} -n {params.label} > {output.model}
         """
 
 rule plot_expected_from_paper_vs_actual_mock_data:

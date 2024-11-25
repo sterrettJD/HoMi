@@ -83,6 +83,9 @@ option_list <- list(
     make_option(c("--gtf_url"), 
                 help="URL to download the reference transcriptome from if it isn't present.",
                 default=NULL),
+    make_option(c("--error_rate"),
+                help="Per nucleotide uniform error rate. Defaults to 0.001 (PHRED=30).",
+                default=0.001),
     make_option(c("-s", "--sample_data"), 
                 help="A CSV file with the number of reads per sample belonging to the host. Samples are columns, and rows are organisms. A column labeled `genome` should denote the organisms, and a column `GCF_id` will be ignored."),
     make_option(c("-n", "--host_id"), 
@@ -102,9 +105,11 @@ transcriptome_filepath <- opt$transcriptome_filepath
 transcriptome_url <- opt$transcriptome_url
 gtf_filepath <- opt$gtf_filepath
 gtf_url <- opt$gtf_url
+polyester_error_rate <- opt$error_rate
 sample_data <- opt$sample_data
 host_id <- opt$host_id
 output_dir <- opt$output_dir
+
 
 get_reference(transcriptome_filepath, transcriptome_url)
 get_reference(gtf_filepath, gtf_url)
@@ -136,7 +141,8 @@ simulate_experiment(fasta=transcriptome_filepath,
                     fold_changes=fold_change_matrix,
                     outdir=output_dir,
                     num_reps=size_per_group,
-                    readlen=150)
+                    readlen=150,
+                    error_rate=polyester_error_rate)
 
 # rename samples according to the provided IDs
 start_wd <- getwd()

@@ -131,7 +131,7 @@ rule simulate_synthetic_host_transcriptomes:
         --transcriptome_url https://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/annotation/GRCh38_latest/refseq_identifiers/GRCh38_latest_rna.fna.gz \
         -g synthetic/data/host_transcriptome.gff.gz \
         --gtf_url https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/GCA_000001405.15_GRCh38_genomic.gff.gz \
-        -e {params.polyester_error_rate} \
+        --error_rate {params.polyester_error_rate} \
         -s {input.sample_data} \
         -n human \
         -o {params.communities_dir}_human
@@ -205,7 +205,7 @@ rule simulate_synthetic_microbial_transcriptomes:
         Rscript {params.script} \
         -t synthetic/data/{wildcards.organism}/genome/cds_from_genomic.fna \
         -g synthetic/data/{wildcards.organism}/genome/genomic.gff \
-        -e {params.polyester_error_rate} \
+        --error_rate {params.polyester_error_rate} \
         -s {input.sample_data} \
         -n {wildcards.organism} \
         -o {params.communities_dir}

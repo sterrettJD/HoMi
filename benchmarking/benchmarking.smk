@@ -369,7 +369,7 @@ rule plot_expected_vs_actual_synthetic_communities:
         label="True percent host reads (pangenome, jittered)" 
     shell:
         """
-        Rscript {params.script} -i {params.data} -o {output.plot} -n {params.label} > {output.model}
+        Rscript {params.script} -i {params.data} -o {output.plot} -n "{params.label}" > {output.model}
         """
 
 
@@ -442,7 +442,7 @@ rule plot_expected_vs_actual_synthetic_transcriptomes:
         label="True percent host reads (GRCh38, jittered)"
     shell:
         """
-        Rscript {params.script} -i {params.data} -o {output.plot}  -n {params.label} > {output.model}
+        Rscript {params.script} -i {params.data} -o {output.plot}  -n "{params.label}" > {output.model}
         """
 
 
@@ -511,7 +511,7 @@ rule plot_expected_vs_actual_mock_data:
         label="Pereira-Marques percent microbial reads"
     shell:
         """
-        Rscript {params.script} -i {params.data} -j {params.jitter} -o {output.plot} -n {params.label} > {output.model}
+        Rscript {params.script} -i {params.data} -j {params.jitter} -o {output.plot} -n "{params.label}" > {output.model}
         """
 
 rule plot_expected_from_paper_vs_actual_mock_data:

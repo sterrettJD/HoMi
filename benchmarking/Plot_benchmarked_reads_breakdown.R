@@ -75,7 +75,7 @@ main <- function(){
     geom_jitter(width=args$jitter_width, size=3, alpha=0.8) +
     geom_smooth(method="lm") +
     theme_bw(base_size=22) +
-    labs(x=args$name_for_plot, y="Actual percent host reads")
+    labs(x=args$name_for_plot, y="Recovered percent host reads")
 
   ggsave(args$output_plot)
 }

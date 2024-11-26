@@ -155,7 +155,7 @@ rule transcriptome_fasta_to_fastq:
         polyester_phred=polyester_phred
     shell:
         """
-        reformat.sh in={input.data} out={output.data} qin={params.polyester_phred} qout={params.polyester_phred} qfake={params.polyester_phred}
+        reformat.sh in={input.data} out={output.data} qin=33 qout=33 qfake={params.polyester_phred}
         rm {input.data}
         """
 
@@ -230,7 +230,7 @@ rule transcriptome_fasta_to_fastq_microbial:
         polyester_phred=polyester_phred
     shell:
         """
-        reformat.sh in={params.in_data} out={output.data} qin={params.polyester_phred} qout={params.polyester_phred} qfake={params.polyester_phred}
+        reformat.sh in={params.in_data} out={output.data} qin=33 qout=33 qfake={params.polyester_phred}
         rm {params.in_data}
         """
 
@@ -262,8 +262,10 @@ rule subsample_fastq_to_correct_depth_microbial:
 
 rule combine_transcriptomes:
     input:
-        expand(os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir}_{{organism}}_s", "{sample}_{read}.fastq"),
-               organism=microbial_organisms, sample=samples, read=reads)
+        microbes=expand(os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir}_{{organism}}_s", "{sample}_{read}.fastq"),
+               organism=microbial_organisms, sample=samples, read=reads),
+        human=expand(os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir}_human", "{sample}_{read}.fastq"),
+               sample=samples, read=reads)
     output:
         data=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir}", "{sample}_{read}.fastq.gz")
     threads: 1

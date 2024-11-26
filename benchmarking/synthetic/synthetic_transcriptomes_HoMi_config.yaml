@@ -58,7 +58,7 @@ utility_mapping_db: synthetic/data/humann_dbs/utility_mapping
 ########################
 ### Kraken + Bracken ###
 # database location
-kraken_db: synthetic/data/kraken2_db
+kraken_db: synthetic/data/kraken2_db_2
 # host taxon ID to not be plotted in microbial taxa barplot
 host_tax_id: 9606
 

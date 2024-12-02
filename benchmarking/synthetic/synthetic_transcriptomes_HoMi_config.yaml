@@ -118,3 +118,5 @@ default_long_partition_name: long
 # we aren't interested in coverage so I'm going to decrease the number of query reads in nonpareil, 
 # since nonpareil is throwing an error that we're querying too many reads relative to the file size
 nonpareil_extra: -X 200
+run_kraken_extra: " --memory-mapping "
+

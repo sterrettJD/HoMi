@@ -638,6 +638,59 @@ rule run_HoMi_synthetic_transcriptomes:
         touch {output}
         """
 
+
+rule create_HoMi_metadata_synthetic_transcriptomes_p40:
+    input:
+        sample_data=metadata_file
+    output:
+        homi_metadata=os.path.join(synthetic_work_dir, "synthetic_transcriptomes_p40_homi_metadata.csv")
+    threads: 1
+    resources:
+        partition="short",
+        mem_mb=int(8*1000), # MB
+        runtime=int(10) # min
+    params:
+        work_dir=synthetic_work_dir,
+        communities_dir=synthetic_transcriptomes_dir_p40
+    run:
+        import pandas as pd
+        df = pd.read_csv(input.sample_data)
+        genome_names = df["genome"].to_list()
+        df = df.drop(["genome", "GCF_id"], axis=1).transpose()
+        df.columns = genome_names
+
+        df["forward_reads"] = [os.path.join(params.work_dir, params.communities_dir, f"{sample}_R1.fastq.gz") 
+                                for sample in df.index]
+        df["reverse_reads"] = [os.path.join(params.work_dir, params.communities_dir, f"{sample}_R2.fastq.gz") 
+                                for sample in df.index]
+
+        df.to_csv(output.homi_metadata, index_label="Sample")
+    
+
+rule run_HoMi_synthetic_transcriptomes_p40:
+    input:
+        homi_metadata=os.path.join(synthetic_work_dir, "synthetic_transcriptomes_p40_homi_metadata.csv"),
+        homi_config=os.path.join(synthetic_work_dir, "synthetic_transcriptomes_p40_HoMi_config.yaml"),
+        fwd=expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir_p40, "{sample}_R1.fastq.gz"),
+               sample=samples),
+        rev=expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir_p40, "{sample}_R2.fastq.gz"),
+               sample=samples)
+    output:
+        "HoMi_is_done_synthetic_transcriptomes_p40"
+    threads: 1
+    resources:
+        partition="short",
+        mem_mb=int(8*1000), # MB
+        runtime=int(20*60) # min
+    params:
+        homi_args=homi_args
+    shell:
+        """
+        HoMi.py {input.homi_config} {params.homi_args} --unlock
+        touch {output}
+        """
+
+
 rule plot_expected_vs_actual_synthetic_transcriptomes:
     input:
         "HoMi_is_done_synthetic_transcriptomes"

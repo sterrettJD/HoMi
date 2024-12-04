@@ -433,7 +433,7 @@ rule transcriptome_fasta_to_fastq_microbial_p40:
     input:
         data_created="synthetic_microbial_transcriptomes_created_p40_{organism}",
     output:
-        data=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir_p40}_{{organism}}_u", "{sample}_unsampled_{read}.fastq")
+        data=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir_p40}_{{organism}}_u", "{sample}_unsampled_{read}_p40.fastq")
     threads: 1
     conda: "conda_envs/bbmap.yaml"
     resources:
@@ -441,7 +441,7 @@ rule transcriptome_fasta_to_fastq_microbial_p40:
         mem_mb=int(16*1000), # MB
         runtime=int(4*60) # min
     params:
-        in_data=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir_p40}_{{organism}}_u", "{sample}_unsampled_{read}.fasta"),
+        in_data=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir_p40}_{{organism}}_u", "{sample}_unsampled_{read}_p40.fasta"),
         polyester_phred=polyester_phred_p40
     shell:
         """
@@ -452,9 +452,9 @@ rule transcriptome_fasta_to_fastq_microbial_p40:
 
 rule subsample_fastq_to_correct_depth_microbial_p40:
     input:
-        data=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir_p40}_{{organism}}_u", "{sample}_unsampled_{read}.fastq")
+        data=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir_p40}_{{organism}}_u", "{sample}_unsampled_{read}_p40.fastq")
     output:
-        data=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir_p40}_{{organism}}_s", "{sample}_{read}.fastq")
+        data=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir_p40}_{{organism}}_s", "{sample}_{read}_p40.fastq")
     threads: 1
     resources:
         partition="short",
@@ -477,7 +477,7 @@ rule subsample_fastq_to_correct_depth_microbial_p40:
 
 rule combine_transcriptomes_p40:
     input:
-        expand(os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir_p40}_{{organism}}_s", "{sample}_{read}.fastq"),
+        expand(os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir_p40}_{{organism}}_s", "{sample}_{read}_p40.fastq"),
                organism=microbial_organisms, sample=samples, read=reads)
     output:
         data=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir_p40}", "{sample}_{read}.fastq.gz")

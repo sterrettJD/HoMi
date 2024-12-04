@@ -82,6 +82,7 @@ host_map_method: HISAT2
 # rule_name_threads: 8 
 get_kraken_db_runtime: 2400
 get_kraken_db_partition: long
+map_host_mem_mb: 24000
 
 ################################
 ### Partition ###

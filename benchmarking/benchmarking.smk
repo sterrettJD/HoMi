@@ -7,6 +7,7 @@ import pandas as pd
 synthetic_work_dir = "synthetic"
 synthetic_communities_dir = "synthetic_communities"
 synthetic_transcriptomes_dir = "synthetic_transcriptomes"
+synthetic_transcriptomes_dir_p40 = "synthetic_transcriptomes_p40"
 
 # to run this on a Slurm-managed cluster
 homi_args = "--profile slurm"
@@ -27,6 +28,9 @@ pereira_srr_ids = pereira_df["SRR"]
 # Per nucleotide quality score for Polyester-simulated reads
 polyester_error_rate=0.001
 polyester_phred=30
+
+polyester_error_rate_p40=0.0001
+polyester_phred_p40=40
 
 rule all:
     input:
@@ -50,6 +54,15 @@ rule all:
         "HoMi_is_done_synthetic_transcriptomes",
         "synthetic_transcriptomes_benchmark.pdf",
         "synthetic_transcriptomes_benchmark_lm_results.txt",
+
+         # From synthetic transcriptomes PHRED 40
+        expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir_p40, "{sample}_R1.fastq.gz"),
+               sample=samples),
+        expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir_p40, "{sample}_R2.fastq.gz"),
+               sample=samples),
+        "HoMi_is_done_synthetic_transcriptomes_p40",
+        "synthetic_transcriptomes_p40_benchmark.pdf",
+        "synthetic_transcriptomes_p40_benchmark_lm_results.txt",
 
         # From mock communities
         expand(os.path.join("Pereira", "{srr_id}_R1.fastq.gz"),
@@ -83,7 +96,7 @@ rule pull_reference_genomes:
         touch {output.done}
         """
 
-
+# Simulating with custom script from human pangenome project
 rule simulate_synthetic_communities:
     input:
         sample_data=metadata_file,
@@ -106,6 +119,8 @@ rule simulate_synthetic_communities:
         """
 
 
+####################################################
+### Simulate transcriptomes with phred of 30
 rule simulate_synthetic_host_transcriptomes:
     input:
         sample_data=metadata_file
@@ -297,6 +312,201 @@ rule combine_transcriptomes:
         ran = subprocess.run(cmd, shell=True)
 
 
+####################################################
+### Simulate transcriptomes with phred of 40
+
+rule simulate_synthetic_host_transcriptome_p40:
+    input:
+        sample_data=metadata_file
+    output:
+        data=expand(os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir_p40}_human", "{sample}_unsampled_{read}.fasta"),
+                    sample=samples,
+                    read=reads),
+        done="synthetic_transcriptomes_created"
+    threads: 1
+    resources:
+        partition="short",
+        mem_mb=int(16*1000), # MB
+        runtime=int(12*60) # min
+    params:
+        script=os.path.join(synthetic_work_dir, "run_polyester.R"),
+        work_dir=synthetic_work_dir,
+        communities_dir=os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir_p40),
+        polyester_error_rate=polyester_error_rate_p40
+    shell:
+        """
+        Rscript {params.script} \
+        -t synthetic/data/host_transcriptome.fna.gz \
+        --transcriptome_url https://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/annotation/GRCh38_latest/refseq_identifiers/GRCh38_latest_rna.fna.gz \
+        -g synthetic/data/host_transcriptome.gff.gz \
+        --gtf_url https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/GCA_000001405.15_GRCh38_genomic.gff.gz \
+        --error_rate {params.polyester_error_rate} \
+        -s {input.sample_data} \
+        -n human \
+        -o {params.communities_dir}_human
+        
+        touch {output.done}
+        """
+
+
+rule transcriptome_fasta_to_fastq:
+    input:
+        data=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir_p40}_human", "{sample}_unsampled_{read}.fasta")
+    output:
+        data=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir_p40}_human", "{sample}_unsampled_{read}.fastq")
+    threads: 1
+    conda: "conda_envs/bbmap.yaml"
+    resources:
+        partition="short",
+        mem_mb=int(16*1000), # MB
+        runtime=int(4*60) # min
+    params:
+        polyester_phred=polyester_phred_p40
+    shell:
+        """
+        reformat.sh in={input.data} out={output.data} qin=33 qout=33 qfake={params.polyester_phred}
+        rm {input.data}
+        """
+
+
+rule subsample_fastq_to_correct_depth:
+    input:
+        data=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir_p40}_human", "{sample}_unsampled_{read}.fastq")
+    output:
+        data=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir_p40}_human", "{sample}_{read}.fastq")
+    threads: 1
+    resources:
+        partition="short",
+        mem_mb=int(2*1000), # MB
+        runtime=int(1*60) # min
+    params:
+        metadata=metadata_file
+    run:
+        import subprocess
+        import pandas as pd
+        metadata = pd.read_csv(params.metadata, index_col="genome")
+        depth = metadata.loc["human", wildcards.sample]
+        if depth > 0:
+            cmd = f"seqtk sample -s 123 {input.data} {depth} > {output.data}"
+        else:
+            cmd = f"cp {input.data} {output.data}"
+        ran = subprocess.run(cmd, shell=True)
+        cleaned = subprocess.run(["rm", input.data])
+        
+
+rule simulate_synthetic_microbial_transcriptomes:
+    input:
+        sample_data=metadata_file
+    output:
+        done="synthetic_microbial_transcriptomes_created_{organism}"
+    threads: 1
+    resources:
+        partition="short",
+        mem_mb=int(16*1000), # MB
+        runtime=int(12*60) # min
+    params:
+        script=os.path.join(synthetic_work_dir, "run_polyester.R"),
+        work_dir=synthetic_work_dir,
+        communities_dir=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir_p40}_{{organism}}_u"),
+        polyester_error_rate=polyester_error_rate_p40
+    shell:
+        """
+        Rscript {params.script} \
+        -t synthetic/data/{wildcards.organism}/genome/cds_from_genomic.fna \
+        -g synthetic/data/{wildcards.organism}/genome/genomic.gff \
+        --error_rate {params.polyester_error_rate} \
+        -s {input.sample_data} \
+        -n {wildcards.organism} \
+        -o {params.communities_dir}
+        
+        touch {output.done}
+        """
+
+
+rule transcriptome_fasta_to_fastq_microbial:
+    input:
+        data_created="synthetic_microbial_transcriptomes_created_{organism}",
+    output:
+        data=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir_p40}_{{organism}}_u", "{sample}_unsampled_{read}.fastq")
+    threads: 1
+    conda: "conda_envs/bbmap.yaml"
+    resources:
+        partition="short",
+        mem_mb=int(16*1000), # MB
+        runtime=int(4*60) # min
+    params:
+        in_data=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir_p40}_{{organism}}_u", "{sample}_unsampled_{read}.fasta"),
+        polyester_phred=polyester_phred_p40
+    shell:
+        """
+        reformat.sh in={params.in_data} out={output.data} qin=33 qout=33 qfake={params.polyester_phred}
+        rm {params.in_data}
+        """
+
+
+rule subsample_fastq_to_correct_depth_microbial:
+    input:
+        data=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir_p40}_{{organism}}_u", "{sample}_unsampled_{read}.fastq")
+    output:
+        data=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir_p40}_{{organism}}_s", "{sample}_{read}.fastq")
+    threads: 1
+    resources:
+        partition="short",
+        mem_mb=int(2*1000), # MB
+        runtime=int(1*60) # min
+    params:
+        metadata=metadata_file
+    run:
+        import subprocess
+        import pandas as pd
+        metadata = pd.read_csv(params.metadata, index_col="genome")
+        depth = metadata.loc[wildcards.organism, wildcards.sample]
+        if depth > 0:
+            cmd = f"seqtk sample -s 123 {input.data} {depth} > {output.data}"
+        else:
+            cmd = f"cp {input.data} {output.data}"
+        ran = subprocess.run(cmd, shell=True)
+        cleaned = subprocess.run(["rm", input.data])
+
+
+rule combine_transcriptomes:
+    input:
+        expand(os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir_p40}_{{organism}}_s", "{sample}_{read}.fastq"),
+               organism=microbial_organisms, sample=samples, read=reads)
+    output:
+        data=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir_p40}", "{sample}_{read}.fastq.gz")
+    threads: 1
+    resources:
+        partition="short",
+        mem_mb=int(2*1000), # MB
+        runtime=int(1*60) # min
+    params:
+        organisms=organisms,
+        synthetic_work_dir=synthetic_work_dir,
+        synthetic_transcriptomes_dir_p40=synthetic_transcriptomes_dir_p40
+    run:
+        import subprocess
+        import os
+	
+        out_dir = os.path.join(params.synthetic_work_dir, f"{params.synthetic_transcriptomes_dir_p40}")
+        os.makedirs(out_dir, exist_ok=True)
+
+        # Find the paths to each organism's transcriptome
+        in_paths = [os.path.join(params.synthetic_work_dir, 
+                                f"{params.synthetic_transcriptomes_dir_p40}_{organism}_s", 
+                                f"{wildcards.sample}_{wildcards.read}.fastq") 
+                    for organism in params.organisms]
+        
+        in_paths_string = " ".join(in_paths)
+        # Human reads don't need the _s/_u to make them distinct for snakemake, so fixing that here.
+        # Could fix that in its rule, but I would need to rerun it which takes time
+        in_paths_string = in_paths_string.replace("human_s", "human")
+
+        cmd = f"cat {in_paths_string} | gzip > {output.data}"
+        ran = subprocess.run(cmd, shell=True)
+
+
+
 ###################################
 ### HoMi on synthetic ###
 
@@ -444,6 +654,11 @@ rule plot_expected_vs_actual_synthetic_transcriptomes:
         """
         Rscript {params.script} -i {params.data} -o {output.plot}  -n "{params.label}" > {output.model}
         """
+
+
+
+
+
 
 
 

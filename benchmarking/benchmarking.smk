@@ -314,6 +314,8 @@ rule combine_transcriptomes:
 
 ####################################################
 ### Simulate transcriptomes with phred of 40
+# Could be done with wildcards on the other transcriptome simulations
+# But doing it separately in the interest of time and not rerunning those simualtions
 
 rule simulate_synthetic_host_transcriptome_p40:
     input:

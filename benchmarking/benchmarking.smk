@@ -328,7 +328,7 @@ rule simulate_synthetic_host_transcriptome_p40:
         data=expand(os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir_p40}_human", "{sample}_unsampled_{read}.fasta"),
                     sample=samples,
                     read=reads),
-        done="synthetic_transcriptomes_created"
+        done="synthetic_transcriptomes_created_p40"
     threads: 1
     resources:
         partition="short",
@@ -404,7 +404,7 @@ rule simulate_synthetic_microbial_transcriptomes_p40:
     input:
         sample_data=metadata_file
     output:
-        done="synthetic_microbial_transcriptomes_created_{organism}"
+        done="synthetic_microbial_transcriptomes_created_p40_{organism}"
     threads: 1
     resources:
         partition="short",
@@ -431,7 +431,7 @@ rule simulate_synthetic_microbial_transcriptomes_p40:
 
 rule transcriptome_fasta_to_fastq_microbial_p40:
     input:
-        data_created="synthetic_microbial_transcriptomes_created_{organism}",
+        data_created="synthetic_microbial_transcriptomes_created_p40_{organism}",
     output:
         data=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir_p40}_{{organism}}_u", "{sample}_unsampled_{read}.fastq")
     threads: 1

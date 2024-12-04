@@ -353,7 +353,7 @@ rule simulate_synthetic_host_transcriptome_p40:
         """
 
 
-rule transcriptome_fasta_to_fastq:
+rule transcriptome_fasta_to_fastq_p40:
     input:
         data=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir_p40}_human", "{sample}_unsampled_{read}.fasta")
     output:
@@ -373,7 +373,7 @@ rule transcriptome_fasta_to_fastq:
         """
 
 
-rule subsample_fastq_to_correct_depth:
+rule subsample_fastq_to_correct_depth_p40:
     input:
         data=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir_p40}_human", "{sample}_unsampled_{read}.fastq")
     output:
@@ -398,7 +398,7 @@ rule subsample_fastq_to_correct_depth:
         cleaned = subprocess.run(["rm", input.data])
         
 
-rule simulate_synthetic_microbial_transcriptomes:
+rule simulate_synthetic_microbial_transcriptomes_p40:
     input:
         sample_data=metadata_file
     output:
@@ -427,7 +427,7 @@ rule simulate_synthetic_microbial_transcriptomes:
         """
 
 
-rule transcriptome_fasta_to_fastq_microbial:
+rule transcriptome_fasta_to_fastq_microbial_p40:
     input:
         data_created="synthetic_microbial_transcriptomes_created_{organism}",
     output:
@@ -448,7 +448,7 @@ rule transcriptome_fasta_to_fastq_microbial:
         """
 
 
-rule subsample_fastq_to_correct_depth_microbial:
+rule subsample_fastq_to_correct_depth_microbial_p40:
     input:
         data=os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir_p40}_{{organism}}_u", "{sample}_unsampled_{read}.fastq")
     output:
@@ -473,7 +473,7 @@ rule subsample_fastq_to_correct_depth_microbial:
         cleaned = subprocess.run(["rm", input.data])
 
 
-rule combine_transcriptomes:
+rule combine_transcriptomes_p40:
     input:
         expand(os.path.join(synthetic_work_dir, f"{synthetic_transcriptomes_dir_p40}_{{organism}}_s", "{sample}_{read}.fastq"),
                organism=microbial_organisms, sample=samples, read=reads)
@@ -528,7 +528,7 @@ rule create_HoMi_metadata_synthetic:
         work_dir=synthetic_work_dir,
         communities_dir=synthetic_communities_dir
     run:
-        import pandas as pd
+        import pandas as pd 
         df = pd.read_csv(input.sample_data)
         genome_names = df["genome"].to_list()
         df = df.drop(["genome", "GCF_id"], axis=1).transpose()

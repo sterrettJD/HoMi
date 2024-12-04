@@ -58,7 +58,7 @@ utility_mapping_db: synthetic/data/humann_dbs/utility_mapping
 ########################
 ### Kraken + Bracken ###
 # database location
-kraken_db: synthetic/data/kraken2_db
+kraken_db: synthetic/data/kraken2_db_2
 # host taxon ID to not be plotted in microbial taxa barplot
 host_tax_id: 9606
 
@@ -118,3 +118,5 @@ default_long_partition_name: long
 # we aren't interested in coverage so I'm going to decrease the number of query reads in nonpareil, 
 # since nonpareil is throwing an error that we're querying too many reads relative to the file size
 nonpareil_extra: -X 200
+run_kraken_extra: " --memory-mapping "
+

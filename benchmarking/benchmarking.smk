@@ -52,17 +52,19 @@ rule all:
         expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_R2.fastq.gz"),
                sample=samples),
         "HoMi_is_done_synthetic_transcriptomes",
-        "synthetic_transcriptomes_benchmark.pdf",
-        "synthetic_transcriptomes_benchmark_lm_results.txt",
-
+        
          # From synthetic transcriptomes PHRED 40
         expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir_p40, "{sample}_R1.fastq.gz"),
                sample=samples),
         expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir_p40, "{sample}_R2.fastq.gz"),
                sample=samples),
         "HoMi_is_done_synthetic_transcriptomes_p40",
-        "synthetic_transcriptomes_p40_benchmark.pdf",
-        "synthetic_transcriptomes_p40_benchmark_lm_results.txt",
+
+        # Comparison of transcriptomes to actual
+        expand("{proj}_benchmark.pdf",
+                proj=["synthetic_transcriptomes", "synthetic_transcriptomes_p40"]),
+        expand("{proj}_benchmark_lm_results.txt",
+                proj=["synthetic_transcriptomes", "synthetic_transcriptomes_p40"]),
 
         # From mock communities
         expand(os.path.join("Pereira", "{srr_id}_R1.fastq.gz"),
@@ -693,10 +695,10 @@ rule run_HoMi_synthetic_transcriptomes_p40:
 
 rule plot_expected_vs_actual_synthetic_transcriptomes:
     input:
-        "HoMi_is_done_synthetic_transcriptomes"
+        "HoMi_is_done_{proj}"
     output:
-        plot="synthetic_transcriptomes_benchmark.pdf",
-        model="synthetic_transcriptomes_benchmark_lm_results.txt"
+        plot="{proj}_benchmark.pdf",
+        model="{proj}_benchmark_lm_results.txt"
     conda: "conda_envs/r_env.yaml"
     threads: 1
     resources:
@@ -705,11 +707,10 @@ rule plot_expected_vs_actual_synthetic_transcriptomes:
         runtime=int(1*60) # min
     params:
         script="Plot_benchmarked_reads_breakdown.R",
-        data="benchmarking_synthetic_transcriptomes_reads_breakdown.csv",
         label="True percent host reads (GRCh38, jittered)"
     shell:
         """
-        Rscript {params.script} -i {params.data} -o {output.plot}  -n "{params.label}" > {output.model}
+        Rscript {params.script} -i benchmarking_{wildcards.proj}_reads_breakdown.csv -o {output.plot}  -n "{params.label}" > {output.model}
         """
 
 

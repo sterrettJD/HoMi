@@ -508,7 +508,7 @@ rule combine_transcriptomes_p40:
         in_paths_string = " ".join(in_paths)
         # Human reads don't need the _s/_u to make them distinct for snakemake, so fixing that here.
         # Could fix that in its rule, but I would need to rerun it which takes time
-        in_paths_string = in_paths_string.replace("human_s", "human")
+        in_paths_string = in_paths_string.replace("human_s_p40", "human")
 
         cmd = f"cat {in_paths_string} | gzip > {output.data}"
         ran = subprocess.run(cmd, shell=True)

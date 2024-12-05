@@ -501,7 +501,7 @@ rule combine_transcriptomes_p40:
 
         # Find the paths to each organism's transcriptome
         in_paths = [os.path.join(params.synthetic_work_dir, 
-                                f"{params.synthetic_transcriptomes_dir_p40}_{organism}_s", 
+                                f"{params.synthetic_transcriptomes_dir_p40}_{organism}_s_p40", 
                                 f"{wildcards.sample}_{wildcards.read}.fastq") 
                     for organism in params.organisms]
         

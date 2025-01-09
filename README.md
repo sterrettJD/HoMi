@@ -13,7 +13,7 @@ HoMi is currently under development! Please feel free to raise an issue or contr
 
 ## Installation
 ```
-conda create -n HoMi python=3.11
+mamba create -n HoMi python=3.11
 conda activate HoMi
 pip install homi-pipeline
 ```

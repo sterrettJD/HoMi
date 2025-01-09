@@ -8,6 +8,11 @@ if (!require("optparse")){
   library("optparse")
 }
 
+if (!require("ggplot2")){
+  install.packages("ggplot2", repos="http://cran.us.r-project.org")
+  library("ggplot2")
+}
+
 
 get_args <- function(){
   option_list <- list( 
@@ -18,6 +23,9 @@ get_args <- function(){
                       Options include `kraken` and `metaphlan`"),
     make_option(c("-m", "--metadata_file"),
                 help="The metadata file for HoMi",
+                default=NULL),
+    make_option(c("-o", "--output_dir"),
+                help="The output directory for plots and results",
                 default=NULL)
   )
   opt <- parse_args(OptionParser(option_list=option_list))
@@ -62,8 +70,7 @@ read_kraken <- function(file){
                    "family", "genus",
                    "species")
   taxonomy.table <- bugslist %>%
-    select(all_of(tax.columns)) %>%
-    as.matrix()
+    select(all_of(tax.columns))
   rownames(taxonomy.table) <- bugs
   
   
@@ -71,12 +78,110 @@ read_kraken <- function(file){
 }
 
 
+filter_host_from_kraken_df <- function(feature.table, host.id="9606"){
+  return(feature.table[rownames(feature.table)!=host.id,])
+}
+
+
+calculate_relative_abundance <- function(feature.table){
+  column.sums <- colSums(feature.table)
+  return(sweep(feature.table, 2, column.sums, FUN = "/"))
+}
+
+
+get_important_abundances <- function(feature.table, tax.table, tax.level, groups){
+  features.with.tax <- merge(feature.table, 
+                             tax.table, 
+                             by="row.names")
+  group.summed.table <- features.with.tax %>% 
+    dplyr::group_by(!!sym(tax.level)) %>%
+    summarise(across(where(is.numeric), ~ sum(.x, na.rm = TRUE)), 
+              .groups = "drop") %>%
+    filter(!!sym(tax.level) %in% groups)
+  
+  return(group.summed.table)
+}
+
+
+get_percent_host <- function(sample.names){
+  percents <- sapply(sample.names,
+         FUN=function(x){
+           unlist(strsplit(x, split="_"))[1]}
+         )
+  return(percents)
+}
+
+
 main <- function(){
   opts <- get_args()
   data <- read_taxonomy_data(opts$input_file, type=opts$taxonomy_method)  
-  str(data$abundance)
-  print(rownames(data$abundance)[1:10])
-  str(data$tax)
+  
+  feature.table <- data$abundance
+  tax.table <- data$tax
+  
+  genera <- c("Clostridium", "Escherichia", "Faecalibacterium")
+  species <- c("Clostridium beijerinckii", "Escherichia coli", "Faecalibacterium prausnitzii")
+  
+  if(opts$taxonomy_method=="kraken"){
+    # remove host reads
+    feature.table <- filter_host_from_kraken_df(feature.table)
+    feature.table <- calculate_relative_abundance(feature.table)
+    
+    # get feature abundances for the taxa of interest
+    # and transpose for plotting
+    # and clean up column names
+    genus.lvl <- t(get_important_abundances(feature.table, tax.table, 
+                                          "genus", genera)) %>%
+      as.data.frame()
+    colnames(genus.lvl) <- genus.lvl["genus",]
+    genus.lvl <- genus.lvl[rownames(genus.lvl)!="genus",]
+    
+    species.lvl <- t(get_important_abundances(feature.table, tax.table, 
+                                            "species", species)) %>%
+      as.data.frame()
+    colnames(species.lvl) <- species.lvl["species",]
+    species.lvl <- species.lvl[rownames(species.lvl)!="species",]
+    
+    # get host percent
+    genus.lvl$`Percent host` <- get_percent_host(rownames(genus.lvl))
+    species.lvl$`Percent host` <- get_percent_host(rownames(species.lvl))
+    
+    # plot data
+    genus.lvl %>% 
+      pivot_longer(!`Percent host`,
+                   names_to=c("Genus"),
+                   values_to=c("Abundance")) %>%
+      mutate(Abundance=as.numeric(Abundance)) %>%
+      ggplot(mapping=aes(x=`Percent host`, y=Abundance)) +
+      geom_boxplot(outliers=F) +
+      geom_jitter() +
+      facet_wrap(vars(Genus), ncol=1) +
+      theme_bw()
+    
+    save.path <- file.path(opts$output_dir, 
+                           paste0(opts$taxonomy_method, "_",
+                                  "genus.pdf"))
+    ggsave(save.path)
+   
+    
+    # plot data
+    species.lvl %>% 
+      pivot_longer(!`Percent host`,
+                   names_to=c("Species"),
+                   values_to=c("Abundance")) %>%
+      mutate(Abundance=as.numeric(Abundance)) %>%
+      ggplot(mapping=aes(x=`Percent host`, y=Abundance)) +
+      geom_boxplot(outliers=F) +
+      geom_jitter() +
+      facet_wrap(vars(Species), ncol=1) +
+      theme_bw()
+    
+    save.path <- file.path(opts$output_dir, 
+                           paste0(opts$taxonomy_method, "_",
+                                  "species.pdf"))
+    ggsave(save.path)
+    
+  }
 }
 
 main()

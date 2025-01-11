@@ -75,7 +75,15 @@ rule all:
         "Pereira_benchmark.pdf",
         "Pereira_benchmark_lm_results.txt",
         "Pereira_benchmark_from_paper.pdf",
-        "Pereira_benchmark_from_paper_lm_results.txt"
+        "Pereira_benchmark_from_paper_lm_results.txt",
+
+        # Boxplot comparisons of taxonomy to what it should be
+        expand("taxonomy_compared/{proj}/{method}_genus.pdf",
+               proj=["synthetic_transcriptomes", "synthetic_transcriptomes_p40", "Pereira"],
+               method=["kraken", "metaphlan"]),
+        expand("taxonomy_compared/{proj}/{method}_species.pdf",
+               proj=["synthetic_transcriptomes", "synthetic_transcriptomes_p40", "Pereira"],
+               method=["kraken", "metaphlan"])
 
 
 rule pull_reference_genomes:
@@ -716,7 +724,32 @@ rule plot_expected_vs_actual_synthetic_transcriptomes:
         """
 
 
-
+rule plot_taxonomy_boxplots:
+    input:
+        "HoMi_is_done_{proj}"
+    output:
+        genus_plot="taxonomy_compared/{proj}/{method}_genus.pdf",
+        species_plot="taxonomy_compared/{proj}/{method}_species.pdf"
+    conda: "conda_envs/r_env.yaml"
+    threads: 1
+    resources:
+        partition="short",
+        mem_mb=int(4*1000), # MB
+        runtime=int(1*60) # min
+    params:
+        script="Compare_taxonomy.R",
+        outdir="taxonomy_compared/{proj}"
+    shell:
+        """
+        mkdir -p {params.outdir}
+        
+        if [[ "{wildcards.method}" == "metaphlan" ]]; then
+            Rscript {params.script} -i benchmarking_{wildcards.proj}.f0.0.r0.0.nonhost.humann/all_bugs_list.tsv -t metaphlan -o {params.outdir}
+        
+        elif [[ "{wildcards.method}" == "kraken" ]]; then
+            Rscript {params.script} -i benchmarking_{wildcards.proj}.f0.0.r0.0.nonhost.kraken/Combined-taxonomy.tsv -t kraken -o {params.outdir}
+        fi
+        """
 
 
 

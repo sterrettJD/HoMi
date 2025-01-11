@@ -112,6 +112,22 @@ get_percent_host <- function(sample.names){
 }
 
 
+plot_data <- function(df){
+  p <- df %>% 
+    pivot_longer(!`Percent host`,
+                 names_to=c("Taxon"),
+                 values_to=c("Abundance")) %>%
+    mutate(Abundance=as.numeric(Abundance)) %>%
+    ggplot(mapping=aes(x=`Percent host`, y=Abundance)) +
+    geom_boxplot(outliers=F) +
+    geom_jitter() +
+    facet_wrap(vars(Taxon), ncol=1) +
+    theme_bw()
+  
+  return(p)
+}
+
+
 main <- function(){
   opts <- get_args()
   data <- read_taxonomy_data(opts$input_file, type=opts$taxonomy_method)  
@@ -146,40 +162,21 @@ main <- function(){
     genus.lvl$`Percent host` <- get_percent_host(rownames(genus.lvl))
     species.lvl$`Percent host` <- get_percent_host(rownames(species.lvl))
     
-    # plot data
-    genus.lvl %>% 
-      pivot_longer(!`Percent host`,
-                   names_to=c("Genus"),
-                   values_to=c("Abundance")) %>%
-      mutate(Abundance=as.numeric(Abundance)) %>%
-      ggplot(mapping=aes(x=`Percent host`, y=Abundance)) +
-      geom_boxplot(outliers=F) +
-      geom_jitter() +
-      facet_wrap(vars(Genus), ncol=1) +
-      theme_bw()
+    # plot and save genus level
+    genus.plot <- plot_data(genus.lvl)
     
     save.path <- file.path(opts$output_dir, 
                            paste0(opts$taxonomy_method, "_",
                                   "genus.pdf"))
-    ggsave(save.path)
+    ggsave(save.path, genus.plot)
    
     
-    # plot data
-    species.lvl %>% 
-      pivot_longer(!`Percent host`,
-                   names_to=c("Species"),
-                   values_to=c("Abundance")) %>%
-      mutate(Abundance=as.numeric(Abundance)) %>%
-      ggplot(mapping=aes(x=`Percent host`, y=Abundance)) +
-      geom_boxplot(outliers=F) +
-      geom_jitter() +
-      facet_wrap(vars(Species), ncol=1) +
-      theme_bw()
-    
+    # plot and save species level
+    species.plot <- plot_data(species.lvl)
     save.path <- file.path(opts$output_dir, 
                            paste0(opts$taxonomy_method, "_",
                                   "species.pdf"))
-    ggsave(save.path)
+    ggsave(save.path, species.plot)
     
   }
 }

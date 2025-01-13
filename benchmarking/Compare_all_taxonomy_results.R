@@ -190,10 +190,10 @@ plot_data <- function(df){
                  names_to=c("Taxon"),
                  values_to=c("Abundance")) %>%
     mutate(Abundance=as.numeric(Abundance)) %>%
-    ggplot(mapping=aes(x=`Percent host`, y=Abundance, fill=project)) +
+    ggplot(mapping=aes(x=`Percent host`, y=Abundance, fill=`taxonomy method`)) +
     geom_boxplot(outliers=F) +
     geom_jitter() +
-    facet_wrap(Taxon ~ `taxonomy method`, ncol=2) +
+    facet_wrap(Taxon ~ project, ncol=2) +
     theme_bw()
   
   return(p)
@@ -278,7 +278,8 @@ main <- function(){
   ggsave(plot=p, 
          filename=file.path(opts$output_dir, 
                         paste0("combined_taxa_boxplot_",
-                               tax.level, ".pdf")))
+                               tax.level, ".pdf")),
+         height=12, width=12)
 }
 
 main()

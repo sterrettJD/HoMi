@@ -190,9 +190,10 @@ plot_data <- function(df){
                  names_to=c("Taxon"),
                  values_to=c("Abundance")) %>%
     mutate(Abundance=as.numeric(Abundance)) %>%
-    ggplot(mapping=aes(x=`Percent host`, y=Abundance, fill=`taxonomy method`)) +
+    ggplot(mapping=aes(x=`Percent host`, y=Abundance, 
+                       color=`taxonomy method`, fill=`taxonomy method`)) +
     geom_boxplot(outliers=F) +
-    geom_jitter() +
+    geom_point(position=position_jitterdodge()) +
     facet_wrap(Taxon ~ project, ncol=2) +
     theme_bw()
   

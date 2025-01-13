@@ -21,11 +21,6 @@ get_args <- function(){
     make_option(c("-t", "--taxonomy_method"),
                 help="Is this a kraken or metaphlan file?
                       Options include `kraken` and `metaphlan`"),
-    make_option(c("--sample_names_are_percent"),
-                help="Sample names are already percent host
-                      and don't need to be parsed into percent host.
-                      Pass this for Pereira",
-                default=FALSE),
     make_option(c("-o", "--output_dir"),
                 help="The output directory for plots and results",
                 default=NULL)
@@ -169,18 +164,7 @@ get_important_abundances <- function(feature.table, tax.table, tax.level, groups
 
 
 get_percent_host <- function(sample.names){
-  # Try to convert directly to percent
-  # This works for the pereira dataset
-  direct.to.percents <- as.numeric(sample.names)
-  # Check if all sample names can be directly converted
-  # The synthetic samples will not be able to do this 
-  # and should return NA
-  # if it works, return. Otherwise, parse sample names
-  if(sum(is.na(direct.to.percents))==0){
-    return(direct.to.percents)
-  }
-  
-  # parse the names according to the schema for synthetic samples
+
   percents <- sapply(sample.names,
          FUN=function(x){
            unlist(strsplit(x, split="_"))[1]}

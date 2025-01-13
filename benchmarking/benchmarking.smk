@@ -83,7 +83,9 @@ rule all:
                method=["kraken", "metaphlan"]),
         expand("taxonomy_compared/{proj}/{method}_species.pdf",
                proj=["synthetic_transcriptomes", "synthetic_transcriptomes_p40", "synthetic_communities"],
-               method=["kraken", "metaphlan"])
+               method=["kraken", "metaphlan"]),
+        "taxonomy_compared/combined_taxa_boxplot_genus.pdf",
+        "taxonomy_compared/combined_taxa_boxplot_species.pdf"
 
 
 rule pull_reference_genomes:
@@ -750,6 +752,38 @@ rule plot_taxonomy_boxplots:
             Rscript {params.script} -i benchmarking_{wildcards.proj}.f0.0.r0.0.nonhost.kraken/Combined-taxonomy.tsv -t kraken -o {params.outdir}
         fi
         """
+
+rule plot_multi_taxonomy_boxplots:
+    input:
+        expand("HoMi_is_done_{proj}",
+                proj=["synthetic_transcriptomes", "synthetic"])
+    output:
+        genus_plot="taxonomy_compared/combined_taxa_boxplot_genus.pdf",
+        species_plot="taxonomy_compared/combined_taxa_boxplot_species.pdf"
+    conda: "conda_envs/r_env.yaml"
+    threads: 1
+    resources:
+        partition="short",
+        mem_mb=int(4*1000), # MB
+        runtime=int(1*60) # min
+    params:
+        script="Compare_all_taxonomy_results.R",
+        outdir="taxonomy_compared/",
+        # Not the best way to do this, but easier than alternatives
+        input_files=",".join(["benchmarking_synthetic_transcriptomes.f0.0.r0.0.nonhost.humann/all_bugs_list.tsv",
+                             "benchmarking_synthetic.f0.0.r0.0.nonhost.humann/all_bugs_list.tsv",
+                             "benchmarking_synthetic_transcriptomes.f0.0.r0.0.nonhost.kraken/Combined-taxonomy.tsv",
+                             "benchmarking_synthetic.f0.0.r0.0.nonhost.kraken/Combined-taxonomy.tsv"
+                             ])
+    shell:
+        """
+        mkdir -p {params.outdir}
+        
+        Rscript {params.script} -i {params.input_files} -l genus -o {params.outdir}
+        Rscript {params.script} -i {params.input_files} -l species -o {params.outdir}
+        
+        """
+
 
 
 

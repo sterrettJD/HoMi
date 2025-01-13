@@ -79,10 +79,10 @@ rule all:
 
         # Boxplot comparisons of taxonomy to what it should be
         expand("taxonomy_compared/{proj}/{method}_genus.pdf",
-               proj=["synthetic_transcriptomes", "synthetic_transcriptomes_p40", "Pereira"],
+               proj=["synthetic_transcriptomes", "synthetic_transcriptomes_p40", "synthetic_communities"],
                method=["kraken", "metaphlan"]),
         expand("taxonomy_compared/{proj}/{method}_species.pdf",
-               proj=["synthetic_transcriptomes", "synthetic_transcriptomes_p40", "Pereira"],
+               proj=["synthetic_transcriptomes", "synthetic_transcriptomes_p40", "synthetic_communities"],
                method=["kraken", "metaphlan"])
 
 

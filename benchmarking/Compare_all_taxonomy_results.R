@@ -36,6 +36,9 @@ infer_kraken_or_metaphlan <- function(filepath){
   else if (grepl("humann", filepath)){
     return("metaphlan")
   }
+  else{
+    stop(paste("Could not infer taxonomy method for", filepath))
+  }
 }
 
 read_taxonomy_data <- function(file, type){
@@ -183,14 +186,14 @@ get_percent_host <- function(sample.names){
 
 plot_data <- function(df){
   p <- df %>% 
-    pivot_longer(!`Percent host`,
+    pivot_longer(!c(`Percent host`, `taxonomy method`, project),
                  names_to=c("Taxon"),
                  values_to=c("Abundance")) %>%
     mutate(Abundance=as.numeric(Abundance)) %>%
-    ggplot(mapping=aes(x=`Percent host`, y=Abundance)) +
+    ggplot(mapping=aes(x=`Percent host`, y=Abundance, fill=project)) +
     geom_boxplot(outliers=F) +
     geom_jitter() +
-    facet_wrap(vars(Taxon), ncol=1) +
+    facet_wrap(Taxon ~ `taxonomy method`, ncol=2) +
     theme_bw()
   
   return(p)
@@ -229,19 +232,53 @@ read_file_and_get_level_df <- function(file, level, level.values){
   
   # get host percent
   taxon.lvl$`Percent host` <- get_percent_host(rownames(taxon.lvl))
+  
+  return(taxon.lvl)
 }
 
 
 main <- function(){
   opts <- get_args()
-  split.files <- str_split(opts$input_files, pattern=",")
+  tax.level <- opts$taxon_level
+  split.files <- unlist(str_split(opts$input_files, pattern=","))
   
-  genera <- c("Clostridium", "Escherichia", "Faecalibacterium")
-  species <- c("Clostridium beijerinckii", "Escherichia coli", "Faecalibacterium prausnitzii")
-  # TODO: APPLY OVER SPLIT FILES
+  if(tax.level=="genus"){
+    level.values <- c("Clostridium", "Escherichia", "Faecalibacterium")
+  } else if (tax.level=="species"){
+    level.values <- c("Clostridium beijerinckii", "Escherichia coli", "Faecalibacterium prausnitzii")
+  } else {
+    stop("Please pass either `genus` or `species` as the value for --tax_level")
+  }
   
+  print("Using files:")
+  for(file in split.files){
+    print(file)
+  }
   
+  dfs <- lapply(split.files,
+         FUN=function(file){
+           df <- read_file_and_get_level_df(file, tax.level, level.values)
+           
+           # Make a taxonomy method column
+           taxonomy.method <- infer_kraken_or_metaphlan(file)
+           df$`taxonomy method` <- taxonomy.method           
+           
+           # Make each row name specific to the project and taxonomy method 
+           # from which it came
+           # So we can merge these
+           project <- str_split_i(file, "\\.", i=1)
+           df$project <- project
+           rownames(df) <- paste0(rownames(df), project, taxonomy.method)
+           return(df)
+         })
   
+  comb.dat <- data.table::rbindlist(dfs)
+  
+  p <- plot_data(comb.dat)
+  ggsave(plot=p, 
+         filename=file.path(opts$output_dir, 
+                        paste0("combined_taxa_boxplot_",
+                               tax.level, ".pdf")))
 }
 
 main()

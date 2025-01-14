@@ -193,6 +193,7 @@ plot_data <- function(df){
     ggplot(mapping=aes(x=`Percent host`, y=Abundance, fill=`Taxonomy method`)) +
     geom_boxplot(outliers=F) +
     geom_point(position=position_jitterdodge()) +
+    geom_hline(yintercept=1/3) +
     facet_wrap(Taxon ~ project, ncol=2) +
     theme_bw()
   

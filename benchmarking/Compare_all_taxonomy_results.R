@@ -186,11 +186,11 @@ get_percent_host <- function(sample.names){
 
 plot_data <- function(df){
   p <- df %>% 
-    pivot_longer(!c(`Percent host`, `taxonomy method`, project),
+    pivot_longer(!c(`Percent host`, `Taxonomy method`, project),
                  names_to=c("Taxon"),
                  values_to=c("Abundance")) %>%
     mutate(Abundance=as.numeric(Abundance)) %>%
-    ggplot(mapping=aes(x=`Percent host`, y=Abundance, fill=`taxonomy method`)) +
+    ggplot(mapping=aes(x=`Percent host`, y=Abundance, fill=`Taxonomy method`)) +
     geom_boxplot(outliers=F) +
     geom_point(position=position_jitterdodge()) +
     facet_wrap(Taxon ~ project, ncol=2) +
@@ -261,12 +261,18 @@ main <- function(){
            
            # Make a taxonomy method column
            taxonomy.method <- infer_kraken_or_metaphlan(file)
-           df$`taxonomy method` <- taxonomy.method           
+           df$`Taxonomy method` <- str_to_title(taxonomy.method)           
            
            # Make each row name specific to the project and taxonomy method 
            # from which it came
            # So we can merge these
            project <- str_split_i(file, "\\.", i=1)
+           # hard coding better names
+           if(project=="benchmarking_synthetic"){
+             project <- "Synthetic communities"
+           } else if(project=="benchmarking_synthetic_transcriptomes"){
+             project <- "Synthetic transcriptomes"
+           }
            df$project <- project
            rownames(df) <- paste0(rownames(df), project, taxonomy.method)
            return(df)

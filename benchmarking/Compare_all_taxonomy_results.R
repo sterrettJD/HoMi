@@ -238,6 +238,33 @@ read_file_and_get_level_df <- function(file, level, level.values){
 }
 
 
+compare_abundances_to_theoretical <- function(df){
+  
+  df %>% 
+    pivot_longer(!c(`Percent host`, `Taxonomy method`, project),
+                 names_to=c("Taxon"),
+                 values_to=c("Abundance")) %>%
+    mutate(Abundance=as.numeric(Abundance),
+           Abundance_diff=Abundance-(1/3)) %>%
+    group_by(`Taxonomy method`, project, Taxon) %>% 
+    summarise(mean=mean(Abundance_diff),
+              sd=sd(Abundance_diff),
+              min=min(Abundance_diff),
+              max=max(Abundance_diff),
+              lower = mean(Abundance_diff) - qt(0.95/2, (n()-1))*sd(Abundance_diff)/sqrt(n()),
+              upper = mean(Abundance_diff) + qt(0.95/2, (n()-1))*sd(Abundance_diff)/sqrt(n()))
+}
+
+
+get_abundance_not_in_level_values <- function(df, level.values){
+  res <- df %>%
+    dplyr::select(all_of(level.values)) %>%
+    mutate_all(as.numeric) %>%
+    rowSums()
+  return(1-res)
+}
+
+
 main <- function(){
   opts <- get_args()
   tax.level <- opts$taxon_level
@@ -287,6 +314,25 @@ main <- function(){
                         paste0("combined_taxa_boxplot_",
                                tax.level, ".pdf")),
          height=12, width=12)
+
+  compare.df <- compare_abundances_to_theoretical(comb.dat)  
+  print(compare.df)
+  
+  comb.dat$`Unassigned to vals` <- get_abundance_not_in_level_values(comb.dat, 
+                                                                     level.values)
+  print(head(comb.dat[comb.dat$`Taxonomy method` == "Metaphlan"]))
+  
+  summary(comb.dat$`Unassigned to vals`)
+  p <- comb.dat %>%
+    ggplot(mapping=aes(x=`Percent host`, y=`Unassigned to vals`, 
+                       fill=`Taxonomy method`)) +
+    geom_boxplot(outliers=F) +
+    geom_point(position=position_jitterdodge()) +
+    theme_bw()
+  ggsave(plot=p, 
+         filename=file.path(opts$output_dir, 
+                            paste0("unassigned_boxplot_",
+                                   tax.level, ".pdf")))
 }
 
 main()

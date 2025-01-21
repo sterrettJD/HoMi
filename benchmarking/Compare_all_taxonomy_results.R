@@ -265,6 +265,18 @@ get_abundance_not_in_level_values <- function(df, level.values){
 }
 
 
+plot_abundance_not_in_level_values <- function(df){
+  p <- df %>%
+    ggplot(mapping=aes(x=`Percent host`, y=`Unassigned to vals`, 
+                       fill=`Taxonomy method`)) +
+    geom_boxplot(outliers=F) +
+    geom_point(position=position_jitterdodge()) + 
+    facet_wrap( ~ project, ncol=2) +
+    theme_bw()
+    
+  return(p)
+}
+
 main <- function(){
   opts <- get_args()
   tax.level <- opts$taxon_level
@@ -320,19 +332,16 @@ main <- function(){
   
   comb.dat$`Unassigned to vals` <- get_abundance_not_in_level_values(comb.dat, 
                                                                      level.values)
-  print(head(comb.dat[comb.dat$`Taxonomy method` == "Metaphlan"]))
-  
-  summary(comb.dat$`Unassigned to vals`)
-  p <- comb.dat %>%
-    ggplot(mapping=aes(x=`Percent host`, y=`Unassigned to vals`, 
-                       fill=`Taxonomy method`)) +
-    geom_boxplot(outliers=F) +
-    geom_point(position=position_jitterdodge()) +
-    theme_bw()
+  p <- plot_abundance_not_in_level_values(comb.dat)
   ggsave(plot=p, 
          filename=file.path(opts$output_dir, 
                             paste0("unassigned_boxplot_",
                                    tax.level, ".pdf")))
+  
+  print(summary(comb.dat$`Unassigned to vals`))
+  comb.dat %>% write.csv(file=file.path(opts$output_dir, 
+                                        paste0("summarized_benchmark_",
+                                               tax.level, ".pdf")))
 }
 
 main()

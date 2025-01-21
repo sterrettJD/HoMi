@@ -184,8 +184,17 @@ get_percent_host <- function(sample.names){
 }
 
 
-plot_data <- function(df){
+plot_data <- function(df, level.values){
+  
+  hline.df <- data.frame(Taxon=c(level.values, 
+                                 "Other"),
+                         line=c(rep(1/3, length(level.values)), 
+                                0)
+                         )
+  
   p <- df %>% 
+    mutate_at(vars(-c(`Percent host`, `Taxonomy method`, project)),
+              as.numeric) %>%
     pivot_longer(!c(`Percent host`, `Taxonomy method`, project),
                  names_to=c("Taxon"),
                  values_to=c("Abundance")) %>%
@@ -193,8 +202,11 @@ plot_data <- function(df){
     ggplot(mapping=aes(x=`Percent host`, y=Abundance, fill=`Taxonomy method`)) +
     geom_boxplot(outliers=F) +
     geom_point(position=position_jitterdodge()) +
-    geom_hline(yintercept=1/3) +
-    facet_wrap(Taxon ~ project, ncol=2) +
+    facet_wrap(Taxon ~ project, 
+               ncol=length(unique(df$project)), 
+               scales="free") +
+    geom_hline(data=hline.df,
+               aes(yintercept=line)) +
     theme_bw()
   
   return(p)
@@ -239,7 +251,6 @@ read_file_and_get_level_df <- function(file, level, level.values){
 
 
 compare_abundances_to_theoretical <- function(df){
-  
   df %>% 
     pivot_longer(!c(`Percent host`, `Taxonomy method`, project),
                  names_to=c("Taxon"),
@@ -264,14 +275,30 @@ get_abundance_not_in_level_values <- function(df, level.values){
   return(1-res)
 }
 
+summarize_abundance_not_in_level_values <- function(df){
+  res <- df %>%
+    # The values should be 0 here, which means that abund = the diff
+    mutate(Abundance=as.numeric(`Other`),
+           Abundance_diff=Abundance-(0)) %>%
+    group_by(`Taxonomy method`, project) %>% 
+    summarise(mean=mean(Abundance_diff),
+              sd=sd(Abundance_diff),
+              min=min(Abundance_diff),
+              max=max(Abundance_diff),
+              lower = mean(Abundance_diff) - qt(0.95/2, (n()-1))*sd(Abundance_diff)/sqrt(n()),
+              upper = mean(Abundance_diff) + qt(0.95/2, (n()-1))*sd(Abundance_diff)/sqrt(n()))
+    res$Taxon <- "Other"
+    return(res)
+}
+
 
 plot_abundance_not_in_level_values <- function(df){
   p <- df %>%
-    ggplot(mapping=aes(x=`Percent host`, y=`Unassigned to vals`, 
+    ggplot(mapping=aes(x=`Percent host`, y=`Other`, 
                        fill=`Taxonomy method`)) +
     geom_boxplot(outliers=F) +
     geom_point(position=position_jitterdodge()) + 
-    facet_wrap( ~ project, ncol=2) +
+    facet_wrap( ~ project, ncol=length(unique(df$project))) +
     theme_bw()
     
   return(p)
@@ -319,29 +346,30 @@ main <- function(){
          })
   
   comb.dat <- data.table::rbindlist(dfs)
-  
-  p <- plot_data(comb.dat)
-  ggsave(plot=p, 
-         filename=file.path(opts$output_dir, 
-                        paste0("combined_taxa_boxplot_",
-                               tax.level, ".pdf")),
-         height=12, width=12)
-
   compare.df <- compare_abundances_to_theoretical(comb.dat)  
-  print(compare.df)
   
-  comb.dat$`Unassigned to vals` <- get_abundance_not_in_level_values(comb.dat, 
-                                                                     level.values)
+  # Get the "Other" abundances here
+  comb.dat$`Other` <- get_abundance_not_in_level_values(comb.dat, 
+                                                          level.values)
   p <- plot_abundance_not_in_level_values(comb.dat)
   ggsave(plot=p, 
          filename=file.path(opts$output_dir, 
                             paste0("unassigned_boxplot_",
                                    tax.level, ".pdf")))
+  # Add the "other" values
+  compare.df <- rbind(summarize_abundance_not_in_level_values(comb.dat), 
+                      compare.df)
+  compare.df %>% 
+    write.csv(file=file.path(opts$output_dir, 
+                              paste0("summarized_benchmark_",
+                              tax.level, ".csv")))
   
-  print(summary(comb.dat$`Unassigned to vals`))
-  comb.dat %>% write.csv(file=file.path(opts$output_dir, 
-                                        paste0("summarized_benchmark_",
-                                               tax.level, ".pdf")))
+  p <- plot_data(comb.dat, level.values)
+  ggsave(plot=p, 
+         filename=file.path(opts$output_dir, 
+                            paste0("combined_taxa_boxplot_",
+                                   tax.level, ".pdf")),
+         height=12, width=12)
 }
 
 main()

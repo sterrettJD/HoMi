@@ -28,6 +28,7 @@ semi_metadata = pd.read_csv(semi_metadata_file)
 semi_samples = semi_metadata.drop(columns=["genome", "SRR"]).columns
 semi_organisms = semi_metadata["genome"].to_list()
 semi_microbial_organisms = [x for x in semi_organisms if (x != "human")]
+semi_srr_ids = semi_metadata["SRR"]
 
 
 # mock community data
@@ -94,7 +95,11 @@ rule all:
                proj=["synthetic_transcriptomes", "synthetic_transcriptomes_p40", "synthetic"],
                method=["kraken", "metaphlan"]),
         "taxonomy_compared/combined_taxa_boxplot_genus.pdf",
-        "taxonomy_compared/combined_taxa_boxplot_species.pdf"
+        "taxonomy_compared/combined_taxa_boxplot_species.pdf",
+
+        # Semisynthetic data files
+        expand(os.path.join("semi", "sampled", "{sample}_{read}.fastq.gz"),
+               sample=semi_samples, read=reads)
 
 
 rule pull_reference_genomes:
@@ -904,7 +909,7 @@ rule fastq_dump_semi:
     resources:
         partition="short",
         mem_mb=int(8*1000), # MB
-        runtime=int(4*60) # min
+        runtime=int(1*60) # min
     shell:
         """
         mkdir -p semi
@@ -914,11 +919,12 @@ rule fastq_dump_semi:
         mv {wildcards.srr_id}_pass_2.fastq.gz > {output.rev}
         """
 
-rule subsample_semi_fastq_to_correct_depth:
+rule subsample_and_combine_semi_fastqs:
     input:
-        data=os.path.join("semi", "data", "{srr_id}_{read}.fastq.gz")
+        data=expand(os.path.join("semi", "data", "{srr_id}_{read}.fastq.gz"),
+            srr_id=semi_srr_ids, read=reads)
     output:
-        data=os.path.join("semi", "data", "{sample}_{srr_id}_{read}.fastq.gz")
+        data=os.path.join("semi", "sampled", "{sample}_{read}.fastq.gz")
     threads: 1
     resources:
         partition="short",
@@ -931,16 +937,16 @@ rule subsample_semi_fastq_to_correct_depth:
         import pandas as pd
 
         metadata = pd.read_csv(params.metadata, index_col="genome")
-        depth = metadata.loc[metadata["SRR"]==wildcards.srr_id, wildcards.sample]
         
         # get the random seed to use. Doing it based on the hash of sample ID so that
         # the fwd and rev reads per sample get the same seed
         sample_hash = hash(wildcards.sample)
-        
-        if depth > 0:
-            cmd = f"seqtk sample -s {sample_hash} {input.data} {depth} | gzip > {output.data}"
-        else:
-            cmd = f"cp {input.data} {output.data}"
+
+        # For each SRR, subsample it and add it to the gzipped output file
+        for srr_id in semi_metadata["SRR"].to_list():    
+            depth = metadata.loc[metadata["SRR"]==srr_id, wildcards.sample]
             
-        ran = subprocess.run(cmd, shell=True)
-    
+            if depth > 0:
+                cmd = f"seqtk sample -s {sample_hash} {input.data} {depth} | gzip >> {output.data}"
+                
+            ran = subprocess.run(cmd, shell=True)

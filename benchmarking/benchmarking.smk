@@ -913,14 +913,17 @@ rule fastq_dump_semi:
         partition="short",
         mem_mb=int(8*1000), # MB
         runtime=int(1*60) # min
+    params:
+        semi_work_dir=semi_work_dir
     shell:
         """
         mkdir -p semi/data
         mkdir -p semi/samples
         cd semi
         fastq-dump --gzip --readids --read-filter pass --dumpbase --split-3 --clip {wildcards.srr_id}
-        mv {wildcards.srr_id}_pass_1.fastq.gz > {output.fwd}
-        mv {wildcards.srr_id}_pass_2.fastq.gz > {output.rev}
+        cd ..
+        mv {params.semi_work_dir}/{wildcards.srr_id}_pass_1.fastq.gz > {output.fwd}
+        mv {params.semi_work_dir}/{wildcards.srr_id}_pass_2.fastq.gz > {output.rev}
         """
 
 rule subsample_and_combine_semi_fastqs:

@@ -8,17 +8,26 @@ synthetic_work_dir = "synthetic"
 synthetic_communities_dir = "synthetic_communities"
 synthetic_transcriptomes_dir = "synthetic_transcriptomes"
 synthetic_transcriptomes_dir_p40 = "synthetic_transcriptomes_p40"
+semi_work_dir = "semi"
 
 # to run this on a Slurm-managed cluster
 homi_args = "--profile slurm"
 
-# Metadata
+# Syntheti communities metadata
 metadata_file = os.path.join(synthetic_work_dir, "sample_data.csv")
 metadata = pd.read_csv(metadata_file)
 samples = metadata.drop(columns=["genome", "GCF_id"]).columns
 reads = ["R1", "R2"]
 organisms = metadata["genome"].to_list()
 microbial_organisms = [x for x in organisms if (x != "human")]
+
+
+# Semisynthetic communities metadata
+semi_metadata_file = os.path.join(semi_work_dir, "sample_data.csv")
+semi_metadata = pd.read_csv(semi_metadata_file)
+semi_samples = semi_metadata.drop(columns=["genome", "SRR"]).columns
+semi_organisms = semi_metadata["genome"].to_list()
+semi_microbial_organisms = [x for x in semi_organisms if (x != "human")]
 
 
 # mock community data
@@ -882,3 +891,56 @@ rule plot_expected_from_paper_vs_actual_mock_data:
         -j {params.jitter} \
         -o {output.plot} > {output.model}
         """
+
+
+#############################################################
+##### Semisynthetic communities #####
+rule fastq_dump_semi:
+    output:
+        fwd=os.path.join("semi", "data", "{srr_id}_R1.fastq.gz"),
+        rev=os.path.join("semi", "data", "{srr_id}_R2.fastq.gz")
+    conda: "conda_envs/sra_tools.yaml"
+    threads: 1
+    resources:
+        partition="short",
+        mem_mb=int(8*1000), # MB
+        runtime=int(4*60) # min
+    shell:
+        """
+        mkdir -p semi
+        cd semi
+        fastq-dump --gzip --readids --read-filter pass --dumpbase --split-3 --clip {wildcards.srr_id}
+        mv {wildcards.srr_id}_pass_1.fastq.gz > {output.fwd}
+        mv {wildcards.srr_id}_pass_2.fastq.gz > {output.rev}
+        """
+
+rule subsample_semi_fastq_to_correct_depth:
+    input:
+        data=os.path.join("semi", "data", "{srr_id}_{read}.fastq.gz")
+    output:
+        data=os.path.join("semi", "data", "{sample}_{srr_id}_{read}.fastq.gz")
+    threads: 1
+    resources:
+        partition="short",
+        mem_mb=int(2*1000), # MB
+        runtime=int(1*60) # min
+    params:
+        metadata=semi_metadata_file
+    run:
+        import subprocess
+        import pandas as pd
+
+        metadata = pd.read_csv(params.metadata, index_col="genome")
+        depth = metadata.loc[metadata["SRR"]==wildcards.srr_id, wildcards.sample]
+        
+        # get the random seed to use. Doing it based on the hash of sample ID so that
+        # the fwd and rev reads per sample get the same seed
+        sample_hash = hash(wildcards.sample)
+        
+        if depth > 0:
+            cmd = f"seqtk sample -s {sample_hash} {input.data} {depth} | gzip > {output.data}"
+        else:
+            cmd = f"cp {input.data} {output.data}"
+            
+        ran = subprocess.run(cmd, shell=True)
+    

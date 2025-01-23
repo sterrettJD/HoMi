@@ -922,8 +922,8 @@ rule fastq_dump_semi:
         cd semi
         fastq-dump --gzip --readids --read-filter pass --dumpbase --split-3 --clip {wildcards.srr_id}
         cd ..
-        mv {params.semi_work_dir}/{wildcards.srr_id}_pass_1.fastq.gz > {output.fwd}
-        mv {params.semi_work_dir}/{wildcards.srr_id}_pass_2.fastq.gz > {output.rev}
+        mv {params.semi_work_dir}/{wildcards.srr_id}_pass_1.fastq.gz {output.fwd}
+        mv {params.semi_work_dir}/{wildcards.srr_id}_pass_2.fastq.gz {output.rev}
         """
 
 rule subsample_and_combine_semi_fastqs:

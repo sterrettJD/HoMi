@@ -915,7 +915,8 @@ rule fastq_dump_semi:
         runtime=int(1*60) # min
     shell:
         """
-        mkdir -p semi
+        mkdir -p semi/data
+        mkdir -p semi/samples
         cd semi
         fastq-dump --gzip --readids --read-filter pass --dumpbase --split-3 --clip {wildcards.srr_id}
         mv {wildcards.srr_id}_pass_1.fastq.gz > {output.fwd}

@@ -98,8 +98,11 @@ rule all:
         "taxonomy_compared/combined_taxa_boxplot_species.pdf",
 
         # Semisynthetic data files
-        expand(os.path.join("semi", "sampled", "{sample}_{read}.fastq.gz"),
-               sample=semi_samples, read=reads)
+        expand(os.path.join("semi", "samples", "{sample}_{read}.fastq.gz"),
+               sample=semi_samples, read=reads),
+        "HoMi_is_done_semi",
+        "semi_benchmark.pdf",
+        "semi_benchmark_lm_results.txt"
 
 
 rule pull_reference_genomes:
@@ -902,8 +905,8 @@ rule plot_expected_from_paper_vs_actual_mock_data:
 ##### Semisynthetic communities #####
 rule fastq_dump_semi:
     output:
-        fwd=os.path.join("semi", "data", "{srr_id}_R1.fastq.gz"),
-        rev=os.path.join("semi", "data", "{srr_id}_R2.fastq.gz")
+        fwd=os.path.join(semi_work_dir, "data", "{srr_id}_R1.fastq.gz"),
+        rev=os.path.join(semi_work_dir, "data", "{srr_id}_R2.fastq.gz")
     conda: "conda_envs/sra_tools.yaml"
     threads: 1
     resources:
@@ -921,10 +924,10 @@ rule fastq_dump_semi:
 
 rule subsample_and_combine_semi_fastqs:
     input:
-        data=expand(os.path.join("semi", "data", "{srr_id}_{read}.fastq.gz"),
+        data=expand(os.path.join(semi_work_dir, "data", "{srr_id}_{read}.fastq.gz"),
             srr_id=semi_srr_ids, read=reads)
     output:
-        data=os.path.join("semi", "sampled", "{sample}_{read}.fastq.gz")
+        data=os.path.join(semi_work_dir, "samples", "{sample}_{read}.fastq.gz")
     threads: 1
     resources:
         partition="short",
@@ -950,3 +953,75 @@ rule subsample_and_combine_semi_fastqs:
                 cmd = f"seqtk sample -s {sample_hash} {input.data} {depth} | gzip >> {output.data}"
                 
             ran = subprocess.run(cmd, shell=True)
+
+
+rule create_HoMi_metadata_semi:
+    input:
+        sample_data=semi_metadata_file
+    output:
+        homi_metadata=os.path.join(semi_work_dir, "semi_homi_metadata.csv")
+    threads: 1
+    resources:
+        partition="short",
+        mem_mb=int(8*1000), # MB
+        runtime=int(10) # min
+    params:
+        work_dir=synthetic_work_dir,
+        communities_dir="samples"
+    run:
+        import pandas as pd 
+        df = pd.read_csv(input.sample_data)
+        genome_names = df["genome"].to_list()
+        df = df.drop(["genome", "SRR"], axis=1).transpose()
+        df.columns = genome_names
+
+        df["forward_reads"] = [os.path.join(params.work_dir, params.communities_dir, f"{sample}_R1.fastq.gz") 
+                                for sample in df.index]
+        df["reverse_reads"] = [os.path.join(params.work_dir, params.communities_dir, f"{sample}_R2.fastq.gz") 
+                                for sample in df.index]
+
+        df.to_csv(output.homi_metadata, index_label="Sample")
+
+
+
+rule run_HoMi_semi:
+    input:
+        homi_metadata=os.path.join(semi_work_dir, "semi_homi_metadata.csv"),
+        homi_config=os.path.join(semi_work_dir, "semi_HoMi_config.yaml"),
+        fwd=expand(os.path.join(semi_work_dir, "samples", "{sample}_{read}.fastq.gz"),
+                sample=semi_samples, read=reads)
+    output:
+        "HoMi_is_done_semi"
+    threads: 1
+    resources:
+        partition="short",
+        mem_mb=int(8*1000), # MB
+        runtime=int(24*60) # min
+    params:
+        homi_args=homi_args
+    shell:
+        """
+        HoMi.py {input.homi_config} {params.homi_args} --unlock
+        touch {output}
+        """
+
+
+rule plot_expected_vs_actual_semi:
+    input:
+        "HoMi_is_done_semi"
+    output:
+        plot="semi_benchmark.pdf",
+        model="semi_benchmark_lm_results.txt"
+    conda: "conda_envs/r_env.yaml"
+    threads: 1
+    resources:
+        partition="short",
+        mem_mb=int(4*1000), # MB
+        runtime=int(1*60) # min
+    params:
+        script="Plot_benchmarked_reads_breakdown.R",
+        label="True percent host reads"
+    shell:
+        """
+        Rscript {params.script} -i semi_reads_breakdown.csv -o {output.plot}  -n "{params.label}" > {output.model}
+        """

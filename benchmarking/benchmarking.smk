@@ -952,14 +952,22 @@ rule subsample_and_combine_semi_fastqs:
         sample_hash = hash(wildcards.sample)
 
         # For each SRR, subsample it and add it to the gzipped output file
-        for srr_id in semi_metadata["SRR"].to_list():    
-            depth = metadata.loc[metadata["SRR"]==srr_id, wildcards.sample].values
-            
+        for srr_id in metadata["SRR"].to_list():    
+            depth = metadata.loc[metadata["SRR"]==srr_id, wildcards.sample].values[0]
+            print(f"sampling {srr_id} to {depth} reads")
+
             if depth > 0:
                 unsampled_path = os.path.join(params.data_dir, f"{srr_id}_{wildcards.read}.fastq.gz")
+                if not os.path.exists(unsampled_path):
+                    raise FileNotFoundError(f"File not found: {unsampled_path}")
+
                 cmd = f"seqtk sample -s {sample_hash} {unsampled_path} {depth} | gzip >> {output.data}"
+                print(f"running command: {cmd}")
+                ran = subprocess.run(cmd, shell=True)
                 
-            ran = subprocess.run(cmd, shell=True)
+                if ran.returncode != 0:
+                    raise RuntimeError(f"Command failed: {cmd}\nStderr: {ran.stderr.decode()}")
+
 
 
 rule create_HoMi_metadata_semi:

@@ -938,10 +938,12 @@ rule subsample_and_combine_semi_fastqs:
         mem_mb=int(2*1000), # MB
         runtime=int(1*60) # min
     params:
-        metadata=semi_metadata_file
+        metadata=semi_metadata_file,
+        data_dir=os.path.join(semi_work_dir, "data")
     run:
         import subprocess
         import pandas as pd
+        import os
 
         metadata = pd.read_csv(params.metadata, index_col="genome")
         
@@ -951,10 +953,11 @@ rule subsample_and_combine_semi_fastqs:
 
         # For each SRR, subsample it and add it to the gzipped output file
         for srr_id in semi_metadata["SRR"].to_list():    
-            depth = metadata.loc[metadata["SRR"]==srr_id, wildcards.sample]
+            depth = metadata.loc[metadata["SRR"]==srr_id, wildcards.sample].values
             
             if depth > 0:
-                cmd = f"seqtk sample -s {sample_hash} {input.data} {depth} | gzip >> {output.data}"
+                unsampled_path = os.path.join(params.data_dir, f"{srr_id}_{wildcards.read}.fastq.gz")
+                cmd = f"seqtk sample -s {sample_hash} {unsampled_path} {depth} | gzip >> {output.data}"
                 
             ran = subprocess.run(cmd, shell=True)
 

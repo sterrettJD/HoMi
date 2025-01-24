@@ -339,12 +339,14 @@ main <- function(){
              project <- "Synthetic communities"
            } else if(project=="benchmarking_synthetic_transcriptomes"){
              project <- "Synthetic transcriptomes"
+           } else if(project=="semi"){
+            project <- "Semisynthetic transcriptomes"
            }
            df$project <- project
            rownames(df) <- paste0(rownames(df), project, taxonomy.method)
            return(df)
          })
-  
+
   comb.dat <- data.table::rbindlist(dfs)
   compare.df <- compare_abundances_to_theoretical(comb.dat)  
   

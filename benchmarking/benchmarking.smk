@@ -981,7 +981,7 @@ rule create_HoMi_metadata_semi:
         mem_mb=int(8*1000), # MB
         runtime=int(10) # min
     params:
-        work_dir=synthetic_work_dir,
+        work_dir=semi_work_dir,
         communities_dir="samples"
     run:
         import pandas as pd 

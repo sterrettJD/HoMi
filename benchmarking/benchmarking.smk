@@ -885,7 +885,7 @@ rule fastq_dump_semi:
     resources:
         partition="short",
         mem_mb=int(8*1000), # MB
-        runtime=int(1*60) # min
+        runtime=int(4*60) # min
     params:
         semi_work_dir=semi_work_dir
     shell:
@@ -923,7 +923,7 @@ rule combine_semi_srrs:
         
         # For this taxon, get the SRRs
         taxon_output_path = output.data
-        srrs = metadata.loc[wildcards.taxon, "SRR"].values[0].split(".")
+        srrs = metadata.loc[wildcards.taxon, "SRR"].split(".")
 
         # cat those respective files together
         for srr_id in srrs:
@@ -967,7 +967,7 @@ rule subsample_and_combine_semi_fastqs:
 
         # For each taxon, subsample it and add it to the gzipped output file
         for taxon in metadata.index:    
-            depth = metadata.loc[taxon, wildcards.sample].values[0]
+            depth = metadata.loc[taxon, wildcards.sample]
             print(f"sampling {taxon} to {depth} reads")
 
             if depth > 0:

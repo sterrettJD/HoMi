@@ -34,6 +34,7 @@ semi_srr_ids = [srr_id
                     lambda x: x.split(".")
                     ).values
                 for srr_id in taxon_srr_ids_list] 
+semi_homi_args = """--profile slurm --snakemake_extra "--jobs 40" """
 
 
 # mock community data
@@ -1027,7 +1028,7 @@ rule run_HoMi_semi:
         mem_mb=int(8*1000), # MB
         runtime=int(24*60) # min
     params:
-        homi_args=homi_args
+        homi_args=semi_homi_args
     shell:
         """
         HoMi.py {input.homi_config} {params.homi_args} --unlock

@@ -28,7 +28,12 @@ semi_metadata = pd.read_csv(semi_metadata_file)
 semi_samples = semi_metadata.drop(columns=["genome", "SRR"]).columns
 semi_organisms = semi_metadata["genome"].to_list()
 semi_microbial_organisms = [x for x in semi_organisms if (x != "human")]
-semi_srr_ids = semi_metadata["SRR"]
+# SRR IDs are formatted as period separated lists within the SRR column
+semi_srr_ids = [srr_id
+                for taxon_srr_ids_list in semi_metadata["SRR"].apply(
+                    lambda x: x.split(".")
+                    ).values
+                for srr_id in taxon_srr_ids_list] 
 
 
 # mock community data
@@ -873,8 +878,8 @@ rule plot_expected_from_paper_vs_actual_mock_data:
 ##### Semisynthetic communities #####
 rule fastq_dump_semi:
     output:
-        fwd=os.path.join(semi_work_dir, "data", "{srr_id}_R1.fastq.gz"),
-        rev=os.path.join(semi_work_dir, "data", "{srr_id}_R2.fastq.gz")
+        fwd=os.path.join(semi_work_dir, "data", "raw_{srr_id}_R1.fastq.gz"),
+        rev=os.path.join(semi_work_dir, "data", "raw_{srr_id}_R2.fastq.gz")
     conda: "conda_envs/sra_tools.yaml"
     threads: 1
     resources:
@@ -894,10 +899,51 @@ rule fastq_dump_semi:
         mv {params.semi_work_dir}/{wildcards.srr_id}_pass_2.fastq.gz {output.rev}
         """
 
+
+rule combine_semi_srrs:
+    input:
+        data=expand(os.path.join(semi_work_dir, "data", "raw_{srr_id}_{read}.fastq.gz"),
+            srr_id=semi_srr_ids, read=reads)
+    output:
+        data=os.path.join(semi_work_dir, "data", "{taxon}_{read}.fastq.gz")
+    threads: 1
+    resources:
+        partition="short",
+        mem_mb=int(2*1000), # MB
+        runtime=int(1*60) # min
+    params:
+        metadata=semi_metadata_file,
+        data_dir=os.path.join(semi_work_dir, "data")
+    run:
+        import subprocess
+        import pandas as pd
+        import os
+
+        metadata = pd.read_csv(params.metadata, index_col="genome")
+        
+        # For this taxon, get the SRRs
+        taxon_output_path = output.data
+        srrs = metadata.loc[wildcards.taxon, "SRR"].values[0].split(".")
+
+        # cat those respective files together
+        for srr_id in srrs:
+            srr_path = os.path.join(params.data_dir, f"raw_{srr_id}_{wildcards.read}.fastq.gz")
+            if not os.path.exists(srr_path):
+                raise FileNotFoundError(f"File not found: {srr_path}")
+
+            # Adding to output file
+            cmd = f"cat {srr_path} >> {output.data}"
+            print(f"running command: {cmd}")
+            ran = subprocess.run(cmd, shell=True)
+            
+            if ran.returncode != 0:
+                raise RuntimeError(f"Command failed: {cmd}\nStderr: {ran.stderr.decode()}")
+
+
 rule subsample_and_combine_semi_fastqs:
     input:
-        data=expand(os.path.join(semi_work_dir, "data", "{srr_id}_{read}.fastq.gz"),
-            srr_id=semi_srr_ids, read=reads)
+        data=expand(os.path.join(semi_work_dir, "data", "{taxon}_{read}.fastq.gz"),
+            taxon=semi_organisms, read=reads)
     output:
         data=os.path.join(semi_work_dir, "samples", "{sample}_{read}.fastq.gz")
     threads: 1
@@ -919,13 +965,13 @@ rule subsample_and_combine_semi_fastqs:
         # the fwd and rev reads per sample get the same seed
         sample_hash = hash(wildcards.sample)
 
-        # For each SRR, subsample it and add it to the gzipped output file
-        for srr_id in metadata["SRR"].to_list():    
-            depth = metadata.loc[metadata["SRR"]==srr_id, wildcards.sample].values[0]
-            print(f"sampling {srr_id} to {depth} reads")
+        # For each taxon, subsample it and add it to the gzipped output file
+        for taxon in metadata.index:    
+            depth = metadata.loc[taxon, wildcards.sample].values[0]
+            print(f"sampling {taxon} to {depth} reads")
 
             if depth > 0:
-                unsampled_path = os.path.join(params.data_dir, f"{srr_id}_{wildcards.read}.fastq.gz")
+                unsampled_path = os.path.join(params.data_dir, f"{taxon}_{wildcards.read}.fastq.gz")
                 if not os.path.exists(unsampled_path):
                     raise FileNotFoundError(f"File not found: {unsampled_path}")
 

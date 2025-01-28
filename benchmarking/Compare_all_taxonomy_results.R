@@ -242,6 +242,13 @@ read_file_and_get_level_df <- function(file, level, level.values){
     as.data.frame()
   colnames(taxon.lvl) <- taxon.lvl[level,]
   taxon.lvl <- taxon.lvl[rownames(taxon.lvl)!=level,]
+
+  # Make a column if it isn't there for each of the taxa that should be detected
+  for(taxon in level.values){
+    if((taxon %in% colnames(taxon.lvl))==F){
+      taxon.lvl[,taxon] <- 0
+    }
+  }
   
   # get host percent
   taxon.lvl$`Percent host` <- get_percent_host(rownames(taxon.lvl))
@@ -347,6 +354,9 @@ main <- function(){
            return(df)
          })
 
+  for(df in dfs){
+    print(head(df))
+  }
   comb.dat <- data.table::rbindlist(dfs)
   compare.df <- compare_abundances_to_theoretical(comb.dat)  
   

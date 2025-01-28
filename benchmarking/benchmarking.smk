@@ -792,6 +792,8 @@ rule fastq_dump_Pereira:
         partition="short",
         mem_mb=int(8*1000), # MB
         runtime=int(4*60) # min
+    params:
+        work_dir="Pereira"
     shell:
         """
         mkdir -p Pereira
@@ -799,8 +801,8 @@ rule fastq_dump_Pereira:
         fastq-dump --gzip --readids --read-filter pass --dumpbase --split-3 --clip {wildcards.srr_id}
         
         cd ..
-        mv {params.semi_work_dir}/{wildcards.srr_id}_pass_1.fastq.gz {output.fwd}
-        mv {params.semi_work_dir}/{wildcards.srr_id}_pass_2.fastq.gz {output.rev}
+        mv {params.work_dir}/{wildcards.srr_id}_pass_1.fastq.gz {output.fwd}
+        mv {params.work_dir}/{wildcards.srr_id}_pass_2.fastq.gz {output.rev}
         """
 
 rule run_HoMi_mock_data:

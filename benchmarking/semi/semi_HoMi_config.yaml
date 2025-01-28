@@ -82,6 +82,7 @@ host_map_method: HISAT2
 
 get_kraken_db_runtime: 2400
 get_kraken_db_partition: long
+run_kraken_runtime: 480
 
 ################################
 ### Partition ###

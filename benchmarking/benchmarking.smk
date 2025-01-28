@@ -797,8 +797,10 @@ rule fastq_dump_Pereira:
         mkdir -p Pereira
         cd Pereira
         fastq-dump --gzip --readids --read-filter pass --dumpbase --split-3 --clip {wildcards.srr_id}
-        mv {wildcards.srr_id}_pass_1.fastq.gz > {output.fwd}
-        mv {wildcards.srr_id}_pass_2.fastq.gz > {output.rev}
+        
+        cd ..
+        mv {params.semi_work_dir}/{wildcards.srr_id}_pass_1.fastq.gz {output.fwd}
+        mv {params.semi_work_dir}/{wildcards.srr_id}_pass_2.fastq.gz {output.rev}
         """
 
 rule run_HoMi_mock_data:

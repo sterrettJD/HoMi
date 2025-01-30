@@ -10,7 +10,7 @@ rev_reads_path: reverse_reads
 ### TRIMMOMATIC ADAPTER AND QUALITY TRIMMING ###
 # minimum read length after trimming
 # Setting this low here because the f prausnitzii reads are only 50 bp each
-min_readlen: 20
+min_readlen: 30
 # the minimum quality for the start of a read. If it's below this quality, trim that base pair
 readstart_qual_min: 20
 # the minimum quality for the end of a read. If it's below this quality, trim that base pair

@@ -20,6 +20,9 @@ get_args <- function(){
                 help="The taxonomy abundance tables, comma separated, no spaces"),
     make_option(c("-l", "--taxon_level"),
                 help="`genus` or `species`"),
+    make_option(c("-r", "--read_lengths"),
+                help="A csv file with the average read length per genome.
+                There should be two columns, `species`, and `length`."),
     make_option(c("-o", "--output_dir"),
                 help="The output directory for plots and results",
                 default=NULL)
@@ -213,7 +216,7 @@ plot_data <- function(df, level.values){
 }
 
 
-read_file_and_get_level_df <- function(file, level, level.values){
+read_file_and_get_level_df <- function(file, level, level.values, read.lengths, normalize){
   taxonomy.method <- infer_kraken_or_metaphlan(file)
   
   data <- read_taxonomy_data(file, type=taxonomy.method)  
@@ -244,9 +247,22 @@ read_file_and_get_level_df <- function(file, level, level.values){
   taxon.lvl <- taxon.lvl[rownames(taxon.lvl)!=level,]
 
   # Make a column if it isn't there for each of the taxa that should be detected
+  # And make sure each column is numeric
   for(taxon in level.values){
     if((taxon %in% colnames(taxon.lvl))==F){
       taxon.lvl[,taxon] <- 0
+    }
+
+    taxon.lvl[,taxon] <- as.numeric(taxon.lvl[,taxon])
+  }
+
+  # Normalize taxon by average read length for that taxon
+  # Some taxa have shorter reads due to the study they were pulled from
+  # So this will be addressed here
+  if(normalize==T){
+    for(taxon in level.values){
+    norm.factor <- read.lengths[read.lengths[level]==taxon, "normalization_factor"]
+    taxon.lvl[,taxon] <- taxon.lvl[,taxon]*norm.factor
     }
   }
   
@@ -324,6 +340,19 @@ main <- function(){
     stop("Please pass either `genus` or `species` as the value for --tax_level")
   }
   
+
+  print(paste("Reading read length file:", opts$read_lengths))
+  read.lengths <- data.table::fread(opts$read_lengths, data.table=F)
+  if(!setequal(colnames(read.lengths), c("species", "length"))){
+    stop("Column names for read_lengths should be `species` and `length`")
+  }
+  read.lengths <- filter(read.lengths, species!="human")
+  read.lengths$genus <- str_split_i(read.lengths$species, " ", i=1)
+  read.lengths.total <- sum(read.lengths$length)
+  average.read.length <- read.lengths.total/nrow(read.lengths)
+  read.lengths$normalization_factor <- average.read.length/read.lengths$length
+
+
   print("Using files:")
   for(file in split.files){
     print(file)
@@ -331,7 +360,25 @@ main <- function(){
   
   dfs <- lapply(split.files,
          FUN=function(file){
-           df <- read_file_and_get_level_df(file, tax.level, level.values)
+          
+           project <- str_split_i(file, "\\.", i=1)
+           
+           # hard coding better project names
+           if(project=="benchmarking_synthetic"){
+             project <- "Synthetic communities"
+             norm.by.read.length <- FALSE
+           } else if(project=="benchmarking_synthetic_transcriptomes"){
+             project <- "Synthetic transcriptomes"
+             norm.by.read.length <- FALSE
+           } else if(project=="semi"){
+            project <- "Semisynthetic transcriptomes"
+            norm.by.read.length <- TRUE
+           } else {
+            stop(paste("Project name", project, "isn't recognized."))
+           }
+           # get the data
+           df <- read_file_and_get_level_df(file, tax.level, level.values, 
+                                            read.lengths, normalize=norm.by.read.length)
            
            # Make a taxonomy method column
            taxonomy.method <- infer_kraken_or_metaphlan(file)
@@ -340,15 +387,6 @@ main <- function(){
            # Make each row name specific to the project and taxonomy method 
            # from which it came
            # So we can merge these
-           project <- str_split_i(file, "\\.", i=1)
-           # hard coding better names
-           if(project=="benchmarking_synthetic"){
-             project <- "Synthetic communities"
-           } else if(project=="benchmarking_synthetic_transcriptomes"){
-             project <- "Synthetic transcriptomes"
-           } else if(project=="semi"){
-            project <- "Semisynthetic transcriptomes"
-           }
            df$project <- project
            rownames(df) <- paste0(rownames(df), project, taxonomy.method)
            return(df)

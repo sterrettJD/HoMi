@@ -1063,8 +1063,9 @@ rule plot_expected_vs_actual_semi:
 
 rule plot_multi_taxonomy_boxplots:
     input:
-        expand("HoMi_is_done_{proj}",
-                proj=["synthetic_transcriptomes", "synthetic", "semi"])
+        data=expand("HoMi_is_done_{proj}",
+                proj=["synthetic_transcriptomes", "synthetic", "semi"]),
+        read_lengths=os.path.join("semi", "read_lengths.csv")
     output:
         genus_plot="taxonomy_compared/combined_taxa_boxplot_genus.pdf",
         species_plot="taxonomy_compared/combined_taxa_boxplot_species.pdf"
@@ -1089,7 +1090,7 @@ rule plot_multi_taxonomy_boxplots:
         """
         mkdir -p {params.outdir}
         
-        Rscript {params.script} -i {params.input_files} -l genus -o {params.outdir}
-        Rscript {params.script} -i {params.input_files} -l species -o {params.outdir}
+        Rscript {params.script} -i {params.input_files} -l genus -r {input.read_lengths} -o {params.outdir}
+        Rscript {params.script} -i {params.input_files} -l species -r {input.read_lengths} -o {params.outdir}
         
         """

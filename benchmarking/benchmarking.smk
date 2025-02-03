@@ -8,17 +8,33 @@ synthetic_work_dir = "synthetic"
 synthetic_communities_dir = "synthetic_communities"
 synthetic_transcriptomes_dir = "synthetic_transcriptomes"
 synthetic_transcriptomes_dir_p40 = "synthetic_transcriptomes_p40"
+semi_work_dir = "semi"
 
 # to run this on a Slurm-managed cluster
 homi_args = "--profile slurm"
 
-# Metadata
+# Syntheti communities metadata
 metadata_file = os.path.join(synthetic_work_dir, "sample_data.csv")
 metadata = pd.read_csv(metadata_file)
 samples = metadata.drop(columns=["genome", "GCF_id"]).columns
 reads = ["R1", "R2"]
 organisms = metadata["genome"].to_list()
 microbial_organisms = [x for x in organisms if (x != "human")]
+
+
+# Semisynthetic communities metadata
+semi_metadata_file = os.path.join(semi_work_dir, "sample_data.csv")
+semi_metadata = pd.read_csv(semi_metadata_file)
+semi_samples = semi_metadata.drop(columns=["genome", "SRR"]).columns
+semi_organisms = semi_metadata["genome"].to_list()
+semi_microbial_organisms = [x for x in semi_organisms if (x != "human")]
+# SRR IDs are formatted as period separated lists within the SRR column
+semi_srr_ids = [srr_id
+                for taxon_srr_ids_list in semi_metadata["SRR"].apply(
+                    lambda x: x.split(".")
+                    ).values
+                for srr_id in taxon_srr_ids_list] 
+semi_homi_args = """--profile slurm --snakemake_extra "--jobs 40" """
 
 
 # mock community data
@@ -75,7 +91,24 @@ rule all:
         "Pereira_benchmark.pdf",
         "Pereira_benchmark_lm_results.txt",
         "Pereira_benchmark_from_paper.pdf",
-        "Pereira_benchmark_from_paper_lm_results.txt"
+        "Pereira_benchmark_from_paper_lm_results.txt",
+
+        # Boxplot comparisons of taxonomy to what it should be
+        expand("taxonomy_compared/{proj}/{method}_genus.pdf",
+               proj=["synthetic_transcriptomes", "synthetic_transcriptomes_p40", "synthetic"],
+               method=["kraken", "metaphlan"]),
+        expand("taxonomy_compared/{proj}/{method}_species.pdf",
+               proj=["synthetic_transcriptomes", "synthetic_transcriptomes_p40", "synthetic"],
+               method=["kraken", "metaphlan"]),
+        "taxonomy_compared/combined_taxa_boxplot_genus.pdf",
+        "taxonomy_compared/combined_taxa_boxplot_species.pdf",
+
+        # Semisynthetic data files
+        expand(os.path.join("semi", "samples", "{sample}_{read}.fastq.gz"),
+               sample=semi_samples, read=reads),
+        "HoMi_is_done_semi",
+        "semi_benchmark.pdf",
+        "semi_benchmark_lm_results.txt"
 
 
 rule pull_reference_genomes:
@@ -716,7 +749,32 @@ rule plot_expected_vs_actual_synthetic_transcriptomes:
         """
 
 
-
+rule plot_taxonomy_boxplots:
+    input:
+        "HoMi_is_done_{proj}"
+    output:
+        genus_plot="taxonomy_compared/{proj}/{method}_genus.pdf",
+        species_plot="taxonomy_compared/{proj}/{method}_species.pdf"
+    conda: "conda_envs/r_env.yaml"
+    threads: 1
+    resources:
+        partition="short",
+        mem_mb=int(4*1000), # MB
+        runtime=int(1*60) # min
+    params:
+        script="Compare_taxonomy.R",
+        outdir="taxonomy_compared/{proj}"
+    shell:
+        """
+        mkdir -p {params.outdir}
+        
+        if [[ "{wildcards.method}" == "metaphlan" ]]; then
+            Rscript {params.script} -i benchmarking_{wildcards.proj}.f0.0.r0.0.nonhost.humann/all_bugs_list.tsv -t metaphlan -o {params.outdir}
+        
+        elif [[ "{wildcards.method}" == "kraken" ]]; then
+            Rscript {params.script} -i benchmarking_{wildcards.proj}.f0.0.r0.0.nonhost.kraken/Combined-taxonomy.tsv -t kraken -o {params.outdir}
+        fi
+        """
 
 
 
@@ -734,13 +792,17 @@ rule fastq_dump_Pereira:
         partition="short",
         mem_mb=int(8*1000), # MB
         runtime=int(4*60) # min
+    params:
+        work_dir="Pereira"
     shell:
         """
         mkdir -p Pereira
         cd Pereira
         fastq-dump --gzip --readids --read-filter pass --dumpbase --split-3 --clip {wildcards.srr_id}
-        mv {wildcards.srr_id}_pass_1.fastq.gz > {output.fwd}
-        mv {wildcards.srr_id}_pass_2.fastq.gz > {output.rev}
+        
+        cd ..
+        mv {params.work_dir}/{wildcards.srr_id}_pass_1.fastq.gz {output.fwd}
+        mv {params.work_dir}/{wildcards.srr_id}_pass_2.fastq.gz {output.rev}
         """
 
 rule run_HoMi_mock_data:
@@ -814,4 +876,221 @@ rule plot_expected_from_paper_vs_actual_mock_data:
         -c {params.column_name} -n {params.axis_name} \
         -j {params.jitter} \
         -o {output.plot} > {output.model}
+        """
+
+
+#############################################################
+##### Semisynthetic communities #####
+rule fastq_dump_semi:
+    output:
+        fwd=os.path.join(semi_work_dir, "data", "raw_{srr_id}_R1.fastq.gz"),
+        rev=os.path.join(semi_work_dir, "data", "raw_{srr_id}_R2.fastq.gz")
+    conda: "conda_envs/sra_tools.yaml"
+    threads: 1
+    resources:
+        partition="short",
+        mem_mb=int(8*1000), # MB
+        runtime=int(4*60) # min
+    params:
+        semi_work_dir=semi_work_dir
+    shell:
+        """
+        mkdir -p semi/data
+        mkdir -p semi/samples
+        cd semi
+        fastq-dump --gzip --readids --read-filter pass --dumpbase --split-3 --clip {wildcards.srr_id}
+        cd ..
+        mv {params.semi_work_dir}/{wildcards.srr_id}_pass_1.fastq.gz {output.fwd}
+        mv {params.semi_work_dir}/{wildcards.srr_id}_pass_2.fastq.gz {output.rev}
+        """
+
+
+rule combine_semi_srrs:
+    input:
+        data=expand(os.path.join(semi_work_dir, "data", "raw_{srr_id}_{read}.fastq.gz"),
+            srr_id=semi_srr_ids, read=reads)
+    output:
+        data=os.path.join(semi_work_dir, "data", "{taxon}_{read}.fastq.gz")
+    threads: 1
+    resources:
+        partition="short",
+        mem_mb=int(2*1000), # MB
+        runtime=int(1*60) # min
+    params:
+        metadata=semi_metadata_file,
+        data_dir=os.path.join(semi_work_dir, "data")
+    run:
+        import subprocess
+        import pandas as pd
+        import os
+
+        metadata = pd.read_csv(params.metadata, index_col="genome")
+        
+        # For this taxon, get the SRRs
+        taxon_output_path = output.data
+        srrs = metadata.loc[wildcards.taxon, "SRR"].split(".")
+
+        # cat those respective files together
+        for srr_id in srrs:
+            srr_path = os.path.join(params.data_dir, f"raw_{srr_id}_{wildcards.read}.fastq.gz")
+            if not os.path.exists(srr_path):
+                raise FileNotFoundError(f"File not found: {srr_path}")
+
+            # Adding to output file
+            cmd = f"cat {srr_path} >> {output.data}"
+            print(f"running command: {cmd}")
+            ran = subprocess.run(cmd, shell=True)
+            
+            if ran.returncode != 0:
+                raise RuntimeError(f"Command failed: {cmd}\nStderr: {ran.stderr.decode()}")
+
+
+rule subsample_and_combine_semi_fastqs:
+    input:
+        data=expand(os.path.join(semi_work_dir, "data", "{taxon}_{read}.fastq.gz"),
+            taxon=semi_organisms, read=reads)
+    output:
+        data=os.path.join(semi_work_dir, "samples", "{sample}_{read}.fastq.gz")
+    threads: 1
+    resources:
+        partition="short",
+        mem_mb=int(2*1000), # MB
+        runtime=int(1*60) # min
+    params:
+        metadata=semi_metadata_file,
+        data_dir=os.path.join(semi_work_dir, "data")
+    run:
+        import subprocess
+        import pandas as pd
+        import os
+
+        metadata = pd.read_csv(params.metadata, index_col="genome")
+        
+        # get the random seed to use. Doing it based on the hash of sample ID so that
+        # the fwd and rev reads per sample get the same seed
+        sample_hash = hash(wildcards.sample)
+
+        # For each taxon, subsample it and add it to the gzipped output file
+        for taxon in metadata.index:    
+            depth = metadata.loc[taxon, wildcards.sample]
+            print(f"sampling {taxon} to {depth} reads")
+
+            if depth > 0:
+                unsampled_path = os.path.join(params.data_dir, f"{taxon}_{wildcards.read}.fastq.gz")
+                if not os.path.exists(unsampled_path):
+                    raise FileNotFoundError(f"File not found: {unsampled_path}")
+
+                cmd = f"seqtk sample -s {sample_hash} {unsampled_path} {depth} | gzip >> {output.data}"
+                print(f"running command: {cmd}")
+                ran = subprocess.run(cmd, shell=True)
+                
+                if ran.returncode != 0:
+                    raise RuntimeError(f"Command failed: {cmd}\nStderr: {ran.stderr.decode()}")
+
+
+
+rule create_HoMi_metadata_semi:
+    input:
+        sample_data=semi_metadata_file
+    output:
+        homi_metadata=os.path.join(semi_work_dir, "semi_homi_metadata.csv")
+    threads: 1
+    resources:
+        partition="short",
+        mem_mb=int(8*1000), # MB
+        runtime=int(10) # min
+    params:
+        work_dir=semi_work_dir,
+        communities_dir="samples"
+    run:
+        import pandas as pd 
+        df = pd.read_csv(input.sample_data)
+        genome_names = df["genome"].to_list()
+        df = df.drop(["genome", "SRR"], axis=1).transpose()
+        df.columns = genome_names
+
+        df["forward_reads"] = [os.path.join(params.work_dir, params.communities_dir, f"{sample}_R1.fastq.gz") 
+                                for sample in df.index]
+        df["reverse_reads"] = [os.path.join(params.work_dir, params.communities_dir, f"{sample}_R2.fastq.gz") 
+                                for sample in df.index]
+
+        df.to_csv(output.homi_metadata, index_label="Sample")
+
+
+
+rule run_HoMi_semi:
+    input:
+        homi_metadata=os.path.join(semi_work_dir, "semi_homi_metadata.csv"),
+        homi_config=os.path.join(semi_work_dir, "semi_HoMi_config.yaml"),
+        fwd=expand(os.path.join(semi_work_dir, "samples", "{sample}_{read}.fastq.gz"),
+                sample=semi_samples, read=reads)
+    output:
+        "HoMi_is_done_semi"
+    threads: 1
+    resources:
+        partition="short",
+        mem_mb=int(8*1000), # MB
+        runtime=int(24*60) # min
+    params:
+        homi_args=semi_homi_args
+    shell:
+        """
+        HoMi.py {input.homi_config} {params.homi_args} --unlock
+        touch {output}
+        """
+
+
+rule plot_expected_vs_actual_semi:
+    input:
+        "HoMi_is_done_semi"
+    output:
+        plot="semi_benchmark.pdf",
+        model="semi_benchmark_lm_results.txt"
+    conda: "conda_envs/r_env.yaml"
+    threads: 1
+    resources:
+        partition="short",
+        mem_mb=int(4*1000), # MB
+        runtime=int(1*60) # min
+    params:
+        script="Plot_benchmarked_reads_breakdown.R",
+        label="True percent host reads"
+    shell:
+        """
+        Rscript {params.script} -i semi_reads_breakdown.csv -o {output.plot}  -n "{params.label}" > {output.model}
+        """
+
+
+rule plot_multi_taxonomy_boxplots:
+    input:
+        data=expand("HoMi_is_done_{proj}",
+                proj=["synthetic_transcriptomes", "synthetic", "semi"]),
+        read_lengths=os.path.join("semi", "read_lengths.csv")
+    output:
+        genus_plot="taxonomy_compared/combined_taxa_boxplot_genus.pdf",
+        species_plot="taxonomy_compared/combined_taxa_boxplot_species.pdf"
+    conda: "conda_envs/r_env.yaml"
+    threads: 1
+    resources:
+        partition="short",
+        mem_mb=int(4*1000), # MB
+        runtime=int(1*60) # min
+    params:
+        script="Compare_all_taxonomy_results.R",
+        outdir="taxonomy_compared/",
+        # Not the best way to do this, but easier than alternatives
+        input_files=",".join(["benchmarking_synthetic_transcriptomes.f0.0.r0.0.nonhost.humann/all_bugs_list.tsv",
+                             "benchmarking_synthetic.f0.0.r0.0.nonhost.humann/all_bugs_list.tsv",
+                             "semi.f0.0.r0.0.nonhost.humann/all_bugs_list.tsv",
+                             "benchmarking_synthetic_transcriptomes.f0.0.r0.0.nonhost.kraken/Combined-taxonomy.tsv",
+                             "benchmarking_synthetic.f0.0.r0.0.nonhost.kraken/Combined-taxonomy.tsv",
+                             "semi.f0.0.r0.0.nonhost.kraken/Combined-taxonomy.tsv"
+                             ])
+    shell:
+        """
+        mkdir -p {params.outdir}
+        
+        Rscript {params.script} -i {params.input_files} -l genus -r {input.read_lengths} -o {params.outdir}
+        Rscript {params.script} -i {params.input_files} -l species -r {input.read_lengths} -o {params.outdir}
+        
         """

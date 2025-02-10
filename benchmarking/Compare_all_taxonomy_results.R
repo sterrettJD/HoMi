@@ -333,9 +333,9 @@ main <- function(){
   split.files <- unlist(str_split(opts$input_files, pattern=","))
   
   if(tax.level=="genus"){
-    level.values <- c("Clostridium", "Escherichia", "Faecalibacterium")
+    level.values <- c("Clostridium", "Escherichia", "Bacteroides")
   } else if (tax.level=="species"){
-    level.values <- c("Clostridium beijerinckii", "Escherichia coli", "Faecalibacterium prausnitzii")
+    level.values <- c("Clostridium beijerinckii", "Escherichia coli", "Bacteroides fragilis")
   } else {
     stop("Please pass either `genus` or `species` as the value for --tax_level")
   }

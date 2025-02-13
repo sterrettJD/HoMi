@@ -206,7 +206,6 @@ plot_data <- function(df, level.values){
     geom_boxplot(outliers=F) +
     geom_point(position=position_jitterdodge()) +
     facet_grid(Taxon ~ project, 
-               ncol=length(unique(df$project)), 
                scales="free") +
     geom_hline(data=hline.df,
                aes(yintercept=line)) +
@@ -321,7 +320,7 @@ plot_abundance_not_in_level_values <- function(df){
                        fill=`Taxonomy method`)) +
     geom_boxplot(outliers=F) +
     geom_point(position=position_jitterdodge()) + 
-    facet_grid( ~ project, ncol=length(unique(df$project))) +
+    facet_grid( ~ project) +
     theme_bw()
     
   return(p)

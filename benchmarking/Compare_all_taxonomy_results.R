@@ -205,8 +205,7 @@ plot_data <- function(df, level.values){
     ggplot(mapping=aes(x=`Percent host`, y=Abundance, fill=`Taxonomy method`)) +
     geom_boxplot(outliers=F) +
     geom_point(position=position_jitterdodge()) +
-    facet_wrap(Taxon ~ project, 
-               ncol=length(unique(df$project)), 
+    facet_grid(Taxon ~ project, 
                scales="free") +
     geom_hline(data=hline.df,
                aes(yintercept=line)) +
@@ -321,7 +320,7 @@ plot_abundance_not_in_level_values <- function(df){
                        fill=`Taxonomy method`)) +
     geom_boxplot(outliers=F) +
     geom_point(position=position_jitterdodge()) + 
-    facet_wrap( ~ project, ncol=length(unique(df$project))) +
+    facet_grid( ~ project) +
     theme_bw()
     
   return(p)
@@ -333,9 +332,9 @@ main <- function(){
   split.files <- unlist(str_split(opts$input_files, pattern=","))
   
   if(tax.level=="genus"){
-    level.values <- c("Clostridium", "Escherichia", "Faecalibacterium")
+    level.values <- c("Clostridium", "Escherichia", "Bacteroides")
   } else if (tax.level=="species"){
-    level.values <- c("Clostridium beijerinckii", "Escherichia coli", "Faecalibacterium prausnitzii")
+    level.values <- c("Clostridium beijerinckii", "Escherichia coli", "Bacteroides fragilis")
   } else {
     stop("Please pass either `genus` or `species` as the value for --tax_level")
   }

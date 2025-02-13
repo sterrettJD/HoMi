@@ -205,7 +205,7 @@ plot_data <- function(df, level.values){
     ggplot(mapping=aes(x=`Percent host`, y=Abundance, fill=`Taxonomy method`)) +
     geom_boxplot(outliers=F) +
     geom_point(position=position_jitterdodge()) +
-    facet_wrap(Taxon ~ project, 
+    facet_grid(Taxon ~ project, 
                ncol=length(unique(df$project)), 
                scales="free") +
     geom_hline(data=hline.df,
@@ -321,7 +321,7 @@ plot_abundance_not_in_level_values <- function(df){
                        fill=`Taxonomy method`)) +
     geom_boxplot(outliers=F) +
     geom_point(position=position_jitterdodge()) + 
-    facet_wrap( ~ project, ncol=length(unique(df$project))) +
+    facet_grid( ~ project, ncol=length(unique(df$project))) +
     theme_bw()
     
   return(p)

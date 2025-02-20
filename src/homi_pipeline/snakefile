@@ -410,7 +410,7 @@ rule host_filter:
     """
     hostile clean \
     --fastq1 {input.FWD} --fastq2 {input.REV} \
-    --out-dir {params.trim_trunc_path}.nonhost \
+    -o {params.trim_trunc_path}.nonhost \
     --threads {threads} \
     --index {params.hostile_db_path} \
     --debug \

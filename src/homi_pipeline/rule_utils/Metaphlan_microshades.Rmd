@@ -255,7 +255,7 @@ plot_1 <- plot + scale_y_continuous(labels = scales::percent, expand = expansion
 
 multi <- plot_grid(plot_1, GP_legend,  rel_widths = c(1, .25))
 multi
-ggsave(paste0(params$directory, "taxa-bar-phyum-genus-microshades.pdf"),
+ggsave(paste0(params$directory, "/taxa-bar-phyum-genus-microshades.pdf"),
         plot=multi, height=10, width=10, 
         bg="transparent")
 

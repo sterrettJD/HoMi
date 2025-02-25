@@ -1054,7 +1054,7 @@ rule plot_expected_vs_actual_semi:
         runtime=int(1*60) # min
     params:
         script="Plot_benchmarked_reads_breakdown.R",
-        label="True percent host reads"
+        label="True percent host reads (transcriptome, jittered)"
     shell:
         """
         Rscript {params.script} -i semi_reads_breakdown.csv -o {output.plot}  -n "{params.label}" > {output.model}

@@ -6,20 +6,12 @@ This directory includes helper scripts to benchmark HoMi against simulated fully
 `benchmarking_env.yaml` contains the conda environment used for benchmarking. To create this environment, run the following command from this `benchmarking/` directory:
 ```
 mamba env create -n benchmarking-homi --file benchmarking_env.yaml
-pip install -e ../
+pip install homi-pipeline
 ```
 
 **NOTE:** Users need to install the SRA toolkit outside of conda, as SRA-tools doesn't support a conda distribution. See the [SRA toolkit official instructions](https://github.com/ncbi/sra-tools/wiki/01.-Downloading-SRA-Toolkit).
 
-NOTE: Because `ncbi-datasets-cli` doesn't have a MacOS ARM-compatible conda-forge distribution, MacOS ARM users need to create the environment and configure the subdir with the following commands:
-```
-conda create -n benchmarking-homi
-conda activate benchmarking-homi 
-conda config --env --set subdir osx-64
-conda env update --file benchmarking_env.yaml
-```
-
-Alternatively, this can be run on ARM using Docker via a command such as
+This can be run on ARM using Docker via a command such as
 ```
 docker run --platform linux/amd64 -v "$(pwd)":/workdir:rw -w /workdir snakemake/snakemake:v7.32.3 snakemake -s benchmarking.smk --cores 4 --use-conda
 ```
@@ -33,11 +25,15 @@ Synthetic communities were generated in two ways.
 
 ### Synthetic transcriptome simulation with Polyester
 
-Polyester was used to simulate transcriptomes from the human transcriptome. Details on polyester can be found [here](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4635655/).
+Polyester was used to simulate transcriptomes from the human transcriptome, using the GRCh38 reference. Details on polyester can be found [here](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4635655/).
 
 ### Simulated communities from genomes including the human pangenome
 
 A custom script (`synthetic/create_mock_community.py`) was used to create communities with reads from the [human pangenome](https://humanpangenome.org/). Errors in the reads were simulated based on a mean PHRED score of 35 with a standard deviation of 3 at each base position. This could be improved, but the main point of this simulation was to make sure HoMi recovered proper portions of host reads when using "noisier" human reads than what are provided by the GRCh reference genome/transcriptome.
+
+## Semisynthetic transcriptomes
+
+Samples were simulated containing real transcriptomic data combined in known portions. Specified numbers of reads were subsampled from publicly available FASTQ files from bacterial isolate studies and human colon chip samples. The SRRs used for this project can be found in `semi/sample_data.csv`. These data are downloaded and subsampled as part of `benchmarking.smk`.
 
 ## Mock communities
 

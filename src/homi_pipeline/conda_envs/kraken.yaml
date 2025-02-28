@@ -5,6 +5,6 @@ channels:
   - astrobiomike
   - defaults
 dependencies:
-  - kraken2
-  - bracken
+  - kraken2=2.14
+  - bracken>=3.0
   - bit>=1.8.62

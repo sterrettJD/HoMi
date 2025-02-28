@@ -284,8 +284,8 @@ compare_abundances_to_theoretical <- function(df){
               sd=sd(Abundance_diff),
               min=min(Abundance_diff),
               max=max(Abundance_diff),
-              lower = mean(Abundance_diff) - qt(0.95/2, (n()-1))*sd(Abundance_diff)/sqrt(n()),
-              upper = mean(Abundance_diff) + qt(0.95/2, (n()-1))*sd(Abundance_diff)/sqrt(n()))
+              lower = mean(Abundance_diff) - qt(1 - 0.05/2, (n()-1))*sd(Abundance_diff)/sqrt(n()),
+              upper = mean(Abundance_diff) + qt(1 - 0.05/2, (n()-1))*sd(Abundance_diff)/sqrt(n()))
 }
 
 
@@ -307,8 +307,8 @@ summarize_abundance_not_in_level_values <- function(df){
               sd=sd(Abundance_diff),
               min=min(Abundance_diff),
               max=max(Abundance_diff),
-              lower = mean(Abundance_diff) - qt(0.95/2, (n()-1))*sd(Abundance_diff)/sqrt(n()),
-              upper = mean(Abundance_diff) + qt(0.95/2, (n()-1))*sd(Abundance_diff)/sqrt(n()))
+              lower = mean(Abundance_diff) - qt(1 - 0.05/2, (n()-1))*sd(Abundance_diff)/sqrt(n()),
+              upper = mean(Abundance_diff) + qt(1 - 0.05/2, (n()-1))*sd(Abundance_diff)/sqrt(n()))
     res$Taxon <- "Other"
     return(res)
 }
@@ -408,7 +408,17 @@ main <- function(){
   # Add the "other" values
   compare.df <- rbind(summarize_abundance_not_in_level_values(comb.dat), 
                       compare.df)
-  compare.df %>% 
+  compare.df %>%
+    mutate(`mean [95% CI]` = paste0(round(mean, digits=3), 
+                                    " [", round(lower, digits=3),
+                                    " - ", round(upper, digits=3), "]"),
+           min = round(min, 3),
+           max = round(max, 3)) %>%
+    select(c(`Taxonomy method`, Taxon, project, `mean [95% CI]`, min, max)) %>%
+    pivot_wider(names_from = `Taxonomy method`, 
+                values_from = c(`mean [95% CI]`, max, min),
+                names_glue = "{`Taxonomy method`} {.value}"
+    ) %>% 
     write.csv(file=file.path(opts$output_dir, 
                               paste0("summarized_benchmark_",
                               tax.level, ".csv")))

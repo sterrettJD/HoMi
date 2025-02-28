@@ -284,8 +284,8 @@ compare_abundances_to_theoretical <- function(df){
               sd=sd(Abundance_diff),
               min=min(Abundance_diff),
               max=max(Abundance_diff),
-              lower = mean(Abundance_diff) - qt(0.95/2, (n()-1))*sd(Abundance_diff)/sqrt(n()),
-              upper = mean(Abundance_diff) + qt(0.95/2, (n()-1))*sd(Abundance_diff)/sqrt(n()))
+              lower = mean(Abundance_diff) - qt(1 - 0.05/2, (n()-1))*sd(Abundance_diff)/sqrt(n()),
+              upper = mean(Abundance_diff) + qt(1 - 0.05/2, (n()-1))*sd(Abundance_diff)/sqrt(n()))
 }
 
 
@@ -307,8 +307,8 @@ summarize_abundance_not_in_level_values <- function(df){
               sd=sd(Abundance_diff),
               min=min(Abundance_diff),
               max=max(Abundance_diff),
-              lower = mean(Abundance_diff) - qt(0.95/2, (n()-1))*sd(Abundance_diff)/sqrt(n()),
-              upper = mean(Abundance_diff) + qt(0.95/2, (n()-1))*sd(Abundance_diff)/sqrt(n()))
+              lower = mean(Abundance_diff) - qt(1 - 0.05/2, (n()-1))*sd(Abundance_diff)/sqrt(n()),
+              upper = mean(Abundance_diff) + qt(1 - 0.05/2, (n()-1))*sd(Abundance_diff)/sqrt(n()))
     res$Taxon <- "Other"
     return(res)
 }

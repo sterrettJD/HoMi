@@ -860,7 +860,7 @@ rule get_kraken_db:
     KMERS=pj(kraken_db_loc, "database150mers.kmer_distrib")
   resources:
     partition=get_partition("short", config, "get_kraken_db"),
-    mem_mb=get_mem(int(188*1000), config, "get_kraken_db"), # MB
+    mem_mb=get_mem(int(16*1000), config, "get_kraken_db"), # MB
     runtime=get_runtime(int(12*60), config, "get_kraken_db"), # min 
     slurm=get_slurm_extra(config, "get_kraken_db")
   threads: get_threads(1, config, "get_kraken_db")
@@ -1033,7 +1033,7 @@ rule nonpareil:
     pj(f"{trim_trunc_path}.nonhost.nonpareil", "{sample}.npa")
   resources:
     partition=get_partition("short", config, "nonpareil"),
-    mem_mb=get_mem(int(30*1000), config, "nonpareil"), # MB
+    mem_mb=get_mem(int(8*1000), config, "nonpareil"), # MB
     runtime=get_runtime(int(3*60), config, "nonpareil"), # min
     slurm=get_slurm_extra(config, "nonpareil")
   threads: get_threads(16, config, "nonpareil")

@@ -209,7 +209,14 @@ plot_data <- function(df, level.values){
                scales="free") +
     geom_hline(data=hline.df,
                aes(yintercept=line)) +
-    theme_bw()
+  theme_bw(base_size=16) +
+  theme(
+    axis.text=element_text(size=14),
+    axis.title=element_text(size=16),
+    strip.text=element_text(size=14),
+    legend.text=element_text(size=14),
+    legend.title=element_text(size=16)
+  )
   
   return(p)
 }

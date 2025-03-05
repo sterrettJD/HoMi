@@ -74,7 +74,10 @@ main <- function(){
   ggplot(df, mapping=aes(x=true_perc_host, y=Percent.host)) +
     geom_jitter(width=args$jitter_width, size=3, alpha=0.8) +
     geom_smooth(method="lm") +
+    geom_abline(slope=1, intercept=0, linetype="dotted", color="black", size=1) +
     theme_bw(base_size=22) +
+    xlim(-5, 90) +
+    ylim(-5, 90) +
     labs(x=args$name_for_plot, y="Recovered percent host reads")
 
   ggsave(args$output_plot)

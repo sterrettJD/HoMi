@@ -848,7 +848,8 @@ rule plot_expected_vs_actual_mock_data:
         label="Pereira-Marques percent microbial reads"
     shell:
         """
-        Rscript {params.script} -i {params.data} -j {params.jitter} -o {output.plot} -n "{params.label}" > {output.model}
+        Rscript {params.script} -i {params.data} -j {params.jitter} \
+        -o {output.plot} -n "{params.label}" --no_dotted_line > {output.model}
         """
 
 rule plot_expected_from_paper_vs_actual_mock_data:
@@ -875,6 +876,7 @@ rule plot_expected_from_paper_vs_actual_mock_data:
         Rscript {params.script} -i {params.data} -m {params.metadata} \
         -c {params.column_name} -n {params.axis_name} \
         -j {params.jitter} \
+        --no_dotted_line \
         -o {output.plot} > {output.model}
         """
 

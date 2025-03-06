@@ -35,6 +35,9 @@ get_args <- function(){
       make_option(c("-j", "--jitter_width"),
                   help="The width to jitter the x axis. Should be an integer.",
                   default=1, type="integer"),
+      make_option(c("--no_dotted_line"),
+                  help="Pass this to avoid showing the dotted line on the benchmark plot.",
+                  default=FALSE, action="store_true"),
       make_option(c("-o", "--output_plot"), 
                   help="The path to create the output plot")
 
@@ -71,16 +74,21 @@ main <- function(){
   mod <- lm(Percent.host ~ true_perc_host, data=df)
   print(summary(mod))
 
-  ggplot(df, mapping=aes(x=true_perc_host, y=Percent.host)) +
+  p <- ggplot(df, mapping=aes(x=true_perc_host, y=Percent.host)) +
     geom_jitter(width=args$jitter_width, size=3, alpha=0.8) +
     geom_smooth(method="lm") +
-    geom_abline(slope=1, intercept=0, linetype="dotted", color="black", size=1) +
     theme_bw(base_size=22) +
     xlim(-5, 90) +
     ylim(-5, 90) +
     labs(x=args$name_for_plot, y="Recovered percent host reads")
 
-  ggsave(args$output_plot)
+  if (!args$no_dotted_line) {
+    p <- p + 
+      geom_abline(slope=1, intercept=0, 
+      linetype="dotted", color="black", size=1)
+  }
+
+  ggsave(args$output_plot, p)
 }
 
 

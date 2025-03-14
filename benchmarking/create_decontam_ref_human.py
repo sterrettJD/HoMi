@@ -29,7 +29,7 @@ def download_and_decompress(output_dir, name, url):
 
         if (url.endswith(".gz")):
             print(f"Decompressing {name}...")
-            subprocess.run(["gunzip", "-k", download_path], check=True)
+            subprocess.run(["gunzip", download_path], check=True)
 
 
 def concatenate_fasta(references, output_filepath, output_dir):
@@ -49,7 +49,7 @@ def build_bowtie2_index(concatenated_fasta_path, bowtie2_index_prefix):
     Build the Bowtie2 index from the concatenated FASTA file.
     """
     print("Building Bowtie2 index...")
-    subprocess.run(["bowtie2-build", " --threads", "4",
+    subprocess.run(["bowtie2-build", "--threads", "4",
                     concatenated_fasta_path, bowtie2_index_prefix], check=True)
     print(f"Bowtie2 index built successfully at: {bowtie2_index_prefix}")
 

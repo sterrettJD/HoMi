@@ -49,7 +49,8 @@ def build_bowtie2_index(concatenated_fasta_path, bowtie2_index_prefix):
     Build the Bowtie2 index from the concatenated FASTA file.
     """
     print("Building Bowtie2 index...")
-    subprocess.run(["bowtie2-build", concatenated_fasta_path, bowtie2_index_prefix], check=True)
+    subprocess.run(["bowtie2-build", " --threads", "4",
+                    concatenated_fasta_path, bowtie2_index_prefix], check=True)
     print(f"Bowtie2 index built successfully at: {bowtie2_index_prefix}")
 
 

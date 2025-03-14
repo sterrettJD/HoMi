@@ -120,6 +120,7 @@ rule create_alt_hostile_index:
     output:
         ref_dir=directory(t2t_rna_hla_index)
     threads: 4
+    conda: "conda_envs/hostile.yaml"
     resources:
         partition="short",
         mem_mb=int(12*1000), # MB

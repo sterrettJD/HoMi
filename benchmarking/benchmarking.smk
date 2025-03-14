@@ -48,8 +48,13 @@ polyester_phred=30
 polyester_error_rate_p40=0.0001
 polyester_phred_p40=40
 
+# hostile reference data
+t2t_rna_hla_index = "t2t_rna_hla_index"
+
 rule all:
     input:
+        # hostile reference
+        "t2t_rna_hla_index"
         # From simulate_synthetic_communities
         expand(os.path.join(synthetic_work_dir, synthetic_communities_dir, "{sample}_R1.fastq.gz"),
                sample=samples),
@@ -109,6 +114,22 @@ rule all:
         "HoMi_is_done_semi",
         "semi_benchmark.pdf",
         "semi_benchmark_lm_results.txt"
+
+
+rule create_alt_hostile_index:
+    output:
+        ref_dir=directory(t2t_rna_hla_index)
+    threads: 4
+    resources:
+        partition="short",
+        mem_mb=int(12*1000), # MB
+        runtime=int(6*60) # min
+    params:
+        script="create_decontam_ref_human.py"
+    shell:
+        """
+        python {params.script} -o {output.ref_dir}
+        """
 
 
 rule pull_reference_genomes:

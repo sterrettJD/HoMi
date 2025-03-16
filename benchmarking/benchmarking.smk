@@ -56,7 +56,7 @@ indexes = ["dna", "rna"]
 rule all:
     input:
         # hostile reference
-        "t2t_rna_hla_index"
+        t2t_rna_hla_index,
         # From simulate_synthetic_communities
         expand(os.path.join(synthetic_work_dir, synthetic_communities_dir, "{sample}_R1.fastq.gz"),
                sample=samples),

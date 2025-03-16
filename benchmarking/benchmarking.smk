@@ -83,10 +83,10 @@ rule all:
                sample=samples),
 
         # Comparison of transcriptomes to actual
-        expand("{index}_{proj}_benchmark.pdf",
+        expand("{index}_index_{proj}_benchmark.pdf",
                 proj=["synthetic_transcriptomes", "synthetic_transcriptomes_p40"],
                 index=indexes),
-        expand("{index}_{proj}_benchmark_lm_results.txt",
+        expand("{index}_index_{proj}_benchmark_lm_results.txt",
                 proj=["synthetic_transcriptomes", "synthetic_transcriptomes_p40"],
             index=indexes),
 
@@ -615,7 +615,7 @@ rule run_HoMi_synthetic_communities:
         rev=expand(os.path.join(synthetic_work_dir, synthetic_communities_dir, "{sample}_R2.fastq.gz"),
                sample=samples)
     output:
-        "HoMi_is_done_{index}_synthetic"
+        "{index}_HoMi_is_done_synthetic"
     threads: 1
     resources:
         partition="short",
@@ -631,7 +631,7 @@ rule run_HoMi_synthetic_communities:
 
 rule plot_expected_vs_actual_synthetic_communities:
     input:
-        "HoMi_is_done_{index}_synthetic"
+        "{index}_HoMi_is_done_synthetic"
     output:
         plot="{index}_synthetic_communities_benchmark.pdf",
         model="{index}_synthetic_communities_benchmark_lm_results.txt"
@@ -759,8 +759,8 @@ rule plot_expected_vs_actual_synthetic_transcriptomes:
     input:
         "{index}_HoMi_is_done_{proj}"
     output:
-        plot="{index}_{proj}_benchmark.pdf",
-        model="{index}_{proj}_benchmark_lm_results.txt"
+        plot="{index}_index_{proj}_benchmark.pdf",
+        model="{index}_index_{proj}_benchmark_lm_results.txt"
     conda: "conda_envs/r_env.yaml"
     threads: 1
     resources:
@@ -778,7 +778,7 @@ rule plot_expected_vs_actual_synthetic_transcriptomes:
 
 rule plot_taxonomy_boxplots:
     input:
-        "HoMi_is_done_{proj}"
+        "{index}_HoMi_is_done_{proj}"
     output:
         genus_plot="taxonomy_compared/{index}/{proj}/{method}_genus.pdf",
         species_plot="taxonomy_compared/{index}/{proj}/{method}_species.pdf"

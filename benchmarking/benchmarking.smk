@@ -51,6 +51,8 @@ polyester_phred_p40=40
 # hostile reference data
 t2t_rna_hla_index = "t2t_rna_hla_index"
 
+indexes = ["dna", "rna"]
+
 rule all:
     input:
         # hostile reference
@@ -63,46 +65,48 @@ rule all:
         # From create_HoMi_metadata
         os.path.join(synthetic_work_dir, "synthetic_homi_metadata.csv"),
         # From run_HoMi_synthetic_communities
-        "HoMi_is_done_synthetic",
-        "synthetic_communities_benchmark.pdf",
-        "synthetic_communities_benchmark_lm_results.txt",
+        expand("{index}_synthetic_communities_benchmark.pdf",
+            index=indexes),
+        expand("{index}_synthetic_communities_benchmark_lm_results.txt",
+            index=indexes),
         
         # From synthetic transcriptomes
         expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_R1.fastq.gz"),
                sample=samples),
         expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_R2.fastq.gz"),
                sample=samples),
-        "HoMi_is_done_synthetic_transcriptomes",
         
          # From synthetic transcriptomes PHRED 40
         expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir_p40, "{sample}_R1.fastq.gz"),
                sample=samples),
         expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir_p40, "{sample}_R2.fastq.gz"),
                sample=samples),
-        "HoMi_is_done_synthetic_transcriptomes_p40",
 
         # Comparison of transcriptomes to actual
-        expand("{proj}_benchmark.pdf",
-                proj=["synthetic_transcriptomes", "synthetic_transcriptomes_p40"]),
-        expand("{proj}_benchmark_lm_results.txt",
-                proj=["synthetic_transcriptomes", "synthetic_transcriptomes_p40"]),
+        expand("{index}_{proj}_benchmark.pdf",
+                proj=["synthetic_transcriptomes", "synthetic_transcriptomes_p40"],
+                index=indexes),
+        expand("{index}_{proj}_benchmark_lm_results.txt",
+                proj=["synthetic_transcriptomes", "synthetic_transcriptomes_p40"],
+            index=indexes),
 
         # From mock communities
         expand(os.path.join("Pereira", "{srr_id}_R1.fastq.gz"),
                 srr_id=pereira_srr_ids),
         expand(os.path.join("Pereira", "{srr_id}_R2.fastq.gz"),
                 srr_id=pereira_srr_ids),
-        "HoMi_is_done_Pereira",
         "Pereira_benchmark.pdf",
         "Pereira_benchmark_lm_results.txt",
         "Pereira_benchmark_from_paper.pdf",
         "Pereira_benchmark_from_paper_lm_results.txt",
 
         # Boxplot comparisons of taxonomy to what it should be
-        expand("taxonomy_compared/{proj}/{method}_genus.pdf",
+        expand("taxonomy_compared/{index}/{proj}/{method}_genus.pdf",
+               index=indexes,
                proj=["synthetic_transcriptomes", "synthetic_transcriptomes_p40", "synthetic"],
                method=["kraken", "metaphlan"]),
-        expand("taxonomy_compared/{proj}/{method}_species.pdf",
+        expand("taxonomy_compared/{index}/{proj}/{method}_species.pdf",
+               index=indexes,
                proj=["synthetic_transcriptomes", "synthetic_transcriptomes_p40", "synthetic"],
                method=["kraken", "metaphlan"]),
         "taxonomy_compared/combined_taxa_boxplot_genus.pdf",
@@ -111,9 +115,10 @@ rule all:
         # Semisynthetic data files
         expand(os.path.join("semi", "samples", "{sample}_{read}.fastq.gz"),
                sample=semi_samples, read=reads),
-        "HoMi_is_done_semi",
-        "semi_benchmark.pdf",
-        "semi_benchmark_lm_results.txt"
+        expand("{index}_semi_benchmark.pdf",
+                index=indexes),
+        expand("{index}_semi_benchmark_lm_results.txt",
+                index=indexes)
 
 
 rule create_alt_hostile_index:
@@ -604,13 +609,13 @@ rule create_HoMi_metadata_synthetic:
 rule run_HoMi_synthetic_communities:
     input:
         homi_metadata=os.path.join(synthetic_work_dir, "synthetic_homi_metadata.csv"),
-        homi_config=os.path.join(synthetic_work_dir, "synthetic_HoMi_config.yaml"),
+        homi_config=os.path.join(synthetic_work_dir, "{index}_synthetic_HoMi_config.yaml"),
         fwd=expand(os.path.join(synthetic_work_dir, synthetic_communities_dir, "{sample}_R1.fastq.gz"),
                sample=samples),
         rev=expand(os.path.join(synthetic_work_dir, synthetic_communities_dir, "{sample}_R2.fastq.gz"),
                sample=samples)
     output:
-        "HoMi_is_done_synthetic"
+        "HoMi_is_done_{index}_synthetic"
     threads: 1
     resources:
         partition="short",
@@ -626,10 +631,10 @@ rule run_HoMi_synthetic_communities:
 
 rule plot_expected_vs_actual_synthetic_communities:
     input:
-        "HoMi_is_done_synthetic"
+        "HoMi_is_done_{index}_synthetic"
     output:
-        plot="synthetic_communities_benchmark.pdf",
-        model="synthetic_communities_benchmark_lm_results.txt"
+        plot="{index}_synthetic_communities_benchmark.pdf",
+        model="{index}_synthetic_communities_benchmark_lm_results.txt"
     conda: "conda_envs/r_env.yaml"
     threads: 1
     resources:
@@ -677,13 +682,13 @@ rule create_HoMi_metadata_synthetic_transcriptomes:
 rule run_HoMi_synthetic_transcriptomes:
     input:
         homi_metadata=os.path.join(synthetic_work_dir, "synthetic_transcriptomes_homi_metadata.csv"),
-        homi_config=os.path.join(synthetic_work_dir, "synthetic_transcriptomes_HoMi_config.yaml"),
+        homi_config=os.path.join(synthetic_work_dir, "{index}_synthetic_transcriptomes_HoMi_config.yaml"),
         fwd=expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_R1.fastq.gz"),
                sample=samples),
         rev=expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_R2.fastq.gz"),
                sample=samples)
     output:
-        "HoMi_is_done_synthetic_transcriptomes"
+        "{index}_HoMi_is_done_synthetic_transcriptomes"
     threads: 1
     resources:
         partition="short",
@@ -729,13 +734,13 @@ rule create_HoMi_metadata_synthetic_transcriptomes_p40:
 rule run_HoMi_synthetic_transcriptomes_p40:
     input:
         homi_metadata=os.path.join(synthetic_work_dir, "synthetic_transcriptomes_p40_homi_metadata.csv"),
-        homi_config=os.path.join(synthetic_work_dir, "synthetic_transcriptomes_p40_HoMi_config.yaml"),
+        homi_config=os.path.join(synthetic_work_dir, "{index}_synthetic_transcriptomes_p40_HoMi_config.yaml"),
         fwd=expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir_p40, "{sample}_R1.fastq.gz"),
                sample=samples),
         rev=expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir_p40, "{sample}_R2.fastq.gz"),
                sample=samples)
     output:
-        "HoMi_is_done_synthetic_transcriptomes_p40"
+        "{index}_HoMi_is_done_synthetic_transcriptomes_p40"
     threads: 1
     resources:
         partition="short",
@@ -752,10 +757,10 @@ rule run_HoMi_synthetic_transcriptomes_p40:
 
 rule plot_expected_vs_actual_synthetic_transcriptomes:
     input:
-        "HoMi_is_done_{proj}"
+        "{index}_HoMi_is_done_{proj}"
     output:
-        plot="{proj}_benchmark.pdf",
-        model="{proj}_benchmark_lm_results.txt"
+        plot="{index}_{proj}_benchmark.pdf",
+        model="{index}_{proj}_benchmark_lm_results.txt"
     conda: "conda_envs/r_env.yaml"
     threads: 1
     resources:
@@ -767,7 +772,7 @@ rule plot_expected_vs_actual_synthetic_transcriptomes:
         label="True percent host reads (GRCh38, jittered)"
     shell:
         """
-        Rscript {params.script} -i benchmarking_{wildcards.proj}_reads_breakdown.csv -o {output.plot}  -n "{params.label}" > {output.model}
+        Rscript {params.script} -i {wildcards.index}_benchmarking_{wildcards.proj}_reads_breakdown.csv -o {output.plot}  -n "{params.label}" > {output.model}
         """
 
 
@@ -775,8 +780,8 @@ rule plot_taxonomy_boxplots:
     input:
         "HoMi_is_done_{proj}"
     output:
-        genus_plot="taxonomy_compared/{proj}/{method}_genus.pdf",
-        species_plot="taxonomy_compared/{proj}/{method}_species.pdf"
+        genus_plot="taxonomy_compared/{index}/{proj}/{method}_genus.pdf",
+        species_plot="taxonomy_compared/{index}/{proj}/{method}_species.pdf"
     conda: "conda_envs/r_env.yaml"
     threads: 1
     resources:
@@ -785,16 +790,16 @@ rule plot_taxonomy_boxplots:
         runtime=int(1*60) # min
     params:
         script="Compare_taxonomy.R",
-        outdir="taxonomy_compared/{proj}"
+        outdir="taxonomy_compared/{index}/{proj}"
     shell:
         """
         mkdir -p {params.outdir}
         
         if [[ "{wildcards.method}" == "metaphlan" ]]; then
-            Rscript {params.script} -i benchmarking_{wildcards.proj}.f0.0.r0.0.nonhost.humann/all_bugs_list.tsv -t metaphlan -o {params.outdir}
+            Rscript {params.script} -i {wildcards.index}_benchmarking_{wildcards.proj}.f0.0.r0.0.nonhost.humann/all_bugs_list.tsv -t metaphlan -o {params.outdir}
         
         elif [[ "{wildcards.method}" == "kraken" ]]; then
-            Rscript {params.script} -i benchmarking_{wildcards.proj}.f0.0.r0.0.nonhost.kraken/Combined-taxonomy.tsv -t kraken -o {params.outdir}
+            Rscript {params.script} -i {wildcards.index}_benchmarking_{wildcards.proj}.f0.0.r0.0.nonhost.kraken/Combined-taxonomy.tsv -t kraken -o {params.outdir}
         fi
         """
 
@@ -1043,11 +1048,11 @@ rule create_HoMi_metadata_semi:
 rule run_HoMi_semi:
     input:
         homi_metadata=os.path.join(semi_work_dir, "semi_homi_metadata.csv"),
-        homi_config=os.path.join(semi_work_dir, "semi_HoMi_config.yaml"),
+        homi_config=os.path.join(semi_work_dir, "{index}_semi_HoMi_config.yaml"),
         fwd=expand(os.path.join(semi_work_dir, "samples", "{sample}_{read}.fastq.gz"),
                 sample=semi_samples, read=reads)
     output:
-        "HoMi_is_done_semi"
+        "{index}_HoMi_is_done_semi"
     threads: 1
     resources:
         partition="short",
@@ -1064,10 +1069,10 @@ rule run_HoMi_semi:
 
 rule plot_expected_vs_actual_semi:
     input:
-        "HoMi_is_done_semi"
+        "{index}_HoMi_is_done_semi"
     output:
-        plot="semi_benchmark.pdf",
-        model="semi_benchmark_lm_results.txt"
+        plot="{index}_semi_benchmark.pdf",
+        model="{index}_semi_benchmark_lm_results.txt"
     conda: "conda_envs/r_env.yaml"
     threads: 1
     resources:
@@ -1079,13 +1084,14 @@ rule plot_expected_vs_actual_semi:
         label="True percent host reads (transcriptome, jittered)"
     shell:
         """
-        Rscript {params.script} -i semi_reads_breakdown.csv -o {output.plot}  -n "{params.label}" > {output.model}
+        Rscript {params.script} -i {wildcards.index}_semi_reads_breakdown.csv -o {output.plot}  -n "{params.label}" > {output.model}
         """
 
 
 rule plot_multi_taxonomy_boxplots:
     input:
-        data=expand("HoMi_is_done_{proj}",
+        data=expand("{index}_HoMi_is_done_{proj}",
+                index=indexes,
                 proj=["synthetic_transcriptomes", "synthetic", "semi"]),
         read_lengths=os.path.join("semi", "read_lengths.csv")
     output:
@@ -1101,12 +1107,18 @@ rule plot_multi_taxonomy_boxplots:
         script="Compare_all_taxonomy_results.R",
         outdir="taxonomy_compared/",
         # Not the best way to do this, but easier than alternatives
-        input_files=",".join(["benchmarking_synthetic_transcriptomes.f0.0.r0.0.nonhost.humann/all_bugs_list.tsv",
-                             "benchmarking_synthetic.f0.0.r0.0.nonhost.humann/all_bugs_list.tsv",
-                             "semi.f0.0.r0.0.nonhost.humann/all_bugs_list.tsv",
-                             "benchmarking_synthetic_transcriptomes.f0.0.r0.0.nonhost.kraken/Combined-taxonomy.tsv",
-                             "benchmarking_synthetic.f0.0.r0.0.nonhost.kraken/Combined-taxonomy.tsv",
-                             "semi.f0.0.r0.0.nonhost.kraken/Combined-taxonomy.tsv"
+        input_files=",".join(["dna_benchmarking_synthetic_transcriptomes.f0.0.r0.0.nonhost.humann/all_bugs_list.tsv",
+                             "dna_benchmarking_synthetic.f0.0.r0.0.nonhost.humann/all_bugs_list.tsv",
+                             "dna_semi.f0.0.r0.0.nonhost.humann/all_bugs_list.tsv",
+                             "dna_benchmarking_synthetic_transcriptomes.f0.0.r0.0.nonhost.kraken/Combined-taxonomy.tsv",
+                             "dna_benchmarking_synthetic.f0.0.r0.0.nonhost.kraken/Combined-taxonomy.tsv",
+                             "dna_semi.f0.0.r0.0.nonhost.kraken/Combined-taxonomy.tsv",
+                             "rna_benchmarking_synthetic_transcriptomes.f0.0.r0.0.nonhost.humann/all_bugs_list.tsv",
+                             "rna_benchmarking_synthetic.f0.0.r0.0.nonhost.humann/all_bugs_list.tsv",
+                             "rna_semi.f0.0.r0.0.nonhost.humann/all_bugs_list.tsv",
+                             "rna_benchmarking_synthetic_transcriptomes.f0.0.r0.0.nonhost.kraken/Combined-taxonomy.tsv",
+                             "rna_benchmarking_synthetic.f0.0.r0.0.nonhost.kraken/Combined-taxonomy.tsv",
+                             "rna_semi.f0.0.r0.0.nonhost.kraken/Combined-taxonomy.tsv"
                              ])
     shell:
         """

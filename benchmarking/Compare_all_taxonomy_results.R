@@ -210,7 +210,7 @@ plot_data <- function(df, level.values){
     ggplot(mapping=aes(x=`Percent host`, y=Abundance, fill=`Taxonomy method`)) +
     geom_boxplot(outliers=F) +
     geom_point(position=position_jitterdodge()) +
-    facet_nested(Taxon ~ index + sim_method,
+    facet_nested(Taxon ~ sim_method + index,
                scales="free") +
     geom_hline(data=hline.df,
                aes(yintercept=line)) +
@@ -373,7 +373,7 @@ main <- function(){
          FUN=function(file){
           
            project <- str_split_i(file, "\\.", i=1)
-           sim_method <- substr(project, 5, nchar(project)) # strip r/dna_
+           sim.method <- substr(project, 5, nchar(project)) # strip r/dna_
            index <- str_to_upper(str_split_i(file, "_", i=1))
            
            if(project %in% c("dna_benchmarking_synthetic",
@@ -429,7 +429,7 @@ main <- function(){
                                     " - ", round(upper, digits=3), "]"),
            min = round(min, 3),
            max = round(max, 3)) %>%
-    select(c(`Taxonomy method`, Taxon, sim, index, `mean [95% CI]`, min, max)) %>%
+    select(c(`Taxonomy method`, Taxon, sim_method, index, `mean [95% CI]`, min, max)) %>%
     pivot_wider(names_from = `Taxonomy method`, 
                 values_from = c(`mean [95% CI]`, max, min),
                 names_glue = "{`Taxonomy method`} {.value}"

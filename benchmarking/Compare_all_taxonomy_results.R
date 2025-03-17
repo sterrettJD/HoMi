@@ -209,14 +209,7 @@ plot_data <- function(df, level.values){
                scales="free") +
     geom_hline(data=hline.df,
                aes(yintercept=line)) +
-  theme_bw(base_size=16) +
-  theme(
-    axis.text=element_text(size=14),
-    axis.title=element_text(size=16),
-    strip.text=element_text(size=14),
-    legend.text=element_text(size=14),
-    legend.title=element_text(size=16)
-  )
+    theme_bw()
   
   return(p)
 }
@@ -363,27 +356,35 @@ main <- function(){
   for(file in split.files){
     print(file)
   }
-  
+    # hard coding better project names
+  new.names <- c("DNA synthetic communities", "RNA synthetic communities",
+                "DNA synthetic transcriptomes",  "RNA synthetic transcriptomes",
+                "DNA semisynthetic transcriptomes",
+                "RNA semisynthetic transcriptomes")
+  names(new.names) <- c("dna_benchmarking_synthetic",
+                        "rna_benchmarking_synthetic",
+                        "dna_benchmarking_synthetic_transcriptomes",
+                        "rna_benchmarking_synthetic_transcriptomes",
+                        "dna_semi", "rna_semi")
+
   dfs <- lapply(split.files,
          FUN=function(file){
           
            project <- str_split_i(file, "\\.", i=1)
            
-           # hard coding better project names
-           if(project %in% c("dna_benchmarking_synthetic", 
-                             "rna_benchmarking_synthetic")){
-             project <- "Synthetic communities"
-             norm.by.read.length <- FALSE
-           } else if(project %in% c("dna_benchmarking_synthetic_transcriptomes",
-                                    "rna_benchmarking_synthetic_transcriptomes")){
-             project <- "Synthetic transcriptomes"
+           if(project %in% c("dna_benchmarking_synthetic",
+                             "rna_benchmarking_synthetic",
+                             "dna_benchmarking_synthetic_transcriptomes",
+                             "rna_benchmarking_synthetic_transcriptomes")){
              norm.by.read.length <- FALSE
            } else if(project %in% c("dna_semi", "rna_semi")){
-            project <- "Semisynthetic transcriptomes"
             norm.by.read.length <- TRUE
            } else {
             stop(paste("Project name", project, "isn't recognized."))
            }
+
+           project <- new.names[project]
+
            # get the data
            df <- read_file_and_get_level_df(file, tax.level, level.values, 
                                             read.lengths, normalize=norm.by.read.length)

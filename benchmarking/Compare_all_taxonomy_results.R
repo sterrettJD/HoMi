@@ -13,6 +13,11 @@ if (!require("ggplot2")){
   library("ggplot2")
 }
 
+if (!require("ggh4x")){
+  install.packages("ggh4x", repos="http://cran.us.r-project.org")
+  library("ggh4x")
+}
+
 
 get_args <- function(){
   option_list <- list( 
@@ -196,16 +201,16 @@ plot_data <- function(df, level.values){
                          )
   
   p <- df %>% 
-    mutate_at(vars(-c(`Percent host`, `Taxonomy method`, project)),
+    mutate_at(vars(-c(`Percent host`, `Taxonomy method`, sim_method, index)),
               as.numeric) %>%
-    pivot_longer(!c(`Percent host`, `Taxonomy method`, project),
+    pivot_longer(!c(`Percent host`, `Taxonomy method`, sim_method, index),
                  names_to=c("Taxon"),
                  values_to=c("Abundance")) %>%
     mutate(Abundance=as.numeric(Abundance)) %>%
     ggplot(mapping=aes(x=`Percent host`, y=Abundance, fill=`Taxonomy method`)) +
     geom_boxplot(outliers=F) +
     geom_point(position=position_jitterdodge()) +
-    facet_grid(Taxon ~ project, 
+    facet_nested(Taxon ~ index + sim_method,
                scales="free") +
     geom_hline(data=hline.df,
                aes(yintercept=line)) +
@@ -274,12 +279,12 @@ read_file_and_get_level_df <- function(file, level, level.values, read.lengths, 
 
 compare_abundances_to_theoretical <- function(df){
   df %>% 
-    pivot_longer(!c(`Percent host`, `Taxonomy method`, project),
+    pivot_longer(!c(`Percent host`, `Taxonomy method`, sim_method, index),
                  names_to=c("Taxon"),
                  values_to=c("Abundance")) %>%
     mutate(Abundance=as.numeric(Abundance),
            Abundance_diff=Abundance-(1/3)) %>%
-    group_by(`Taxonomy method`, project, Taxon) %>% 
+    group_by(`Taxonomy method`, sim_method, index, Taxon) %>% 
     summarise(mean=mean(Abundance_diff),
               sd=sd(Abundance_diff),
               min=min(Abundance_diff),
@@ -302,7 +307,7 @@ summarize_abundance_not_in_level_values <- function(df){
     # The values should be 0 here, which means that abund = the diff
     mutate(Abundance=as.numeric(`Other`),
            Abundance_diff=Abundance-(0)) %>%
-    group_by(`Taxonomy method`, project) %>% 
+    group_by(`Taxonomy method`, sim_method, index) %>% 
     summarise(mean=mean(Abundance_diff),
               sd=sd(Abundance_diff),
               min=min(Abundance_diff),
@@ -320,7 +325,7 @@ plot_abundance_not_in_level_values <- function(df){
                        fill=`Taxonomy method`)) +
     geom_boxplot(outliers=F) +
     geom_point(position=position_jitterdodge()) + 
-    facet_grid( ~ project) +
+    facet_nested( ~ index + sim_method) +
     theme_bw()
     
   return(p)
@@ -357,20 +362,19 @@ main <- function(){
     print(file)
   }
     # hard coding better project names
-  new.names <- c("DNA synthetic communities", "RNA synthetic communities",
-                "DNA synthetic transcriptomes",  "RNA synthetic transcriptomes",
-                "DNA semisynthetic transcriptomes",
-                "RNA semisynthetic transcriptomes")
-  names(new.names) <- c("dna_benchmarking_synthetic",
-                        "rna_benchmarking_synthetic",
-                        "dna_benchmarking_synthetic_transcriptomes",
-                        "rna_benchmarking_synthetic_transcriptomes",
-                        "dna_semi", "rna_semi")
+  new.names <- c("Synthetic communities",
+                "Synthetic transcriptomes",
+                "Semisynthetic transcriptomes")
+  names(new.names) <- c("benchmarking_synthetic",
+                        "benchmarking_synthetic_transcriptomes",
+                        "semi")
 
   dfs <- lapply(split.files,
          FUN=function(file){
           
            project <- str_split_i(file, "\\.", i=1)
+           sim_method <- substr(project, 5, nchar(project)) # strip r/dna_
+           index <- str_to_upper(str_split_i(file, "_", i=1))
            
            if(project %in% c("dna_benchmarking_synthetic",
                              "rna_benchmarking_synthetic",
@@ -383,7 +387,7 @@ main <- function(){
             stop(paste("Project name", project, "isn't recognized."))
            }
 
-           project <- new.names[project]
+           sim.method <- new.names[sim.method]
 
            # get the data
            df <- read_file_and_get_level_df(file, tax.level, level.values, 
@@ -396,7 +400,8 @@ main <- function(){
            # Make each row name specific to the project and taxonomy method 
            # from which it came
            # So we can merge these
-           df$project <- project
+           df$index <- index
+           df$sim_method <- sim.method
            rownames(df) <- paste0(rownames(df), project, taxonomy.method)
            return(df)
          })
@@ -424,7 +429,7 @@ main <- function(){
                                     " - ", round(upper, digits=3), "]"),
            min = round(min, 3),
            max = round(max, 3)) %>%
-    select(c(`Taxonomy method`, Taxon, project, `mean [95% CI]`, min, max)) %>%
+    select(c(`Taxonomy method`, Taxon, sim, index, `mean [95% CI]`, min, max)) %>%
     pivot_wider(names_from = `Taxonomy method`, 
                 values_from = c(`mean [95% CI]`, max, min),
                 names_glue = "{`Taxonomy method`} {.value}"

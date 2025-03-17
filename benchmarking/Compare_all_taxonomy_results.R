@@ -370,13 +370,15 @@ main <- function(){
            project <- str_split_i(file, "\\.", i=1)
            
            # hard coding better project names
-           if(project=="benchmarking_synthetic"){
+           if(project %in% c("dna_benchmarking_synthetic", 
+                             "rna_benchmarking_synthetic")){
              project <- "Synthetic communities"
              norm.by.read.length <- FALSE
-           } else if(project=="benchmarking_synthetic_transcriptomes"){
+           } else if(project %in% c("dna_benchmarking_synthetic_transcriptomes",
+                                    "rna_benchmarking_synthetic_transcriptomes")){
              project <- "Synthetic transcriptomes"
              norm.by.read.length <- FALSE
-           } else if(project=="semi"){
+           } else if(project %in% c("dna_semi", "rna_semi")){
             project <- "Semisynthetic transcriptomes"
             norm.by.read.length <- TRUE
            } else {

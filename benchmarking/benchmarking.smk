@@ -647,7 +647,7 @@ rule plot_expected_vs_actual_synthetic_communities:
         label="True percent host reads (pangenome, jittered)" 
     shell:
         """
-        Rscript {params.script} -i {params.data} -o {output.plot} -n "{params.label}" > {output.model}
+        Rscript {params.script} -i {wildcards.index}_benchmarking_synthetic_reads_breakdown.csv -o {output.plot} -n "{params.label}" > {output.model}
         """
 
 

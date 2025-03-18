@@ -2,7 +2,7 @@
 ROOT: .
 
 # Project name
-PROJ: benchmarking_Pereira
+PROJ: rna_benchmarking_Pereira
 
 # Metadata file
 METADATA: Pereira/Pereira_data.csv
@@ -37,7 +37,7 @@ trunc_rev: 0
 # - human-t2t-hla-argos985
 # - filepath to an already downloaded and bowtie2-indexed database 
 #   (with no .bt1, .bt2 etc file extensions in this argument)
-hostile_db: human-t2t-hla-argos985
+hostile_db: t2t_rna_hla_index/index
 # Where to download a database for hostile (if applicable)
 loc_for_hostile_db_download: synthetic/data
 

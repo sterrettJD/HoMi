@@ -95,10 +95,14 @@ rule all:
                 srr_id=pereira_srr_ids),
         expand(os.path.join("Pereira", "{srr_id}_R2.fastq.gz"),
                 srr_id=pereira_srr_ids),
-        "Pereira_benchmark.pdf",
-        "Pereira_benchmark_lm_results.txt",
-        "Pereira_benchmark_from_paper.pdf",
-        "Pereira_benchmark_from_paper_lm_results.txt",
+        expand("{index}_Pereira_benchmark.pdf",
+            index=indexes),
+        expand("{index}_Pereira_benchmark_lm_results.txt",
+            index=indexes),
+        expand("{index}_Pereira_benchmark_from_paper.pdf",
+            index=indexes),
+        expand("{index}_Pereira_benchmark_from_paper_lm_results.txt",
+            index=indexes),
 
         # Boxplot comparisons of taxonomy to what it should be
         expand("taxonomy_compared/{index}/{proj}/{method}_genus.pdf",
@@ -835,13 +839,13 @@ rule fastq_dump_Pereira:
 rule run_HoMi_mock_data:
     input:
         homi_metadata=os.path.join("Pereira", "Pereira_data.csv"),
-        homi_config=os.path.join("Pereira", "mock_community_HoMi_config.yaml"),
+        homi_config=os.path.join("Pereira", "{index}_mock_community_HoMi_config.yaml"),
         fwd=expand(os.path.join("Pereira", "{srr_id}_R1.fastq.gz"),
                 srr_id=pereira_srr_ids),
         rev=expand(os.path.join("Pereira", "{srr_id}_R2.fastq.gz"),
                 srr_id=pereira_srr_ids)
     output:
-        "HoMi_is_done_Pereira"
+        "{index}_HoMi_is_done_Pereira"
     threads: 1
     resources:
         partition="short",
@@ -858,10 +862,10 @@ rule run_HoMi_mock_data:
 
 rule plot_expected_vs_actual_mock_data:
     input:
-        "HoMi_is_done_Pereira"
+        "{index}_HoMi_is_done_Pereira"
     output:
-        plot="Pereira_benchmark.pdf",
-        model="Pereira_benchmark_lm_results.txt"
+        plot="{index}_Pereira_benchmark.pdf",
+        model="{index}_Pereira_benchmark_lm_results.txt"
     conda: "conda_envs/r_env.yaml"
     threads: 1
     resources:
@@ -870,7 +874,7 @@ rule plot_expected_vs_actual_mock_data:
         runtime=int(1*60) # min
     params:
         script="Plot_benchmarked_reads_breakdown.R",
-        data="benchmarking_Pereira_reads_breakdown.csv",
+        data="{index}_benchmarking_Pereira_reads_breakdown.csv",
         jitter=0,
         label="Pereira-Marques percent microbial reads"
     shell:
@@ -881,10 +885,10 @@ rule plot_expected_vs_actual_mock_data:
 
 rule plot_expected_from_paper_vs_actual_mock_data:
     input:
-        "HoMi_is_done_Pereira"
+        "{index}_HoMi_is_done_Pereira"
     output:
-        plot="Pereira_benchmark_from_paper.pdf",
-        model="Pereira_benchmark_from_paper_lm_results.txt"
+        plot="{index}_Pereira_benchmark_from_paper.pdf",
+        model="{index}_Pereira_benchmark_from_paper_lm_results.txt"
     conda: "conda_envs/r_env.yaml"
     threads: 1
     resources:
@@ -893,7 +897,7 @@ rule plot_expected_from_paper_vs_actual_mock_data:
         runtime=int(1*60) # min
     params:
         script="Plot_benchmarked_reads_breakdown.R",
-        data="benchmarking_Pereira_reads_breakdown.csv",
+        data="{index}_benchmarking_Pereira_reads_breakdown.csv",
         metadata="Pereira/Pereira_data.csv",
         column_name="Pereira_percent_microbial",
         axis_name="\"Paper-derived percent microbial\"",

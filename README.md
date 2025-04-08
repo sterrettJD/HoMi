@@ -104,5 +104,5 @@ sample_withhost,True
 - `data/` contains relevant data, such as adapter sequences to be removed during trimming.
 
 ### Auxiliary files
-- `src/HoMi_cleanup.py` contains a script that can be used to clean up unecessary intermediate files, if you decide you don't want them. Current functionality deletes temporary files from failed HUMAnN runs and HUMANnN `.bam` files across all samples provided in the metadata.
-- `src/profile_setup.py` is a script that can be used to setup a cluster profile for Slurm integration, with options for clusters with and without hyperthreaded cores. Researchers at CU Boulder/Anschutz using Alpine should run this script as `profile_setup.py --cluster_type slurm-nosmt` to setup a Slurm snakemake profile compatible with Alpine, which does not have hyperthreaded cores.
+- `src/homi_pipeline/HoMi_cleanup.py` contains a script that can be used to clean up unecessary intermediate files, if you decide you don't want them. Current functionality deletes temporary files from failed HUMAnN runs and HUMANnN `.bam` files across all samples provided in the metadata.
+- `src/homi_pipeline/profile_setup.py` is a script that can be used to setup a cluster profile for Slurm integration, with options for clusters with and without hyperthreaded cores. Researchers at CU Boulder/Anschutz using Alpine should run this script as `profile_setup.py --cluster_type slurm-nosmt` to setup a Slurm snakemake profile compatible with Alpine, which does not have hyperthreaded cores.

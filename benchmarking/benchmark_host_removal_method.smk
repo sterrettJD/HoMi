@@ -39,18 +39,9 @@ index_methods = ["bowtie2", "hisat2"]
 
 rule all:
     input:
-        expand("{method}_index",
-                method=index_methods),
-        expand(os.path.join("{method}_data", 
-                "{sample}_R1.fastq.gz"),
-                method=index_methods, sample=sample_paths),
-        expand(os.path.join("{method}_data", 
-                "{sample}_R2.fastq.gz"),
-                method=index_methods, sample=sample_paths),
-        expand(os.path.join("{method}_data",
-                "{sample}.report"),
-                method=index_methods, sample=sample_paths),
-        "host_filtering_benchmark_aggregated.csv"
+        "host_filtering_benchmark_aggregated.csv",
+        "hostile_alt_lms.csv",
+        "hostile_alt_plot.pdf"
 
 
 rule create_alt_hostile_indexes:
@@ -134,3 +125,21 @@ rule aggregate_hostile_reports:
                                     columns=vars_of_interest)
         df.to_csv(output.report)
 
+rule model_plot_benchmark_results:
+    input:
+        report="host_filtering_benchmark_aggregated.csv"
+    output:
+        lms="hostile_alt_lms.csv",
+        pdf="hostile_alt_plot.pdf"
+    threads: 1
+    conda: "conda_envs/r_env.yaml"
+    resources:
+        partition="short",
+        mem_mb=int(1*1000), # MB
+        runtime=int(1*60) # min
+    params:
+        script="Plot_alt_splicing_benchmark.R"
+    shell:
+        """
+        Rscript {params.script} -i {input.report} -o {output.pdf} -l {output.lms}
+        """

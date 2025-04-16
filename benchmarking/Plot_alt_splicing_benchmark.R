@@ -41,12 +41,16 @@ get_args <- function(){
 }
 
 get_simulation_method <- function(filepath){
-  patterns <- c("synthetic_communities", "synthetic_transcriptomes", "semi")
-  for(pattern in patterns){
-    if(grepl(pattern, filepath)){
-      return(pattern)
-    }   
+  patterns <- c("", "synthetic_transcriptomes", "semi")
+  if(grepl("synthetic_communities", filepath)){
+    return("Synthetic communities")
   }
+  if(grepl("synthetic_transcriptomes", filepath)){
+    return("Synthetic transcriptomes")
+  }
+  if(grepl("semi", filepath)){
+    return("Semisynthetic transcriptomes")
+}
   stop("None of the accepted patterns were detected in ", filepath)
 }
 
@@ -56,9 +60,6 @@ clean_df <- function(df, col_to_use=X){
                       sample_name=col_to_use)
   colnames(df)[1] <- "filepath"
   df$simulation_method <- sapply(df$filepath, get_simulation_method)
-  
-  df[df$simulation_method=="semi","simulation_method"] <- "semisynthetic_transcriptomes"
-  
   
   df$true_perc_host <- df$sample_name %>% 
     str_split_i(pattern="_",i=1) %>%
@@ -79,14 +80,17 @@ main <- function(){
   reg_summaries <- plyr::ddply(df, ~aligner+simulation_method, run_regression)
   print(reg_summaries)
   write.csv(x=reg_summaries, file=args$output_lms)
-
-  p <- ggplot(df, mapping=aes(x=true_perc_host, y=Percent_host, color=aligner)) +
+  
+  df <- df %>%
+    dplyr::rename(Aligner=aligner)
+  p <- ggplot(df, mapping=aes(x=true_perc_host, y=Percent_host, color=Aligner)) +
     geom_jitter(width=args$jitter_width, size=3, alpha=0.8) +
     geom_smooth(method="lm") +
     theme_bw(base_size=22) +
     xlim(-5, 90) +
     ylim(-5, 90) +
-    facet_grid(cols=vars(simulation_method))
+    facet_wrap(~simulation_method, 
+               labeller=label_wrap_gen(10)) +
     labs(x=args$name_for_plot, y="Recovered percent host reads")
 
   if (!args$no_dotted_line) {
@@ -95,7 +99,7 @@ main <- function(){
       linetype="dotted", color="black", size=1)
   }
 
-  ggsave(args$output_plot, p)
+  ggsave(args$output_plot, p, width=10, height=8)
 }
 
 

@@ -11,14 +11,17 @@ pip install homi-pipeline
 
 **NOTE:** Users need to install the SRA toolkit outside of conda, as SRA-tools doesn't support a conda distribution. See the [SRA toolkit official instructions](https://github.com/ncbi/sra-tools/wiki/01.-Downloading-SRA-Toolkit).
 
-This can be run on ARM using Docker via a command such as
+This pipeline can alternatively be run on ARM using Docker via a command such as
 ```
 docker run --platform linux/amd64 -v "$(pwd)":/workdir:rw -w /workdir snakemake/snakemake:v7.32.3 snakemake -s benchmarking.smk --cores 4 --use-conda
 ```
 
 ## Running it all
 
-`benchmarking.smk` is the snakemake file that will run all of the benchmarking. Run it at your leisure via snakemake (e.g., `snakemake -s benchmarking.smk -c8` for 8 cores or ` snakemake -s benchmarking.smk --profile slurm` if you have a slurm profile set up and want to run it with that)
+1. `benchmarking.smk` is the snakemake file that will run all of the benchmarking. Run it at your leisure via snakemake (e.g., `snakemake -s benchmarking.smk -c8` for 8 cores or `snakemake -s benchmarking.smk --profile slurm` if you have a slurm profile set up and want to run it with that)
+
+2. `benchmark_host_read_removal_method.smk` does some alternative benchmarking of hostile using HISAT2 via updates to hostile on my forked branch of the repo. This will hopefully become redundant if HISAT2 is incorporated into hostile, but for now it relies on running this pipeline after `benchmarking.smk`. It can be run using `snakemake -s benchmarking.smk --profile slurm`.
+
 
 ## Synthetic communities
 Synthetic communities were generated in two ways.

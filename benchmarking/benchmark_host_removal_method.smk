@@ -49,7 +49,8 @@ rule all:
                 method=index_methods, sample=sample_paths),
         expand(os.path.join("{method}_data",
                 "{sample}.report"),
-                method=index_methods, sample=sample_paths)
+                method=index_methods, sample=sample_paths),
+        "host_filtering_benchmark_aggregated.csv"
 
 
 rule create_alt_hostile_indexes:
@@ -101,3 +102,36 @@ rule run_hostile:
         mv {wildcards.method}_data/{wildcards.sample}_R1.clean_1.fastq.gz {output.fwd}
         mv {wildcards.method}_data/{wildcards.sample}_R2.clean_2.fastq.gz {output.rev}
         """
+
+rule aggregate_hostile_reports:
+    input:
+        reports=expand(os.path.join("{method}_data",
+                "{sample}.report"),
+                method=index_methods, sample=sample_paths)
+    output:
+        report="host_filtering_benchmark_aggregated.csv"
+    threads: 1
+    conda: "conda_envs/hostile_dev.yaml"
+    resources:
+        partition="short",
+        mem_mb=int(1*1000), # MB
+        runtime=int(1*60) # min
+    params:
+    shell:
+        import json
+        import pandas as pd
+
+        vars_of_interest = ["fastq1_in_name", "aligner", 
+                            "reads_removed_proportion"]
+        data = dict()
+        for report in input.reports:
+            with open(report) as f:
+                report_data = json.load(f)[0]
+            
+            data[report] = [report_data[var] for var in vars_of_interest]
+        
+        df = pd.DataFrame.from_dict(data, 
+                                    orient="index", 
+                                    columns=vars_of_interest)
+        df.to_csv(output.report)
+

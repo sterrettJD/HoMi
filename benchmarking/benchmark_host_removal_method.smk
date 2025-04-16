@@ -111,13 +111,12 @@ rule aggregate_hostile_reports:
     output:
         report="host_filtering_benchmark_aggregated.csv"
     threads: 1
-    conda: "conda_envs/hostile_dev.yaml"
     resources:
         partition="short",
         mem_mb=int(1*1000), # MB
         runtime=int(1*60) # min
     params:
-    shell:
+    run:
         import json
         import pandas as pd
 

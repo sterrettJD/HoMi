@@ -91,13 +91,13 @@ rule run_hostile:
 
         hostile clean \
         --fastq1 {input.fwd} --fastq2 {input.rev} \
-        -o {wildcards.method}_data/{wildcards.sample} \
+        -o {wildcards.method}_data/{wildcards.sample}/.. \
         --threads {threads} \
         --index {wildcards.method}_index/index \
         --debug \
-        --aligner {wilcards.method} > {output.report}
+        --aligner {wildcards.method} > {output.report}
 
         # cleanup filepath
-        mv {wildcards.method}_data/{wildcards.sample}.R1.clean_1.fastq.gz {output.fwd}
-        mv {wildcards.method}_data/{wildcards.sample}.R2.clean_1.fastq.gz {output.fwd}
+        mv {wildcards.method}_data/{wildcards.sample}_R1.clean_1.fastq.gz {output.fwd}
+        mv {wildcards.method}_data/{wildcards.sample}_R2.clean_2.fastq.gz {output.rev}
         """

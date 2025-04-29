@@ -84,3 +84,19 @@ def test_get_rule_extra_args_nondefault():
 def test_get_taxa_bar_rmd():
     assert str(su.get_taxa_barplot_rmd_path()).endswith("Metaphlan_microshades.Rmd")
     assert str(su.get_taxa_barplot_rmd_path("Kraken")).endswith("Kraken_microshades.Rmd")
+
+
+def test_get_hostile_aligner():
+    config = {"hostile_aligner": "hisat2"}
+    assert su.get_hostile_aligner(config) == "hisat2"
+
+    config = {"hostile_aligner": "bowtie2"}
+    assert su.get_hostile_aligner(config) == "bowtie2"
+
+    config = {"hostile_aligner": "hi"}
+    with pytest.raises(ValueError):
+        out = su.get_hostile_aligner(config)
+
+    config = {"doesn't contain": "hostile aligner"}
+    with pytest.raises(ValueError):
+        out = su.get_hostile_aligner(config)

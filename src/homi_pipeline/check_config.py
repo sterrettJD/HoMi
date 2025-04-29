@@ -39,7 +39,7 @@ def check_strings(config):
         conf_param = config.get(param)
         if conf_param is None:
             raise ValueError(f"{param} is missing from the config file. {required[param]}")
-        if type(conf_param) != str:
+        if type(conf_param) is not str:
             raise TypeError(f"{param} is the wrong type in the config file. It should be a string.")
     
     for param in recommended.keys():
@@ -47,7 +47,7 @@ def check_strings(config):
         if conf_param is None:
             print(f"Optional param {param} ({recommended[param]}) is missing from the config file. ")
             
-        elif type(conf_param) != str:
+        elif type(conf_param) is not str:
             raise TypeError(f"{param} is the wrong type in the config file. It should be a string instead of {type(conf_param)}.")
     
 
@@ -69,7 +69,7 @@ def check_nums(config):
         conf_param = config.get(param)
         if conf_param is None:
             raise ValueError(f"{param} is missing from the config file. {required[param]}")
-        if type(conf_param) != int:
+        if type(conf_param) is not int:
             raise TypeError(f"{param} is the wrong type in the config file. It should be a string.")
 
 

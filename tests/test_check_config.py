@@ -23,8 +23,7 @@ def config():
         "utility_mapping_db": "util_db",
         "kraken_db": "k_loc",
         "host_ref_fna": "host_fna_loc",
-        "host_ref_gtf": "host_gtf_loc",
-        "host_map_method": "map_method"
+        "host_ref_gtf": "host_gtf_loc"
     }
 
 
@@ -70,3 +69,12 @@ def test_config_checker_string_typeerror(config):
             current_config[param] = 1
             with pytest.raises(TypeError):
                 cc.check_strings(current_config)
+
+
+def test_config_checker_recommended(config, capsys):
+    recommended = {"loc_for_hostile_db_download": "database_loc",
+                   "host_map_method": "HISAT2"}
+    cc.check_strings(config)
+    captured = capsys.readouterr()
+    all_rec_printed = all(sub in captured.out for sub in recommended.keys())
+    assert all_rec_printed

@@ -16,7 +16,7 @@ def config():
         "trunc_fwd": 0,
         "trunc_rev": 0,
         "hostile_db": "database_name",
-        "loc_for_hostile_db_download": "database_loc",
+        "hostile_aligner": "hisat2",
         "metaphlan_bowtie_db": "mphlan_loc",
         "chocophlan_db": "choco_loc",
         "uniref_db": "uniref_loc",

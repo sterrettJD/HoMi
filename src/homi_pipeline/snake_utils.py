@@ -216,3 +216,13 @@ def get_read_reports_path():
         return reporter
     else:
         raise FileNotFoundError(f"Read reports script was not found at {reporter}.")
+    
+
+def get_hostile_aligner(config):
+    aligner = config.get(f"hostile_aligner", None) 
+    accepted_aligners = ["hisat2", "bowtie2"]
+    if aligner in accepted_aligners:
+        return aligner 
+       
+    raise ValueError("Please provide a valid Hostile aligner",
+                     f"({",".join(accepted_aligners)})")

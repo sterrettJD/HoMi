@@ -37,6 +37,7 @@ trunc_rev: 0
 hostile_db: human-t2t-hla-argos985
 # Where to download a database for hostile (if applicable)
 loc_for_hostile_db_download: synthetic/data
+hostile_aligner: bowtie2
 
 
 #################################

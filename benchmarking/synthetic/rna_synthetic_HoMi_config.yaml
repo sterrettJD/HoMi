@@ -40,6 +40,7 @@ trunc_rev: 0
 hostile_db: t2t_rna_hla_index/index
 # Where to download a database for hostile (if applicable)
 loc_for_hostile_db_download: synthetic/data
+hostile_aligner: bowtie2
 
 
 #################################

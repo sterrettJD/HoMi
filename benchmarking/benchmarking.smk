@@ -11,7 +11,7 @@ synthetic_transcriptomes_dir_p40 = "synthetic_transcriptomes_p40"
 semi_work_dir = "semi"
 
 # to run this on a Slurm-managed cluster
-homi_args = "--profile slurm"
+homi_args = """--profile slurm --snakemake_extra "--jobs 40" """
 
 # Syntheti communities metadata
 metadata_file = os.path.join(synthetic_work_dir, "sample_data.csv")
@@ -49,14 +49,16 @@ polyester_error_rate_p40=0.0001
 polyester_phred_p40=40
 
 # hostile reference data
-t2t_rna_hla_index = "t2t_rna_hla_index"
+custom_hostile_index_specs = ["rna", "hisat2"]
 
-indexes = ["dna", "rna"]
+# host removal index option
+indexes = ["dna", "rna", "hisat2"]
 
 rule all:
     input:
         # hostile reference
-        t2t_rna_hla_index,
+        expand("t2t_rna_{hostile_index_spec}_index",
+              hostile_index_spec=custom_hostile_index_specs),
         # From simulate_synthetic_communities
         expand(os.path.join(synthetic_work_dir, synthetic_communities_dir, "{sample}_R1.fastq.gz"),
                sample=samples),
@@ -127,7 +129,7 @@ rule all:
 
 rule create_alt_hostile_index:
     output:
-        ref_dir=directory(t2t_rna_hla_index)
+        ref_dir=directory("t2t_rna_{hostile_index_spec}_index")
     threads: 4
     conda: "conda_envs/hostile.yaml"
     resources:
@@ -617,7 +619,9 @@ rule run_HoMi_synthetic_communities:
         fwd=expand(os.path.join(synthetic_work_dir, synthetic_communities_dir, "{sample}_R1.fastq.gz"),
                sample=samples),
         rev=expand(os.path.join(synthetic_work_dir, synthetic_communities_dir, "{sample}_R2.fastq.gz"),
-               sample=samples)
+               sample=samples),
+        alt_indexes_created=expand("t2t_rna_{hostile_index_spec}_index",
+              hostile_index_spec=custom_hostile_index_specs)
     output:
         "{index}_HoMi_is_done_synthetic"
     threads: 1
@@ -690,7 +694,9 @@ rule run_HoMi_synthetic_transcriptomes:
         fwd=expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_R1.fastq.gz"),
                sample=samples),
         rev=expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_R2.fastq.gz"),
-               sample=samples)
+               sample=samples),
+        alt_indexes_created=expand("t2t_rna_{hostile_index_spec}_index",
+                hostile_index_spec=custom_hostile_index_specs)
     output:
         "{index}_HoMi_is_done_synthetic_transcriptomes"
     threads: 1
@@ -742,7 +748,9 @@ rule run_HoMi_synthetic_transcriptomes_p40:
         fwd=expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir_p40, "{sample}_R1.fastq.gz"),
                sample=samples),
         rev=expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir_p40, "{sample}_R2.fastq.gz"),
-               sample=samples)
+               sample=samples),
+        alt_indexes_created=expand("t2t_rna_{hostile_index_spec}_index",
+                hostile_index_spec=custom_hostile_index_specs)
     output:
         "{index}_HoMi_is_done_synthetic_transcriptomes_p40"
     threads: 1
@@ -843,7 +851,9 @@ rule run_HoMi_mock_data:
         fwd=expand(os.path.join("Pereira", "{srr_id}_R1.fastq.gz"),
                 srr_id=pereira_srr_ids),
         rev=expand(os.path.join("Pereira", "{srr_id}_R2.fastq.gz"),
-                srr_id=pereira_srr_ids)
+                srr_id=pereira_srr_ids),
+        alt_indexes_created=expand("t2t_rna_{hostile_index_spec}_index",
+                hostile_index_spec=custom_hostile_index_specs)
     output:
         "{index}_HoMi_is_done_Pereira"
     threads: 1
@@ -1056,7 +1066,9 @@ rule run_HoMi_semi:
         homi_metadata=os.path.join(semi_work_dir, "semi_homi_metadata.csv"),
         homi_config=os.path.join(semi_work_dir, "{index}_semi_HoMi_config.yaml"),
         fwd=expand(os.path.join(semi_work_dir, "samples", "{sample}_{read}.fastq.gz"),
-                sample=semi_samples, read=reads)
+                sample=semi_samples, read=reads),
+        alt_indexes_created=expand("t2t_rna_{hostile_index_spec}_index",
+                hostile_index_spec=custom_hostile_index_specs)
     output:
         "{index}_HoMi_is_done_semi"
     threads: 1

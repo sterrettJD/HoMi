@@ -224,5 +224,7 @@ def get_hostile_aligner(config):
     if aligner in accepted_aligners:
         return aligner 
        
-    raise ValueError("Please provide a valid Hostile aligner",
-                     f"({",".join(accepted_aligners)})")
+    raise ValueError(f"""
+                     Please provide a valid Hostile aligner
+                     ({', '.join(accepted_aligners)})
+                     """)

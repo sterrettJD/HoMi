@@ -112,6 +112,7 @@ main <- function(){
                 color="black", 
                 inherit.aes=FALSE)
    
+  ggsave(args$output_plot, p)
 }
 
 

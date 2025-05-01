@@ -77,38 +77,41 @@ main <- function(){
       # by merging this and then renaming
       clean.df <- merge(clean.df, dataset.metadata[c("Sample", column.to.use)],
                       by.x="sample_name", by.y="Sample")
-      clean.df$plotting_percent_host <- clean.df[column.to.use]
+      clean.df$plotting_true_percent_host <- clean.df[column.to.use]
     } else {
-      clean.df$plotting_percent_host <- clean.df$true_percent_host
+      clean.df$plotting_true_percent_host <- clean.df$true_percent_host
     }
     
     # rbind with the full dataframe
     big.data <- rbind(big.data, clean.df)
   }
   
-
-  if (!is.null(args$metadata_file)){
-    metadata <- read.csv(args$metadata_file)
-    df <- merge(df, metadata, by.x="X", by.y="Sample")
-  }
   
-  df <- clean_df(df, col_to_use=args$column_to_use)
+  # Get list of facet values to draw theoretical optimal line on
+  facet_vals_with_line <- unique(big.data$dataset)
+  facet_vals_with_line <- facet_vals_with_line[facet_vals_with_line!="Pereira-Marques"]  # replace with actual name
   
-  p <- ggplot(df, mapping=aes(x=true_perc_host, y=Percent.host)) +
+  # Create a small data frame to use with geom_abline
+  abline_df <- data.frame(dataset=facet_vals_with_line)
+  
+  p <- ggplot(big.data, 
+              mapping=aes(x=plotting_true_percent_host, 
+                          y=Percent.host, 
+                          color=hostile_index)) +
     geom_jitter(width=args$jitter_width, size=3, alpha=0.8) +
     geom_smooth(method="lm") +
     theme_bw(base_size=22) +
     xlim(-5, 90) +
     ylim(-5, 90) +
-    labs(x=args$name_for_plot, y="Recovered percent host reads")
-  
-  if (!args$no_dotted_line) {
-    p <- p + 
-      geom_abline(slope=1, intercept=0, 
-                  linetype="dotted", color="black", size=1)
-  }
-  
-  ggsave(args$output_plot, p)
+    labs(x="True percent host reads", y="Recovered percent host reads") +
+    facet_grid(cols=dataset, 
+               labeller=label_wrap_gen(10)) +
+    geom_abline(data=abline_df, 
+                aes(slope=1, intercept=0), 
+                linetype="dashed", 
+                color="black", 
+                inherit.aes=FALSE)
+   
 }
 
 

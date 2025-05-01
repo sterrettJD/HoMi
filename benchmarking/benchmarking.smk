@@ -124,7 +124,8 @@ rule all:
         expand("{index}_semi_benchmark.pdf",
                 index=indexes),
         expand("{index}_semi_benchmark_lm_results.txt",
-                index=indexes)
+                index=indexes),
+        "all_hostile_out_benchmark.pdf"
 
 
 rule create_alt_hostile_index:
@@ -1104,6 +1105,32 @@ rule plot_expected_vs_actual_semi:
         """
         Rscript {params.script} -i {wildcards.index}_semi_reads_breakdown.csv -o {output.plot}  -n "{params.label}" > {output.model}
         """
+
+
+rule plot_expected_vs_actual_hostile_all:
+    input:
+        homi_dones=expand("{index}_HoMi_is_done_{proj}",
+                index=indexes,
+                proj=["synthetic_transcriptomes", 
+                      "synthetic", 
+                      "semi", 
+                      "Pereira"]),
+        metadata="Plot_reads_breakdown_metadata.csv"
+    output:
+        plot="all_hostile_out_benchmark.pdf"
+    conda: "conda_envs/r_env.yaml"
+    threads: 1
+    resources:
+        partition="short",
+        mem_mb=int(2*1000), # MB
+        runtime=int(40) # min
+    params:
+        script="Plot_all_benchmarked_reads_breakdowns.R"
+    shell:
+        """
+        Rscript {params.script} -m {input.metadata} -o {output.plot}
+        """
+
 
 
 rule plot_multi_taxonomy_boxplots:

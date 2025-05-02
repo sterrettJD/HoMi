@@ -57,7 +57,7 @@ indexes = ["dna", "rna", "hisat2"]
 rule all:
     input:
         # hostile reference
-        expand("t2t_rna_{hostile_index_spec}_index",
+        expand("t2t_hla_{hostile_index_spec}_index",
               hostile_index_spec=custom_hostile_index_specs),
         # From simulate_synthetic_communities
         expand(os.path.join(synthetic_work_dir, synthetic_communities_dir, "{sample}_R1.fastq.gz"),
@@ -130,7 +130,7 @@ rule all:
 
 rule create_alt_hostile_index:
     output:
-        ref_dir=directory("t2t_rna_{hostile_index_spec}_index")
+        ref_dir=directory("t2t_hla_{hostile_index_spec}_index")
     threads: 4
     conda: "conda_envs/hostile.yaml"
     resources:
@@ -621,7 +621,7 @@ rule run_HoMi_synthetic_communities:
                sample=samples),
         rev=expand(os.path.join(synthetic_work_dir, synthetic_communities_dir, "{sample}_R2.fastq.gz"),
                sample=samples),
-        alt_indexes_created=expand("t2t_rna_{hostile_index_spec}_index",
+        alt_indexes_created=expand("t2t_hla_{hostile_index_spec}_index",
               hostile_index_spec=custom_hostile_index_specs)
     output:
         "{index}_HoMi_is_done_synthetic"
@@ -696,7 +696,7 @@ rule run_HoMi_synthetic_transcriptomes:
                sample=samples),
         rev=expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_R2.fastq.gz"),
                sample=samples),
-        alt_indexes_created=expand("t2t_rna_{hostile_index_spec}_index",
+        alt_indexes_created=expand("t2t_hla_{hostile_index_spec}_index",
                 hostile_index_spec=custom_hostile_index_specs)
     output:
         "{index}_HoMi_is_done_synthetic_transcriptomes"
@@ -750,7 +750,7 @@ rule run_HoMi_synthetic_transcriptomes_p40:
                sample=samples),
         rev=expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir_p40, "{sample}_R2.fastq.gz"),
                sample=samples),
-        alt_indexes_created=expand("t2t_rna_{hostile_index_spec}_index",
+        alt_indexes_created=expand("t2t_hla_{hostile_index_spec}_index",
                 hostile_index_spec=custom_hostile_index_specs)
     output:
         "{index}_HoMi_is_done_synthetic_transcriptomes_p40"
@@ -853,7 +853,7 @@ rule run_HoMi_mock_data:
                 srr_id=pereira_srr_ids),
         rev=expand(os.path.join("Pereira", "{srr_id}_R2.fastq.gz"),
                 srr_id=pereira_srr_ids),
-        alt_indexes_created=expand("t2t_rna_{hostile_index_spec}_index",
+        alt_indexes_created=expand("t2t_hla_{hostile_index_spec}_index",
                 hostile_index_spec=custom_hostile_index_specs)
     output:
         "{index}_HoMi_is_done_Pereira"
@@ -1068,7 +1068,7 @@ rule run_HoMi_semi:
         homi_config=os.path.join(semi_work_dir, "{index}_semi_HoMi_config.yaml"),
         fwd=expand(os.path.join(semi_work_dir, "samples", "{sample}_{read}.fastq.gz"),
                 sample=semi_samples, read=reads),
-        alt_indexes_created=expand("t2t_rna_{hostile_index_spec}_index",
+        alt_indexes_created=expand("t2t_hla_{hostile_index_spec}_index",
                 hostile_index_spec=custom_hostile_index_specs)
     output:
         "{index}_HoMi_is_done_semi"

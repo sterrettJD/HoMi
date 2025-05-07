@@ -39,7 +39,8 @@ trunc_rev: 0
 #   (with no .bt1, .bt2 etc file extensions in this argument)
 hostile_db: t2t_hla_rna_index/index
 # Where to download a database for hostile (if applicable)
-loc_for_hostile_db_download: synthetic/data
+# loc_for_hostile_db_download: synthetic/data
+hostile_aligner: bowtie2
 
 
 #################################

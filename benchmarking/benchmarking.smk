@@ -141,7 +141,11 @@ rule create_alt_hostile_index:
         script="create_decontam_ref_human.py"
     shell:
         """
-        python {params.script} -o {output.ref_dir}
+        if [[ "{wildcards.hostile_index_spec}" == "hisat2" ]]; then
+            python {params.script} -m hisat2 -o {output.ref_dir}
+        else
+            python {params.script} -o {output.ref_dir}
+        fi
         """
 
 

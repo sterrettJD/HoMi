@@ -381,7 +381,7 @@ rule host_filter:
   This removes host reads using the tool Hostile.
   """
   input:
-    INDEX=expand(f"{HOSTILE_DB_PATH}{{extension}}", extension=hostile_index_exts)
+    INDEX=expand(f"{HOSTILE_DB_PATH}{{extension}}", extension=hostile_index_exts),
     FWD=pj(trim_trunc_path,
        "{sample}.R1.fq"),
     REV=pj(trim_trunc_path,

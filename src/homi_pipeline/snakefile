@@ -2,7 +2,7 @@ import pandas as pd
 from importlib.resources import files
 from os.path import join as pj
 from os.path import split
-from homi_pipeline.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil_rmd_path, get_nonpareil_html_path, get_agg_script_path, get_mphlan_conv_script_path, get_taxa_barplot_rmd_path, get_sam2bam_path, get_func_barplot_rmd_path, get_partition, get_mem, get_runtime, get_threads, get_host_mapping_samples, get_slurm_extra, get_gmm_rmd_path, get_kraken_db_loc, get_tpm_converter_path, get_host_map_method, get_rule_extra_args, get_metaphlan_index_name, get_R_installation_path, get_read_reports_path, get_hostile_aligner
+from homi_pipeline.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil_rmd_path, get_nonpareil_html_path, get_agg_script_path, get_mphlan_conv_script_path, get_taxa_barplot_rmd_path, get_sam2bam_path, get_func_barplot_rmd_path, get_partition, get_mem, get_runtime, get_threads, get_host_mapping_samples, get_slurm_extra, get_gmm_rmd_path, get_kraken_db_loc, get_tpm_converter_path, get_host_map_method, get_rule_extra_args, get_metaphlan_index_name, get_R_installation_path, get_read_reports_path, get_hostile_aligner, get_hostile_exts
 
 
 METADATA = pd.read_csv(config["METADATA"].strip())
@@ -20,6 +20,8 @@ HOSTILE_DB_PATH = hostile_db_to_path(HOSTILE_DB_NAME,
                                      HOSTILE_DB_DWNLD_PATH)
 
 trim_trunc_path = f"{config['PROJ']}.f{config['trim_fwd']}.{config['trunc_fwd']}.r{config['trim_rev']}.{config['trunc_rev']}"
+
+hostile_index_exts = get_hostile_exts(config)
 
 rule all:
   """
@@ -346,9 +348,7 @@ rule download_hostile_db:
   This rule downloads the host index to be used for Hostile's host read filtering.
   """
   output:
-    multiext(HOSTILE_DB_PATH,
-             ".1.bt2", ".2.bt2", ".3.bt2", ".4.bt2",
-             ".rev.1.bt2", ".rev.2.bt2")
+    expand(f"{HOSTILE_DB_PATH}{{extension}}", extension=hostile_index_exts)
   resources:
     partition=get_partition("short", config, "download_hostile_db"),
     mem_mb=get_mem(int(4*1000), config, "download_hostile_db"), # MB, or 4 GB,
@@ -381,9 +381,7 @@ rule host_filter:
   This removes host reads using the tool Hostile.
   """
   input:
-    INDEX=multiext(HOSTILE_DB_PATH,
-             ".1.bt2", ".2.bt2", ".3.bt2", ".4.bt2",
-             ".rev.1.bt2", ".rev.2.bt2"),
+    INDEX=expand(f"{HOSTILE_DB_PATH}{{extension}}", extension=hostile_index_exts)
     FWD=pj(trim_trunc_path,
        "{sample}.R1.fq"),
     REV=pj(trim_trunc_path,

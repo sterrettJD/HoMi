@@ -54,6 +54,14 @@ custom_hostile_index_specs = ["rna", "hisat2"]
 # host removal index option
 indexes = ["dna", "rna", "hisat2"]
 
+# Here, I'm using this default resource as a way to prevent too many HoMi 
+# processes at once, since the resource use of those isn't necessarily tracked 
+# by snakemake effectively
+# For example, it thinks running 4 HoMi instances is 4 jobs, 
+# but really it's 4 + 160 child jobs
+default_resources:
+    homi_runs: 0
+
 rule all:
     input:
         # hostile reference
@@ -633,7 +641,8 @@ rule run_HoMi_synthetic_communities:
     resources:
         partition="short",
         mem_mb=int(8*1000), # MB
-        runtime=int(20*60) # min
+        runtime=int(20*60), # min
+        homi_runs=1
     params:
         homi_args=homi_args
     shell:
@@ -708,7 +717,8 @@ rule run_HoMi_synthetic_transcriptomes:
     resources:
         partition="short",
         mem_mb=int(8*1000), # MB
-        runtime=int(20*60) # min
+        runtime=int(20*60), # min
+        homi_runs=1
     params:
         homi_args=homi_args
     shell:
@@ -762,7 +772,8 @@ rule run_HoMi_synthetic_transcriptomes_p40:
     resources:
         partition="short",
         mem_mb=int(8*1000), # MB
-        runtime=int(20*60) # min
+        runtime=int(20*60), # min
+        homi_runs=1
     params:
         homi_args=homi_args
     shell:
@@ -865,7 +876,8 @@ rule run_HoMi_mock_data:
     resources:
         partition="short",
         mem_mb=int(8*1000), # MB
-        runtime=int(24*60) # min
+        runtime=int(24*60), # min
+        homi_runs=1
     params:
         homi_args=homi_args
     shell:
@@ -995,11 +1007,15 @@ rule combine_semi_srrs:
 
 rule subsample_and_combine_semi_fastqs:
     input:
-        data=expand(os.path.join(semi_work_dir, "data", "{taxon}_{read}.fastq.gz"),
-            taxon=semi_organisms, read=reads)
+        fwd=expand(os.path.join(semi_work_dir, "data", "{taxon}_R1.fastq.gz"),
+            taxon=semi_organisms),
+        rev=expand(os.path.join(semi_work_dir, "data", "{taxon}_R2.fastq.gz"),
+            taxon=semi_organisms)
     output:
-        data=os.path.join(semi_work_dir, "samples", "{sample}_{read}.fastq.gz")
+        fwd=os.path.join(semi_work_dir, "samples", "{sample}_R1.fastq.gz"),
+        rev=os.path.join(semi_work_dir, "samples", "{sample}_R2.fastq.gz")
     threads: 1
+    conda: "conda_envs/bbmap.yaml"
     resources:
         partition="short",
         mem_mb=int(2*1000), # MB
@@ -1011,6 +1027,12 @@ rule subsample_and_combine_semi_fastqs:
         import subprocess
         import pandas as pd
         import os
+
+        # clean up output files if they exist for safety
+        for f in [output.fwd, output.rev]:
+            if os.path.exists(f):
+                os.remove(f)
+
 
         metadata = pd.read_csv(params.metadata, index_col="genome")
         
@@ -1024,16 +1046,31 @@ rule subsample_and_combine_semi_fastqs:
             print(f"sampling {taxon} to {depth} reads")
 
             if depth > 0:
-                unsampled_path = os.path.join(params.data_dir, f"{taxon}_{wildcards.read}.fastq.gz")
-                if not os.path.exists(unsampled_path):
-                    raise FileNotFoundError(f"File not found: {unsampled_path}")
+                fwd_in = os.path.join(params.data_dir, f"{taxon}_R1.fastq.gz")
+                rev_in = os.path.join(params.data_dir, f"{taxon}_R2.fastq.gz")
 
-                cmd = f"seqtk sample -s {sample_hash} {unsampled_path} {depth} | gzip >> {output.data}"
+                for file in [fwd_in, rev_in]:
+                    if not os.path.exists(file):
+                        raise FileNotFoundError(f"File not found: {file}")
+
+                tmp_fwd = f"tmp_{taxon}_{wildcards.sample}_R1.fastq.gz"
+                tmp_rev = f"tmp_{taxon}_{wildcards.sample}_R2.fastq.gz"
+
+                cmd = (
+                    f"reformat.sh in1={fwd_in} in2={rev_in} "
+                    f"out1={tmp_fwd} out2={tmp_rev} "
+                    f"sampleseed={sample_hash} samplereadstarget={depth}"
+                )
+
                 print(f"running command: {cmd}")
-                ran = subprocess.run(cmd, shell=True)
-                
-                if ran.returncode != 0:
-                    raise RuntimeError(f"Command failed: {cmd}\nStderr: {ran.stderr.decode()}")
+                ran = subprocess.run(cmd, shell=True, check=True)
+
+                print(f"Moving temp files to {output.fwd} and {output.rev}") 
+                subprocess.run(f"cat {tmp_fwd} >> {output.fwd}", shell=True, check=True)
+                subprocess.run(f"cat {tmp_rev} >> {output.rev}", shell=True, check=True)
+                os.remove(tmp_fwd)
+                os.remove(tmp_rev)
+
 
 
 
@@ -1080,7 +1117,8 @@ rule run_HoMi_semi:
     resources:
         partition="short",
         mem_mb=int(8*1000), # MB
-        runtime=int(24*60) # min
+        runtime=int(24*60), # min
+        homi_runs=1
     params:
         homi_args=semi_homi_args
     shell:

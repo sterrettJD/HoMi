@@ -6,6 +6,7 @@ dependencies:
   - python=3.11
   - snakemake<8.0.0
   - seqtk
+  - bbmap
   - biopython
   - numpy
   - pandas

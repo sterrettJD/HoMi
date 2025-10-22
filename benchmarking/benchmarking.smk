@@ -54,13 +54,6 @@ custom_hostile_index_specs = ["rna", "hisat2"]
 # host removal index option
 indexes = ["dna", "rna", "hisat2"]
 
-# Here, I'm using this default resource as a way to prevent too many HoMi 
-# processes at once, since the resource use of those isn't necessarily tracked 
-# by snakemake effectively
-# For example, it thinks running 4 HoMi instances is 4 jobs, 
-# but really it's 4 + 160 child jobs
-default_resources:
-    homi_runs: 0
 
 rule all:
     input:
@@ -1015,7 +1008,6 @@ rule subsample_and_combine_semi_fastqs:
         fwd=os.path.join(semi_work_dir, "samples", "{sample}_R1.fastq.gz"),
         rev=os.path.join(semi_work_dir, "samples", "{sample}_R2.fastq.gz")
     threads: 1
-    conda: "conda_envs/bbmap.yaml"
     resources:
         partition="short",
         mem_mb=int(2*1000), # MB

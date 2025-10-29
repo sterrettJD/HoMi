@@ -60,7 +60,7 @@ indexes = ["dna", "rna", "hisat2"]
 # For example, it thinks running 4 HoMi instances is 4 jobs, 
 # but really it's 4 + 160 child jobs
 default_resources:
-    homi_runs: 0
+    homi_runs=0
 
 rule all:
     input:
@@ -1019,7 +1019,7 @@ rule subsample_and_combine_semi_fastqs:
     resources:
         partition="short",
         mem_mb=int(2*1000), # MB
-        runtime=int(1*60) # min
+        runtime=int(4*60) # min
     params:
         metadata=semi_metadata_file,
         data_dir=os.path.join(semi_work_dir, "data")
@@ -1060,6 +1060,7 @@ rule subsample_and_combine_semi_fastqs:
                     f"reformat.sh in1={fwd_in} in2={rev_in} "
                     f"out1={tmp_fwd} out2={tmp_rev} "
                     f"sampleseed={sample_hash} samplereadstarget={depth}"
+                    f"ow=t"
                 )
 
                 print(f"running command: {cmd}")

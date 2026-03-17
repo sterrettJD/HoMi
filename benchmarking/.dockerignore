@@ -1,0 +1,9 @@
+synthetic/
+semi/
+Pereira/
+*.fastq*
+*.fasta*
+*.fastq.gz
+*.bam
+*.snakemake/
+*.cache/

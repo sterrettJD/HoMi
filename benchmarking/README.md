@@ -11,10 +11,20 @@ pip install homi-pipeline
 
 **NOTE:** Users need to install the SRA toolkit outside of conda, as SRA-tools doesn't support a conda distribution. See the [SRA toolkit official instructions](https://github.com/ncbi/sra-tools/wiki/01.-Downloading-SRA-Toolkit).
 
-This pipeline can alternatively be run on ARM using Docker via a command such as
+
+
+To run this pipeline using docker, first build the image from the main homi directory:
+
 ```
-docker run --platform linux/amd64 -v "$(pwd)":/workdir:rw -w /workdir snakemake/snakemake:v7.32.3 snakemake -s benchmarking.smk --cores 4 --use-conda
+cd ../
+docker build -f benchmarking/Dockerfile -t homi-benchmarking benchmarking/            
 ```
+
+Then, you can run the pipeline.
+```
+docker run -v "$(pwd)":/workdir:rw -w /workdir homi-benchmarking snakemake -s benchmarking.smk --cores 4 --use-conda         
+```
+
 
 ## Running it all
 

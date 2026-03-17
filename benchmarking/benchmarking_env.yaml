@@ -1,14 +1,19 @@
+name: homi_benchmarking
 channels:
   - conda-forge
   - bioconda
-  - defaults
+  - nodefaults
 dependencies:
   - python=3.11
-  - snakemake<8.0.0
+  - snakemake<8.0.0 ## installing homi will just downgrade snakemake to 7.32.4 so idk what to do w this
   - seqtk
+  - bbmap
   - biopython
   - numpy
   - pandas
   - pulp=2.7.0
   - r-base=4.4.1
   - r-openssl
+  - pip
+  - pip:
+    - homi-pipeline==1.0.13

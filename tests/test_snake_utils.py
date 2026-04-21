@@ -84,3 +84,36 @@ def test_get_rule_extra_args_nondefault():
 def test_get_taxa_bar_rmd():
     assert str(su.get_taxa_barplot_rmd_path()).endswith("Metaphlan_microshades.Rmd")
     assert str(su.get_taxa_barplot_rmd_path("Kraken")).endswith("Kraken_microshades.Rmd")
+
+
+def test_get_hostile_aligner():
+    config = {"hostile_aligner": "hisat2"}
+    assert su.get_hostile_aligner(config) == "hisat2"
+
+    config = {"hostile_aligner": "bowtie2"}
+    assert su.get_hostile_aligner(config) == "bowtie2"
+
+    config = {"hostile_aligner": "hi"}
+    with pytest.raises(ValueError):
+        out = su.get_hostile_aligner(config)
+
+    config = {"doesn't contain": "hostile aligner"}
+    with pytest.raises(ValueError):
+        out = su.get_hostile_aligner(config)
+
+
+def test_get_hostile_exts():
+    config = {"hostile_aligner": "hisat2"}
+    exts = su.get_hostile_exts(config) 
+    assert exts == [".1.ht2", ".2.ht2", ".3.ht2", 
+                    ".4.ht2", ".5.ht2", ".6.ht2",
+                    ".7.ht2", ".8.ht2"]
+
+    config = {"hostile_aligner": "bowtie2"}
+    exts = su.get_hostile_exts(config) 
+    assert exts== [".1.bt2", ".2.bt2", ".3.bt2", 
+                   ".4.bt2", ".rev.1.bt2", ".rev.2.bt2"]
+
+    config = {"hostile_aligner": "hi"}
+    with pytest.raises(ValueError):
+        out = su.get_hostile_exts(config)

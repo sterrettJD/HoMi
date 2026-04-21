@@ -1,0 +1,16 @@
+﻿input_file,hostile_index,dataset,metadata_file,column_to_use,name_for_plot,jitter_width,no_dotted_line
+dna_benchmarking_synthetic_reads_breakdown.csv,bowtie2_dna,synthetic communities,synthetic/sample_data.csv,,,,
+dna_benchmarking_synthetic_transcriptomes_reads_breakdown.csv,bowtie2_dna,synthetic transcriptomes,synthetic/sample_data.csv,,,,
+dna_benchmarking_synthetic_transcriptomes_p40_reads_breakdown.csv,bowtie2_dna,synthetic transcriptomes p40,synthetic/sample_data.csv,,,,
+dna_semi_reads_breakdown.csv,bowtie2_dna,semisynthetic transcriptomes,semi/sample_data.csv,,,,
+dna_benchmarking_Pereira_reads_breakdown.csv,bowtie2_dna,Pereira-Marques,Pereira/Pereira_data.csv,Pereira_percent_microbial,,0,TRUE
+rna_benchmarking_synthetic_reads_breakdown.csv,bowtie2_rna,synthetic communities,synthetic/sample_data.csv,,,,
+rna_benchmarking_synthetic_transcriptomes_reads_breakdown.csv,bowtie2_rna,synthetic transcriptomes,synthetic/sample_data.csv,,,,
+rna_benchmarking_synthetic_transcriptomes_p40_reads_breakdown.csv,bowtie2_rna,synthetic transcriptomes p40,synthetic/sample_data.csv,,,,
+rna_semi_reads_breakdown.csv,bowtie2_rna,semisynthetic transcriptomes,semi/sample_data.csv,,,,
+rna_benchmarking_Pereira_reads_breakdown.csv,bowtie2_rna,Pereira-Marques,Pereira/Pereira_data.csv,Pereira_percent_microbial,,0,TRUE
+hisat2_benchmarking_synthetic_reads_breakdown.csv,hisat2_dna,synthetic communities,synthetic/sample_data.csv,,,,
+hisat2_benchmarking_synthetic_transcriptomes_reads_breakdown.csv,hisat2_dna,synthetic transcriptomes,synthetic/sample_data.csv,,,,
+hisat2_benchmarking_synthetic_transcriptomes_p40_reads_breakdown.csv,hisat2_dna,synthetic transcriptomes p40,synthetic/sample_data.csv,,,,
+hisat2_semi_reads_breakdown.csv,hisat2_dna,semisynthetic transcriptomes,semi/sample_data.csv,,,,
+hisat2_benchmarking_Pereira_reads_breakdown.csv,hisat2_dna,Pereira-Marques,Pereira/Pereira_data.csv,Pereira_percent_microbial,,0,TRUE

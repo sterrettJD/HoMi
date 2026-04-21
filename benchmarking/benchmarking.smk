@@ -11,7 +11,7 @@ synthetic_transcriptomes_dir_p40 = "synthetic_transcriptomes_p40"
 semi_work_dir = "semi"
 
 # to run this on a Slurm-managed cluster
-homi_args = "--profile slurm"
+homi_args = """--profile slurm --snakemake_extra "--jobs 40" """
 
 # Syntheti communities metadata
 metadata_file = os.path.join(synthetic_work_dir, "sample_data.csv")
@@ -49,14 +49,17 @@ polyester_error_rate_p40=0.0001
 polyester_phred_p40=40
 
 # hostile reference data
-t2t_rna_hla_index = "t2t_rna_hla_index"
+custom_hostile_index_specs = ["rna", "hisat2"]
 
-indexes = ["dna", "rna"]
+# host removal index option
+indexes = ["dna", "rna", "hisat2"]
+
 
 rule all:
     input:
         # hostile reference
-        t2t_rna_hla_index,
+        expand("t2t_hla_{hostile_index_spec}_index",
+              hostile_index_spec=custom_hostile_index_specs),
         # From simulate_synthetic_communities
         expand(os.path.join(synthetic_work_dir, synthetic_communities_dir, "{sample}_R1.fastq.gz"),
                sample=samples),
@@ -122,12 +125,13 @@ rule all:
         expand("{index}_semi_benchmark.pdf",
                 index=indexes),
         expand("{index}_semi_benchmark_lm_results.txt",
-                index=indexes)
+                index=indexes),
+        "all_hostile_out_benchmark.pdf"
 
 
 rule create_alt_hostile_index:
     output:
-        ref_dir=directory(t2t_rna_hla_index)
+        ref_dir=directory("t2t_hla_{hostile_index_spec}_index")
     threads: 4
     conda: "conda_envs/hostile.yaml"
     resources:
@@ -138,7 +142,11 @@ rule create_alt_hostile_index:
         script="create_decontam_ref_human.py"
     shell:
         """
-        python {params.script} -o {output.ref_dir}
+        if [[ "{wildcards.hostile_index_spec}" == "hisat2" ]]; then
+            python {params.script} -m hisat2 -o {output.ref_dir}
+        else
+            python {params.script} -o {output.ref_dir}
+        fi
         """
 
 
@@ -617,14 +625,17 @@ rule run_HoMi_synthetic_communities:
         fwd=expand(os.path.join(synthetic_work_dir, synthetic_communities_dir, "{sample}_R1.fastq.gz"),
                sample=samples),
         rev=expand(os.path.join(synthetic_work_dir, synthetic_communities_dir, "{sample}_R2.fastq.gz"),
-               sample=samples)
+               sample=samples),
+        alt_indexes_created=expand("t2t_hla_{hostile_index_spec}_index",
+              hostile_index_spec=custom_hostile_index_specs)
     output:
         "{index}_HoMi_is_done_synthetic"
     threads: 1
     resources:
         partition="short",
         mem_mb=int(8*1000), # MB
-        runtime=int(20*60) # min
+        runtime=int(20*60), # min
+        homi_runs=1
     params:
         homi_args=homi_args
     shell:
@@ -690,14 +701,17 @@ rule run_HoMi_synthetic_transcriptomes:
         fwd=expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_R1.fastq.gz"),
                sample=samples),
         rev=expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir, "{sample}_R2.fastq.gz"),
-               sample=samples)
+               sample=samples),
+        alt_indexes_created=expand("t2t_hla_{hostile_index_spec}_index",
+                hostile_index_spec=custom_hostile_index_specs)
     output:
         "{index}_HoMi_is_done_synthetic_transcriptomes"
     threads: 1
     resources:
         partition="short",
         mem_mb=int(8*1000), # MB
-        runtime=int(20*60) # min
+        runtime=int(20*60), # min
+        homi_runs=1
     params:
         homi_args=homi_args
     shell:
@@ -742,14 +756,17 @@ rule run_HoMi_synthetic_transcriptomes_p40:
         fwd=expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir_p40, "{sample}_R1.fastq.gz"),
                sample=samples),
         rev=expand(os.path.join(synthetic_work_dir, synthetic_transcriptomes_dir_p40, "{sample}_R2.fastq.gz"),
-               sample=samples)
+               sample=samples),
+        alt_indexes_created=expand("t2t_hla_{hostile_index_spec}_index",
+                hostile_index_spec=custom_hostile_index_specs)
     output:
         "{index}_HoMi_is_done_synthetic_transcriptomes_p40"
     threads: 1
     resources:
         partition="short",
         mem_mb=int(8*1000), # MB
-        runtime=int(20*60) # min
+        runtime=int(20*60), # min
+        homi_runs=1
     params:
         homi_args=homi_args
     shell:
@@ -843,14 +860,17 @@ rule run_HoMi_mock_data:
         fwd=expand(os.path.join("Pereira", "{srr_id}_R1.fastq.gz"),
                 srr_id=pereira_srr_ids),
         rev=expand(os.path.join("Pereira", "{srr_id}_R2.fastq.gz"),
-                srr_id=pereira_srr_ids)
+                srr_id=pereira_srr_ids),
+        alt_indexes_created=expand("t2t_hla_{hostile_index_spec}_index",
+                hostile_index_spec=custom_hostile_index_specs)
     output:
         "{index}_HoMi_is_done_Pereira"
     threads: 1
     resources:
         partition="short",
         mem_mb=int(8*1000), # MB
-        runtime=int(24*60) # min
+        runtime=int(24*60), # min
+        homi_runs=1
     params:
         homi_args=homi_args
     shell:
@@ -980,15 +1000,18 @@ rule combine_semi_srrs:
 
 rule subsample_and_combine_semi_fastqs:
     input:
-        data=expand(os.path.join(semi_work_dir, "data", "{taxon}_{read}.fastq.gz"),
-            taxon=semi_organisms, read=reads)
+        fwd=expand(os.path.join(semi_work_dir, "data", "{taxon}_R1.fastq.gz"),
+            taxon=semi_organisms),
+        rev=expand(os.path.join(semi_work_dir, "data", "{taxon}_R2.fastq.gz"),
+            taxon=semi_organisms)
     output:
-        data=os.path.join(semi_work_dir, "samples", "{sample}_{read}.fastq.gz")
+        fwd=os.path.join(semi_work_dir, "samples", "{sample}_R1.fastq.gz"),
+        rev=os.path.join(semi_work_dir, "samples", "{sample}_R2.fastq.gz")
     threads: 1
     resources:
         partition="short",
         mem_mb=int(2*1000), # MB
-        runtime=int(1*60) # min
+        runtime=int(4*60) # min
     params:
         metadata=semi_metadata_file,
         data_dir=os.path.join(semi_work_dir, "data")
@@ -996,6 +1019,12 @@ rule subsample_and_combine_semi_fastqs:
         import subprocess
         import pandas as pd
         import os
+
+        # clean up output files if they exist for safety
+        for f in [output.fwd, output.rev]:
+            if os.path.exists(f):
+                os.remove(f)
+
 
         metadata = pd.read_csv(params.metadata, index_col="genome")
         
@@ -1009,16 +1038,32 @@ rule subsample_and_combine_semi_fastqs:
             print(f"sampling {taxon} to {depth} reads")
 
             if depth > 0:
-                unsampled_path = os.path.join(params.data_dir, f"{taxon}_{wildcards.read}.fastq.gz")
-                if not os.path.exists(unsampled_path):
-                    raise FileNotFoundError(f"File not found: {unsampled_path}")
+                fwd_in = os.path.join(params.data_dir, f"{taxon}_R1.fastq.gz")
+                rev_in = os.path.join(params.data_dir, f"{taxon}_R2.fastq.gz")
 
-                cmd = f"seqtk sample -s {sample_hash} {unsampled_path} {depth} | gzip >> {output.data}"
+                for file in [fwd_in, rev_in]:
+                    if not os.path.exists(file):
+                        raise FileNotFoundError(f"File not found: {file}")
+
+                tmp_fwd = f"tmp_{taxon}_{wildcards.sample}_R1.fastq.gz"
+                tmp_rev = f"tmp_{taxon}_{wildcards.sample}_R2.fastq.gz"
+
+                cmd = (
+                    f"reformat.sh in1={fwd_in} in2={rev_in} "
+                    f"out1={tmp_fwd} out2={tmp_rev} "
+                    f"sampleseed={sample_hash} samplereadstarget={depth}"
+                    f"ow=t"
+                )
+
                 print(f"running command: {cmd}")
-                ran = subprocess.run(cmd, shell=True)
-                
-                if ran.returncode != 0:
-                    raise RuntimeError(f"Command failed: {cmd}\nStderr: {ran.stderr.decode()}")
+                ran = subprocess.run(cmd, shell=True, check=True)
+
+                print(f"Moving temp files to {output.fwd} and {output.rev}") 
+                subprocess.run(f"cat {tmp_fwd} >> {output.fwd}", shell=True, check=True)
+                subprocess.run(f"cat {tmp_rev} >> {output.rev}", shell=True, check=True)
+                os.remove(tmp_fwd)
+                os.remove(tmp_rev)
+
 
 
 
@@ -1056,14 +1101,17 @@ rule run_HoMi_semi:
         homi_metadata=os.path.join(semi_work_dir, "semi_homi_metadata.csv"),
         homi_config=os.path.join(semi_work_dir, "{index}_semi_HoMi_config.yaml"),
         fwd=expand(os.path.join(semi_work_dir, "samples", "{sample}_{read}.fastq.gz"),
-                sample=semi_samples, read=reads)
+                sample=semi_samples, read=reads),
+        alt_indexes_created=expand("t2t_hla_{hostile_index_spec}_index",
+                hostile_index_spec=custom_hostile_index_specs)
     output:
         "{index}_HoMi_is_done_semi"
     threads: 1
     resources:
         partition="short",
         mem_mb=int(8*1000), # MB
-        runtime=int(24*60) # min
+        runtime=int(24*60), # min
+        homi_runs=1
     params:
         homi_args=semi_homi_args
     shell:
@@ -1092,6 +1140,32 @@ rule plot_expected_vs_actual_semi:
         """
         Rscript {params.script} -i {wildcards.index}_semi_reads_breakdown.csv -o {output.plot}  -n "{params.label}" > {output.model}
         """
+
+
+rule plot_expected_vs_actual_hostile_all:
+    input:
+        homi_dones=expand("{index}_HoMi_is_done_{proj}",
+                index=indexes,
+                proj=["synthetic_transcriptomes", 
+                      "synthetic", 
+                      "semi", 
+                      "Pereira"]),
+        metadata="Plot_reads_breakdown_metadata.csv"
+    output:
+        plot="all_hostile_out_benchmark.pdf"
+    conda: "conda_envs/r_env.yaml"
+    threads: 1
+    resources:
+        partition="short",
+        mem_mb=int(2*1000), # MB
+        runtime=int(40) # min
+    params:
+        script="Plot_all_benchmarked_reads_breakdowns.R"
+    shell:
+        """
+        Rscript {params.script} -m {input.metadata} -o {output.plot}
+        """
+
 
 
 rule plot_multi_taxonomy_boxplots:

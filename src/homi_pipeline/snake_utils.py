@@ -216,3 +216,28 @@ def get_read_reports_path():
         return reporter
     else:
         raise FileNotFoundError(f"Read reports script was not found at {reporter}.")
+    
+
+def get_hostile_aligner(config):
+    aligner = config.get(f"hostile_aligner", None) 
+    accepted_aligners = ["hisat2", "bowtie2"]
+    if aligner in accepted_aligners:
+        return aligner 
+       
+    raise ValueError(f"""
+                     Please provide a valid Hostile aligner
+                     ({', '.join(accepted_aligners)})
+                     """)
+
+
+def get_hostile_exts(config):
+    aligner = get_hostile_aligner(config)
+    
+    if aligner == "hisat2":
+        exts = [".1.ht2", ".2.ht2", ".3.ht2", 
+                ".4.ht2", ".5.ht2", ".6.ht2",
+                ".7.ht2", ".8.ht2"]
+    elif aligner == "bowtie2":
+        exts = [".1.bt2", ".2.bt2", ".3.bt2", 
+                ".4.bt2", ".rev.1.bt2", ".rev.2.bt2"]
+    return exts

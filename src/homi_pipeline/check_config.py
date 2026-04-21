@@ -23,7 +23,7 @@ def check_strings(config):
                 "fwd_reads_path": "The name of the column in METADATA with the forward reads filepaths.", 
                 "rev_reads_path": "The name of the column in METADATA with the reverse reads filepaths.",
                 "hostile_db": "The hostile database that you would like to use.",
-                "loc_for_hostile_db_download": "The location to store the hostile database.",
+                "hostile_aligner": "Method for aligning to the host reference in Hostile. Options for short reads include `hisat2` (splice-aware, recommended for transcriptome data) and `bowtie2`.",
                 "metaphlan_bowtie_db": "Filepath for the metaphlan database. Files will be downloaded here if not already present.",
                 "chocophlan_db":  "Filepath for the HUMAnN ChocoPhlAn database. Files will be downloaded here if not already present.",
                 "uniref_db":  "Filepath for the HUMANnN UniRef database. Files will be downloaded here if not already present.",
@@ -32,21 +32,22 @@ def check_strings(config):
                 "host_ref_fna": "Filepath for the host reference genome fna. If this is not present, the GRCh38 human genome will be downlaoded to this path.",
                 "host_ref_gtf": "Filepath for the host reference genome gtf file. If this is not present, the GRCh38 human genome will be downlaoded to this path."}
     
-    recommended = {"host_map_method": "The default host aligner (HISAT2) will be used if this is not provided."}
+    recommended = {"loc_for_hostile_db_download": "The location to store a downloaded hostile database.",
+                   "host_map_method": "The default host aligner (HISAT2) will be used if this is not provided."}
     
     for param in required.keys():
         conf_param = config.get(param)
         if conf_param is None:
             raise ValueError(f"{param} is missing from the config file. {required[param]}")
-        if type(conf_param) != str:
+        if type(conf_param) is not str:
             raise TypeError(f"{param} is the wrong type in the config file. It should be a string.")
     
     for param in recommended.keys():
         conf_param = config.get(param)
         if conf_param is None:
-            print(f"{param} is missing from the config file. {recommended[param]}")
+            print(f"Optional param {param} ({recommended[param]}) is missing from the config file. ")
             
-        elif type(conf_param) != str:
+        elif type(conf_param) is not str:
             raise TypeError(f"{param} is the wrong type in the config file. It should be a string instead of {type(conf_param)}.")
     
 
@@ -68,7 +69,7 @@ def check_nums(config):
         conf_param = config.get(param)
         if conf_param is None:
             raise ValueError(f"{param} is missing from the config file. {required[param]}")
-        if type(conf_param) != int:
+        if type(conf_param) is not int:
             raise TypeError(f"{param} is the wrong type in the config file. It should be a string.")
 
 

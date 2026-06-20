@@ -55,7 +55,7 @@ semi_srr_ids = [srr_id
                     lambda x: x.split(".")
                     ).values
                 for srr_id in taxon_srr_ids_list] 
-semi_homi_args = """--profile slurm --snakemake_extra "--jobs 40" """
+semi_homi_args = """--profile slurm --snakemake_extra "--jobs 40 --default-resources qos=normal" """
 
 
 # mock community data

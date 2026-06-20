@@ -92,7 +92,7 @@ get_kraken_db_partition: long
 # For example, Alpine users at CU Boulder/Anschutz CSU using the amilan partition for most rules can pass
 # default_short_partition_name: amilan
 
-default_short_partition_name: short
+default_short_partition_name: amilan
 default_long_partition_name: long
 
 ################################

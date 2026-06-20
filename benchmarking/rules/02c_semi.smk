@@ -117,7 +117,7 @@ rule subsample_and_combine_semi_fastqs:
                 cmd = (
                     f"reformat.sh in1={fwd_in} in2={rev_in} "
                     f"out1={tmp_fwd} out2={tmp_rev} "
-                    f"sampleseed={sample_hash} samplereadstarget={depth}"
+                    f"sampleseed={sample_hash} samplereadstarget={depth} "
                     f"ow=t"
                 )
 

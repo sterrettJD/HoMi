@@ -44,7 +44,7 @@ snakemake -s benchmarking.smk --config run=compare_all wanted_partition=amilan -
 
 **Available workflows:** `gen_refs`, `synthetic`, `semi`, `pereira`, `compare_all`
 
-For SLURM environments, add `--default-resources qos=normal` to the command.
+For SLURM environments such as the Alpine HPC (Colorado), add `--default-resources qos=normal` to the command.
 
 ### Legacy Scripts
 

@@ -241,3 +241,7 @@ def get_hostile_exts(config):
         exts = [".1.bt2", ".2.bt2", ".3.bt2", 
                 ".4.bt2", ".rev.1.bt2", ".rev.2.bt2"]
     return exts
+    
+def get_hostile_index_prefix(config):
+    # e.g., returns "t2t_hla_dna_index/human-t2t-hla" or "t2t_hla_hisat2_index/index"
+    return config["hostile_index_prefix"]

@@ -2,8 +2,7 @@ import pandas as pd
 from importlib.resources import files
 from os.path import join as pj
 from os.path import split
-from homi_pipeline.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil_rmd_path, get_nonpareil_html_path, get_agg_script_path, get_mphlan_conv_script_path, get_taxa_barplot_rmd_path, get_sam2bam_path, get_func_barplot_rmd_path, get_partition, get_mem, get_runtime, get_threads, get_host_mapping_samples, get_slurm_extra, get_gmm_rmd_path, get_kraken_db_loc, get_tpm_converter_path, get_host_map_method, get_rule_extra_args, get_metaphlan_index_name, get_R_installation_path, get_read_reports_path, get_hostile_aligner, get_hostile_exts
-
+from homi_pipeline.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil_rmd_path, get_nonpareil_html_path, get_agg_script_path, get_mphlan_conv_script_path, get_taxa_barplot_rmd_path, get_sam2bam_path, get_func_barplot_rmd_path, get_partition, get_mem, get_runtime, get_threads, get_host_mapping_samples, get_slurm_extra, get_gmm_rmd_path, get_kraken_db_loc, get_tpm_converter_path, get_host_map_method, get_rule_extra_args, get_metaphlan_index_name, get_R_installation_path, get_read_reports_path, get_hostile_aligner, get_hostile_exts, get_hostile_index_prefix
 
 METADATA = pd.read_csv(config["METADATA"].strip())
 SAMPLES = METADATA["Sample"].tolist()
@@ -15,7 +14,7 @@ READS = ["R1", "R2"]
 PROJ = config["PROJ"].strip()
 
 HOSTILE_DB_NAME = config["hostile_db"]
-HOSTILE_DB_DWNLD_PATH = config.get("loc_for_hostile_db_download", "./hostile_db")
+HOSTILE_DB_DWNLD_PATH = config["loc_for_hostile_db_download"]
 HOSTILE_DB_PATH = hostile_db_to_path(HOSTILE_DB_NAME, 
                                      HOSTILE_DB_DWNLD_PATH)
 
@@ -229,63 +228,61 @@ rule multiqc_pass1:
 
 
 rule trim_forward:
-  """
-  This is a secondary trimming step using SeqTK to trim/truncate 
-  any set number of base pairs from the start/end of each forward read.
-  """
-  input:
-    pj(f"{PROJ}.noadpt","{sample}","{sample}.trimmed.R1.fq")
-  output:
-    pj(trim_trunc_path,
-       "{sample}.R1.fq")
-
-  conda: files("homi_pipeline").joinpath("conda_envs", "seqtk.yaml")
-  resources:
+    """
+    This is a secondary trimming step using SeqTK to trim/truncate 
+    any set number of base pairs from the start/end of each forward read.
+    """
+    input:
+        pj(f"{PROJ}.noadpt", "{sample}", "{sample}.trimmed.R1.fq")
+    output:
+        pj(trim_trunc_path, "{sample}.R1.fq")
+    conda: 
+        files("homi_pipeline").joinpath("conda_envs", "seqtk.yaml")
+    resources:
         partition=get_partition("short", config, "trim_forward"),
-        mem_mb=get_mem(int(12*1000), config, "trim_forward"), # MB, or 12 GB
-        runtime=get_runtime(int(1*60), config, "trim_forward"), # min, or 1 hours
+        mem_mb=get_mem(int(12*1000), config, "trim_forward"),
+        runtime=get_runtime(int(1*60), config, "trim_forward"),
         slurm=get_slurm_extra(config, "trim_forward")
-  threads: get_threads(1, config, "trim_forward")
-  params:
-    trim_trunc_path=trim_trunc_path,
-    trim=config['trim_fwd'],
-    trunc={config['trunc_fwd']},
-    extra=get_rule_extra_args(config, "trim_forward")
-  shell:
-    """
-    mkdir -p {params.trim_trunc_path}
-    seqtk trimfq -b {params.trim} -e {params.trunc} {params.extra} {input} > {output} 
-    """
+    threads: 
+        get_threads(1, config, "trim_forward")
+    params:
+        trim_trunc_path=trim_trunc_path,
+        trim=config['trim_fwd'],
+        trunc=config['trunc_fwd'],  # Fixed: removed set braces
+        extra=get_rule_extra_args(config, "trim_forward")
+    shell:
+        """
+        seqtk trimfq -b {params.trim} -e {params.trunc} {params.extra} {input} > {output} 
+        """
 
 
 rule trim_reverse:
-  """
-  This is a secondary trimming step using SeqTK to trim/truncate 
-  any set number of base pairs from the start/end of each reverse read.
-  """
-  input:
-    pj(f"{PROJ}.noadpt","{sample}","{sample}.trimmed.R2.fq")
-  output:
-    pj(trim_trunc_path,
-       "{sample}.R2.fq")
-
-  conda: files("homi_pipeline").joinpath("conda_envs", "seqtk.yaml")
-  resources:
-    partition=get_partition("short", config, "trim_reverse"),
-    mem_mb=get_mem(int(12*1000), config, "trim_reverse"), # MB, or 12 GB
-    runtime=get_runtime(int(1*60), config, "trim_reverse"), # min, or 1 hours
-    slurm=get_slurm_extra(config, "trim_reverse")
-  threads: get_threads(1, config, "trim_reverse")
-  params:
-    trim_trunc_path=trim_trunc_path,
-    trim=config['trim_rev'],
-    trunc={config['trunc_rev']},
-    extra=get_rule_extra_args(config, "trim_reverse")
-  shell:
     """
-    mkdir -p {params.trim_trunc_path}
-    seqtk trimfq -b {params.trim} -e {params.trunc} {params.extra} {input} > {output}
+    This is a secondary trimming step using SeqTK to trim/truncate 
+    any set number of base pairs from the start/end of each reverse read.
     """
+    input:
+        pj(f"{PROJ}.noadpt", "{sample}", "{sample}.trimmed.R2.fq")
+    output:
+        pj(trim_trunc_path, "{sample}.R2.fq")
+    conda: 
+        files("homi_pipeline").joinpath("conda_envs", "seqtk.yaml")
+    resources:
+        partition=get_partition("short", config, "trim_reverse"),
+        mem_mb=get_mem(int(12*1000), config, "trim_reverse"),
+        runtime=get_runtime(int(1*60), config, "trim_reverse"),
+        slurm=get_slurm_extra(config, "trim_reverse")
+    threads: 
+        get_threads(1, config, "trim_reverse")
+    params:
+        trim_trunc_path=trim_trunc_path,
+        trim=config['trim_rev'],
+        trunc=config['trunc_rev'],  # Fixed: removed set braces
+        extra=get_rule_extra_args(config, "trim_reverse")
+    shell:
+        """
+        seqtk trimfq -b {params.trim} -e {params.trunc} {params.extra} {input} > {output}
+        """
 
 
 rule fastQC_pass2:
@@ -377,50 +374,49 @@ rule download_hostile_db:
 
 
 rule host_filter:
-  """
-  This removes host reads using the tool Hostile.
-  """
-  input:
-    INDEX=expand(f"{HOSTILE_DB_PATH}{{extension}}", extension=hostile_index_exts),
-    FWD=pj(trim_trunc_path,
-       "{sample}.R1.fq"),
-    REV=pj(trim_trunc_path,
-       "{sample}.R2.fq")
-  output:
-    FWD=pj(f"{trim_trunc_path}.nonhost",
-            "{sample}.R1.fq.gz"),
-    REV=pj(f"{trim_trunc_path}.nonhost",
-            "{sample}.R2.fq.gz"),
-    REPORT=pj(f"{trim_trunc_path}.nonhost",
-            "{sample}.report")
-  conda: files("homi_pipeline").joinpath("conda_envs", "hostile.yaml")
-  resources:
-    partition=get_partition("short", config, "host_filter"),
-    mem_mb=get_mem(int(12*1000), config, "host_filter"), # MB, or 12 GB, hostile should max at 4 (under 8 thread example), but playing it safe
-    runtime=get_runtime(int(20*60), config, "host_filter"), # min, or 20 hours
-    slurm=get_slurm_extra(config, "host_filter")
-  threads: get_threads(16, config, "host_filter")
-  params:
-    trim_trunc_path=trim_trunc_path,
-    hostile_db_path=HOSTILE_DB_PATH,
-    aligner=get_hostile_aligner(config),
-    extra=get_rule_extra_args(config, "host_filter")
-  shell:
     """
-    hostile clean \
-    --fastq1 {input.FWD} --fastq2 {input.REV} \
-    -o {params.trim_trunc_path}.nonhost \
-    --threads {threads} \
-    --index {params.hostile_db_path} \
-    --debug \
-    --aligner {params.aligner} \
-    {params.extra} > {output.REPORT}
-
-    # cleanup filepaths
-    mv {params.trim_trunc_path}.nonhost/{wildcards.sample}.R1.clean_1.fastq.gz {output.FWD}
-    mv {params.trim_trunc_path}.nonhost/{wildcards.sample}.R2.clean_2.fastq.gz {output.REV}
+    This removes host reads using the tool Hostile.
     """
+    input:
+        INDEX=expand(f"{HOSTILE_DB_PATH}{{extension}}", extension=hostile_index_exts),
+        FWD=pj(trim_trunc_path,
+               "{sample}.R1.fq"),
+        REV=pj(trim_trunc_path,
+               "{sample}.R2.fq")
+    output:
+        FWD=pj(f"{trim_trunc_path}.nonhost",
+               "{sample}.R1.fq.gz"),
+        REV=pj(f"{trim_trunc_path}.nonhost",
+               "{sample}.R2.fq.gz"),
+        REPORT=pj(f"{trim_trunc_path}.nonhost",
+               "{sample}.report")
+    conda: "hostile"
+    resources:
+        partition=get_partition("short", config, "host_filter"),
+        mem_mb=get_mem(int(12*1000), config, "host_filter"), # MB, or 12 GB
+        runtime=get_runtime(int(20*60), config, "host_filter"), # min, or 20 hours
+        slurm=get_slurm_extra(config, "host_filter")
+    threads: get_threads(16, config, "host_filter")
+    params:
+        trim_trunc_path=trim_trunc_path,
+        hostile_db_path=HOSTILE_DB_PATH,
+        aligner=get_hostile_aligner(config),
+        extra=get_rule_extra_args(config, "host_filter")
+    shell:
+        """
+        hostile clean \
+        --fastq1 {input.FWD} --fastq2 {input.REV} \
+        -o {params.trim_trunc_path}.nonhost \
+        --threads {threads} \
+        --index {params.hostile_db_path} \
+        --debug \
+        --aligner {params.aligner} \
+        {params.extra} > {output.REPORT}
 
+        # cleanup filepaths
+        mv {params.trim_trunc_path}.nonhost/{wildcards.sample}.R1.clean_1.fastq.gz {output.FWD}
+        mv {params.trim_trunc_path}.nonhost/{wildcards.sample}.R2.clean_2.fastq.gz {output.REV}
+        """
 
 ############# INSTALL R PACKAGES NEEDED FOR NONHOST ANALYSIS #############
 
@@ -860,7 +856,7 @@ rule get_kraken_db:
   resources:
     partition=get_partition("short", config, "get_kraken_db"),
     mem_mb=get_mem(int(16*1000), config, "get_kraken_db"), # MB
-    runtime=get_runtime(int(12*60), config, "get_kraken_db"), # min 
+    runtime=60,  
     slurm=get_slurm_extra(config, "get_kraken_db")
   threads: get_threads(1, config, "get_kraken_db")
   conda: files("homi_pipeline").joinpath("conda_envs", "kraken.yaml")
@@ -1158,52 +1154,49 @@ rule build_host_genome_index:
 
 # Map to host genome
 rule map_host:
-  """
-  This rule maps reads to the host genome and compresses SAM files to BAM files.
-  """
-  input:
-    REF=pj(f"{trim_trunc_path}.{get_host_map_method(config)}", "ref/"),
-    FWD=pj(trim_trunc_path,
-          "{sample}.R1.fq"),
-    REV=pj(trim_trunc_path,
-          "{sample}.R2.fq")
-  output:
-    SAM=pj(f"{trim_trunc_path}.{get_host_map_method(config)}", "{sample}.sam"),
-    BAM=pj(f"{trim_trunc_path}.{get_host_map_method(config)}", "{sample}.bam")
-  conda: files("homi_pipeline").joinpath("conda_envs", f"{get_host_map_method(config).lower()}.yaml")
-  resources:
-    partition=get_partition("short", config, "map_host"),
-    mem_mb=get_mem(int(210*1000), config, "map_host"), # MB, or 210 GB, can cut to ~100 for 16 threads
-    runtime=get_runtime(int(23.9*60), config, "map_host"), # min, or almost 24 hrs
-    slurm=get_slurm_extra(config, "map_host")
-  threads: get_threads(32, config, "map_host")
-  params:
-    out_dir=f"{trim_trunc_path}.{get_host_map_method(config)}",
-    sam2bam_path=get_sam2bam_path(),
-    method=get_host_map_method(config),
-    extra=get_rule_extra_args(config, "map_host")
-  shell:
     """
-    cd {params.out_dir}
-
-    if [ "{params.method}" == "BBMap" ]; then
-      bbmap.sh in=../{input.FWD} in2=../{input.REV} \
-      out={wildcards.sample}.sam \
-      trimreaddescriptions=t \
-      threads={threads} \
-      -Xmx{resources.mem_mb}m \
-      {params.extra}
-
-    elif [ "{params.method}" == "HISAT2" ]; then
-        hisat2 -1 ../{input.FWD} -2 ../{input.REV} \
-        -S {wildcards.sample}.sam \
-        -x ref/index \
-        -p {threads} \
-        {params.extra}
-    fi
-    
-    bash {params.sam2bam_path} {wildcards.sample}.sam
+    This rule maps reads to the host genome and compresses SAM files to BAM files.
     """
+    input:
+        REF=pj(f"{trim_trunc_path}.{get_host_map_method(config)}", "ref/"),
+        FWD=pj(trim_trunc_path, "{sample}.R1.fq"),
+        REV=pj(trim_trunc_path, "{sample}.R2.fq")
+    output:
+        SAM=pj(f"{trim_trunc_path}.{get_host_map_method(config)}", "{sample}.sam"),
+        BAM=pj(f"{trim_trunc_path}.{get_host_map_method(config)}", "{sample}.bam")
+    conda: "hostile"
+    resources:
+        partition=get_partition("short", config, "map_host"),
+        mem_mb=get_mem(int(210*1000), config, "map_host"),
+        runtime=get_runtime(int(23.9*60), config, "map_host"),
+        slurm=get_slurm_extra(config, "map_host")
+    threads: get_threads(32, config, "map_host")
+    params:
+        out_dir=f"{trim_trunc_path}.{get_host_map_method(config)}",
+        index_prefix=pj(f"{trim_trunc_path}.{get_host_map_method(config)}", "ref", "index"),
+        sam2bam_path=get_sam2bam_path(),
+        method=get_host_map_method(config),
+        extra=get_rule_extra_args(config, "map_host")
+    shell:
+        """
+        if [ "{params.method}" == "BBMap" ]; then
+            bbmap.sh in={input.FWD} in2={input.REV} \
+            out={output.SAM} \
+            trimreaddescriptions=t \
+            threads={threads} \
+            -Xmx{resources.mem_mb}m \
+            {params.extra}
+
+        elif [ "{params.method}" == "HISAT2" ]; then
+            hisat2 -1 {input.FWD} -2 {input.REV} \
+            -S {output.SAM} \
+            -x {params.index_prefix} \
+            -p {threads} \
+            {params.extra}
+        fi
+        
+        bash {params.sam2bam_path} {output.SAM}
+        """
 
 rule validate_bams:
   """

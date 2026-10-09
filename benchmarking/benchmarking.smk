@@ -7,7 +7,6 @@ import pandas as pd
 ## 3. added qos=normal as a default resource for homi_args (i think this will work but idk) - need to check strings 
 ## if this doesn't work, could add `default_slurm_extra: qos=normal` to ALL homi configs 
 
-
 ######## CONFIG ########
 
 ## IMPORTANT!! this is what determines which parts of benchmarking are run right now ##
@@ -16,11 +15,10 @@ import pandas as pd
 WANT_TO_RUN = config["run"]
 # to run this on a Slurm-managed cluster
 ## added qos default resource for homi (idk if the strings are correct so will have to debug)
-homi_args = """--profile slurm --snakemake_extra "--jobs 40 --default-resources qos=normal" """
+#homi_args = """--profile slurm --conda_prebuilt --conda-prefix /gpfs/alpine1/scratch/.xsede.org/joconnor/HoMi/.snakemake/conda --snakemake_extra "--jobs 40 --default-resources qos=cpu-normal" """
 ## this may need to be changed based on HPC being used!!
 ## define on the command line when you call snakemake like so: --config wanted_partition=amilan ##
 hpc_partition = config["wanted_partition"]
-
 
 # CONDA ENVIRONMENT PATHS!
 hostile_conda = "../conda_envs/hostile.yaml"
@@ -55,12 +53,15 @@ semi_srr_ids = [srr_id
                     lambda x: x.split(".")
                     ).values
                 for srr_id in taxon_srr_ids_list] 
-semi_homi_args = """--profile slurm --snakemake_extra "--jobs 40 --default-resources qos=normal" """
+#semi_homi_args = """--profile slurm --snakemake_extra "--jobs 40 --default-resources qos=cpu-normal" """
+semi_homi_args = """--profile slurm --snakemake_extra "--jobs 40 --default-resources qos=cpu-normal --until host_filter" """
 
 
 # mock community data
 pereira_df = pd.read_csv("Pereira/Pereira_data.csv")
 pereira_srr_ids = pereira_df["SRR"]
+#pereira_homi_args = """--profile slurm --snakemake_extra "--jobs 40 --default-resources qos=cpu-normal" """
+pereira_homi_args = """--profile slurm --snakemake_extra "--jobs 40 --default-resources qos=cpu-normal --until host_filter" """
 
 # Per nucleotide quality score for Polyester-simulated reads
 ## error rate changes depending on the phred score
@@ -120,6 +121,9 @@ synthetic_outs = [expand(os.path.join(synthetic_work_dir, synthetic_communities_
                             "synthetic"],
                       method=["kraken", 
                             "metaphlan"])]
+
+#synthetic_homi_args = """--profile slurm --snakemake_extra "--jobs 40 --default-resources qos=cpu-normal" """
+synthetic_homi_args = """--profile slurm --snakemake_extra "--jobs 40 --default-resources qos=cpu-normal --until host_filter" """
 
 ## this is only dependent on gen refs 
 semi_outs = [expand(os.path.join("semi", "samples", "{sample}_{read}.fastq.gz"),

@@ -117,3 +117,40 @@ def test_get_hostile_exts():
     config = {"hostile_aligner": "hi"}
     with pytest.raises(ValueError):
         out = su.get_hostile_exts(config)
+
+
+@pytest.mark.parametrize("value, expected", [
+    (True, True),
+    (False, False),
+    ("True", True),
+    ("true", True),
+    ("False", False),
+])
+def test_is_humann_skipped(value, expected):
+    config = {"skip_humann": value}
+    assert su.is_humann_skipped(config) == expected
+
+
+def test_is_humann_skipped_default():
+    assert su.is_humann_skipped(dict()) == False
+
+
+def test_get_reads_breakdown_inputs_with_humann():
+    config = {"METADATA": "metadata.csv "}
+    inputs = su.get_reads_breakdown_inputs(config, ["s1", "s2"], "proj.f0.0.r0.0")
+    assert inputs == {"METADATA": "metadata.csv",
+                      "REPORTS": ["proj.f0.0.r0.0.nonhost/s1.report",
+                                  "proj.f0.0.r0.0.nonhost/s2.report"],
+                      "GENEFAMS": "proj.f0.0.r0.0.nonhost.humann/all_genefamilies.tsv"}
+
+
+def test_get_reads_breakdown_inputs_skip_humann():
+    config = {"METADATA": "metadata.csv", "skip_humann": True}
+    inputs = su.get_reads_breakdown_inputs(config, ["s1"], "proj.f0.0.r0.0")
+    assert "GENEFAMS" not in inputs
+    assert inputs["REPORTS"] == ["proj.f0.0.r0.0.nonhost/s1.report"]
+
+
+def test_get_genefams_arg():
+    assert su.get_genefams_arg(dict(), "proj") == "--genefams_filepath proj.nonhost.humann/all_genefamilies.tsv"
+    assert su.get_genefams_arg({"skip_humann": True}, "proj") == ""

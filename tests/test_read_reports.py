@@ -1,3 +1,6 @@
+import shutil
+import sys
+
 import pytest
 import pandas as pd
 from homi_pipeline.rule_utils import read_reports as rr
@@ -89,3 +92,24 @@ def test_add_raw_counts_to_df():
                              index=["small"])
     
     assert (actual.values == expected.values).all()
+
+
+def test_main_without_genefams(tmp_path, monkeypatch):
+    sample = "hostile_report"
+    shutil.copy("tests/test_data/hostile_report.report", tmp_path / f"{sample}.report")
+    shutil.copy("tests/test_data/small.R1.fq.gz", tmp_path / f"{sample}.R1.fq.gz")
+    shutil.copy("tests/test_data/small.R2.fq.gz", tmp_path / f"{sample}.R2.fq.gz")
+    metadata_path = tmp_path / "metadata.csv"
+    pd.DataFrame({"Sample": [sample]}).to_csv(metadata_path, index=False)
+    output_path = tmp_path / "reads_breakdown.csv"
+
+    monkeypatch.setattr(sys, "argv", ["read_reports.py", str(metadata_path),
+                                      "--raw_reads_dir", str(tmp_path),
+                                      "--hostile_dir", str(tmp_path),
+                                      "--output", str(output_path)])
+    rr.main()
+
+    actual = pd.read_csv(output_path, index_col=0)
+    assert "Unmapped nonhost TPM" not in actual.columns
+    assert actual.loc[sample, "Percent host"] == 0.66136
+    assert actual.loc[sample, "Raw reads"] == 6

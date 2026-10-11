@@ -3,6 +3,7 @@
 import subprocess
 import argparse
 import os
+import sys
 from importlib.resources import files
 from re import findall
 from homi_pipeline.check_config import run_checker
@@ -127,9 +128,13 @@ def main():
 
     if args.unlock == True:
         completed_unlock = unlock_snakemake_directory(snakepath, args)
+        if completed_unlock.returncode != 0:
+            sys.exit(completed_unlock.returncode)
     
     command = construct_snakemake_command(snakepath, args)
     completed_process = subprocess.run(command)
+    # exit with the snakemake exit code, so that a failed run is not reported as a success
+    sys.exit(completed_process.returncode)
 
 if __name__=="__main__":
     main()

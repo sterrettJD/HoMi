@@ -2,7 +2,7 @@ import pandas as pd
 from importlib.resources import files
 from os.path import join as pj
 from os.path import split
-from homi_pipeline.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil_rmd_path, get_nonpareil_html_path, get_agg_script_path, get_mphlan_conv_script_path, get_taxa_barplot_rmd_path, get_sam2bam_path, get_func_barplot_rmd_path, get_partition, get_mem, get_runtime, get_threads, get_host_mapping_samples, get_slurm_extra, get_gmm_rmd_path, get_kraken_db_loc, get_tpm_converter_path, get_host_map_method, get_rule_extra_args, get_metaphlan_index_name, get_R_installation_path, get_read_reports_path, get_hostile_aligner, get_hostile_exts, get_hostile_index_prefix
+from homi_pipeline.snake_utils import hostile_db_to_path, get_adapters_path, get_nonpareil_rmd_path, get_nonpareil_html_path, get_agg_script_path, get_mphlan_conv_script_path, get_taxa_barplot_rmd_path, get_sam2bam_path, get_func_barplot_rmd_path, get_partition, get_mem, get_runtime, get_threads, get_host_mapping_samples, get_slurm_extra, get_gmm_rmd_path, get_kraken_db_loc, get_tpm_converter_path, get_host_map_method, get_rule_extra_args, get_metaphlan_index_name, get_R_installation_path, get_read_reports_path, get_hostile_aligner, get_hostile_exts, get_hostile_index_prefix, get_reads_breakdown_inputs, get_genefams_arg
 
 METADATA = pd.read_csv(config["METADATA"].strip())
 SAMPLES = METADATA["Sample"].tolist()
@@ -957,7 +957,7 @@ rule aggregate_bracken:
     runtime=get_runtime(int(4*60), config, "aggregate_bracken"), # min
     slurm=get_slurm_extra(config, "aggregate_bracken")
   threads: get_threads(1, config, "aggregate_bracken")
-  conda: files("homi_pipeline").joinpath("conda_envs", "kraken.yaml")
+  conda: files("homi_pipeline").joinpath("conda_envs", "bit.yaml")
   params:
     dirpath=f"{trim_trunc_path}.nonhost.kraken"
   shell:
@@ -1287,9 +1287,7 @@ rule reads_breakdown:
   It outputs a CSV report of this with data per sample.
   """
   input:
-    METADATA=config["METADATA"].strip(),
-    GENEFAMS=pj(f"{trim_trunc_path}.nonhost.humann", 
-                "all_genefamilies.tsv")
+    **get_reads_breakdown_inputs(config, SAMPLES, trim_trunc_path)
   output:
     REPORT=f"{PROJ}_reads_breakdown.csv"
   conda: files("homi_pipeline").joinpath("conda_envs", "humann.yaml")
@@ -1302,16 +1300,17 @@ rule reads_breakdown:
   params:
     reporter_script=get_read_reports_path(),
     proj=PROJ, # directory for symlinked raw reads
-    hostile=f"{trim_trunc_path}.nonhost"
+    hostile=f"{trim_trunc_path}.nonhost",
     # proj and hostile are more technically "inputs",
     # but putting them as params here because it doesn't know which rules
     # generate those
+    genefams_arg=get_genefams_arg(config, trim_trunc_path)
   shell:
     """
     {params.reporter_script} {input.METADATA} \
     --raw_reads_dir {params.proj} \
     --hostile_dir {params.hostile} \
-    --genefams_filepath {input.GENEFAMS} \
+    {params.genefams_arg} \
     --output {output.REPORT}
 
     """

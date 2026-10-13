@@ -276,13 +276,13 @@ rule run_HoMi_synthetic_communities:
         rev=expand(os.path.join(synthetic_work_dir, synthetic_communities_dir, "{sample}_R2.fastq.gz"),
                sample=samples),
         alt_indexes_created=expand("t2t_hla_{hostile_index_spec}_index",
-              hostile_index_spec=custom_hostile_index_specs)
+              hostile_index_spec=indexes)
     output:
         "{index}_HoMi_is_done_synthetic"
     threads: 1
     resources:
         partition=hpc_partition,
-        mem_mb=int(8*1000), # MB
+        mem_mb=homi_job_mem_mb, # MB
         runtime=int(20*60), # min
         homi_runs=1
     params:
@@ -310,7 +310,7 @@ rule plot_expected_vs_actual_synthetic_communities:
         label="True percent host reads (pangenome, jittered)" 
     shell:
         """
-        Rscript {params.script} -i {wildcards.index}_benchmarking_synthetic_reads_breakdown.csv -o {output.plot} -n "{params.label}" > {output.model}
+        Rscript {params.script} -i synthetic/homi_outputs/{wildcards.index}_reads_breakdown.csv -o {output.plot} -n "{params.label}" > {output.model}
         """
 
 
@@ -353,13 +353,13 @@ rule run_HoMi_synthetic_transcriptomes:
         rev=expand(os.path.join(synthetic_work_dir, "synthetic_transcriptomes_p{{score}}/combined/{sample}_R2.fastq.gz"),
                    sample=samples),
         alt_indexes_created=expand("t2t_hla_{hostile_index_spec}_index",
-                hostile_index_spec=custom_hostile_index_specs)
+                hostile_index_spec=indexes)
     output:
          "{index}_HoMi_is_done_synthetic_transcriptomes_p{score}"
     threads: 1
     resources:
         partition=hpc_partition,
-        mem_mb=int(8*1000), # MB
+        mem_mb=homi_job_mem_mb, # MB
         runtime=int(20*60), # min
         homi_runs=1
     params:
@@ -388,7 +388,7 @@ rule plot_expected_vs_actual_synthetic_transcriptomes:
         label="True percent host reads (GRCh38, jittered)"
     shell:
         """
-        Rscript {params.script} -i {wildcards.index}_benchmarking_synthetic_transcriptomes_p{wildcards.score}_reads_breakdown.csv -o {output.plot}  -n "{params.label}" > {output.model}
+        Rscript {params.script} -i synthetic/homi_outputs/{wildcards.index}_transcriptomes_p{wildcards.score}_reads_breakdown.csv -o {output.plot}  -n "{params.label}" > {output.model}
         """
 
 ## use {proj} here bc it includes synthetic transcriptomes (p30/40) and synthetic communities 
@@ -406,15 +406,16 @@ rule plot_taxonomy_boxplots:
         runtime=int(1*60) # min
     params:
         script="Compare_taxonomy.R",
-        outdir="taxonomy_compared/{index}/{proj}"
+        outdir="taxonomy_compared/{index}/{proj}",
+        homi_proj=get_synthetic_homi_proj
     shell:
         """
         mkdir -p {params.outdir}
         
         if [[ "{wildcards.method}" == "metaphlan" ]]; then
-            Rscript {params.script} -i {wildcards.index}_benchmarking_{wildcards.proj}.f0.0.r0.0.nonhost.humann/all_bugs_list.tsv -t metaphlan -o {params.outdir}
+            Rscript {params.script} -i {params.homi_proj}.f0.0.r0.0.nonhost.humann/all_bugs_list.tsv -t metaphlan -o {params.outdir}
         
         elif [[ "{wildcards.method}" == "kraken" ]]; then
-            Rscript {params.script} -i {wildcards.index}_benchmarking_{wildcards.proj}.f0.0.r0.0.nonhost.kraken/Combined-taxonomy.tsv -t kraken -o {params.outdir}
+            Rscript {params.script} -i {params.homi_proj}.f0.0.r0.0.nonhost.kraken/Combined-taxonomy.tsv -t kraken -o {params.outdir}
         fi
         """

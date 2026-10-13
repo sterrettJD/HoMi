@@ -16,7 +16,7 @@ rule fastq_dump_Pereira:
         """
         mkdir -p Pereira
         cd Pereira
-        fastq-dump --gzip --readids --read-filter pass --dumpbase --split-3 --clip {wildcards.srr_id}
+        fastq-dump --gzip --read-filter pass --dumpbase --split-3 --clip {wildcards.srr_id}
         
         cd ..
         mv {params.work_dir}/{wildcards.srr_id}_pass_1.fastq.gz {output.fwd}
@@ -32,13 +32,13 @@ rule run_HoMi_mock_data:
         rev=expand(os.path.join("Pereira", "{srr_id}_R2.fastq.gz"),
                 srr_id=pereira_srr_ids),
         alt_indexes_created=expand("t2t_hla_{hostile_index_spec}_index",
-                hostile_index_spec=custom_hostile_index_specs)
+                hostile_index_spec=indexes)
     output:
         "{index}_HoMi_is_done_Pereira"
     threads: 1
     resources:
         partition=hpc_partition,
-        mem_mb=int(8*1000), # MB
+        mem_mb=homi_job_mem_mb, # MB
         runtime=int(24*60), # min
         homi_runs=1
     params:
@@ -63,7 +63,7 @@ rule plot_expected_vs_actual_mock_data:
         runtime=int(1*60) # min
     params:
         script="Plot_benchmarked_reads_breakdown.R",
-        data="{index}_benchmarking_Pereira_reads_breakdown.csv",
+        data="Pereira/homi_outputs/{index}_reads_breakdown.csv",
         jitter=0,
         label="Pereira-Marques percent microbial reads"
     shell:
@@ -86,7 +86,7 @@ rule plot_expected_from_paper_vs_actual_mock_data:
         runtime=int(1*60) # min
     params:
         script="Plot_benchmarked_reads_breakdown.R",
-        data="{index}_benchmarking_Pereira_reads_breakdown.csv",
+        data="Pereira/homi_outputs/{index}_reads_breakdown.csv",
         metadata="Pereira/Pereira_data.csv",
         column_name="Pereira_percent_microbial",
         axis_name="\"Paper-derived percent microbial\"",

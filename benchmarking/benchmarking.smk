@@ -13,12 +13,64 @@ import pandas as pd
 ## options for WANT_TO_RUN: "gen_refs", "synthetic", "semi", "pereira", "compare_all" ##
 ## define on the command line when you call snakemake like so: --config run=gen_refs  ##
 WANT_TO_RUN = config["run"]
-# to run this on a Slurm-managed cluster
-## added qos default resource for homi (idk if the strings are correct so will have to debug)
-#homi_args = """--profile slurm --conda_prebuilt --conda-prefix /gpfs/alpine1/scratch/.xsede.org/joconnor/HoMi/.snakemake/conda --snakemake_extra "--jobs 40 --default-resources qos=cpu-normal" """
+
+## executor=slurm (default) submits jobs to SLURM. executor=local runs on this computer. ##
+## define on the command line when you call snakemake like so: --config executor=local ##
+EXECUTOR = config.get("executor", "slurm")
+IS_LOCAL = EXECUTOR == "local"
+
 ## this may need to be changed based on HPC being used!!
 ## define on the command line when you call snakemake like so: --config wanted_partition=amilan ##
-hpc_partition = config["wanted_partition"]
+hpc_partition = config.get("wanted_partition", "local")
+
+## local runs skip HUMAnN by default, because it needs more memory than a desktop has ##
+SKIP_HUMANN = str(config.get("skip_humann", IS_LOCAL)).lower() == "true"
+## cores and memory (MB) for each nested HoMi run when executor=local ##
+HOMI_CORES = int(config.get("homi_cores", 4))
+HOMI_MEM_MB = int(config.get("homi_mem_mb", 24000))
+## kraken memory (MB) when executor=local. The Standard-16 database needs about 16 GB. ##
+KRAKEN_MEM_MB = int(config.get("kraken_mem_mb", 18000))
+## HUMAnN and MetaPhlAn database setup memory (MB) when executor=local and skip_humann=False ##
+HUMANN_MEM_MB = int(config.get("humann_mem_mb", 22000))
+
+## nested HoMi targets for local runs. Explicit targets keep HoMi from running its rule all, ##
+## which also asks for host read mapping and nonpareil outputs.                              ##
+## The MultiQC reports read the trimmed reads, so they must be made before those are deleted. ##
+LOCAL_HOMI_TARGETS = "aggregate_bracken reads_breakdown multiqc_pass1 multiqc_pass2"
+LOCAL_HUMANN_TARGETS = "aggregate_humann_outs_nonhost"
+
+SLURM_HOMI_ARGS = """--profile slurm --snakemake_extra "--jobs 40 --default-resources qos=cpu-normal --until host_filter" """
+
+
+def build_local_homi_args(cores, mem_mb, kraken_mem_mb, humann_mem_mb, skip_humann):
+    """
+    Returns the HoMi.py arguments for a local run.
+    Targets must come first in --snakemake_extra, because HoMi.py adds it at the end of
+    the snakemake command, and --resources and --set-resources take a list of values.
+    """
+    set_resources = f"run_kraken:mem_mb={kraken_mem_mb}"
+    if skip_humann:
+        targets_and_config = f"{LOCAL_HOMI_TARGETS} --config skip_humann=True"
+    else:
+        targets_and_config = f"{LOCAL_HOMI_TARGETS} {LOCAL_HUMANN_TARGETS}"
+        set_resources += (f" run_humann_nonhost:mem_mb={humann_mem_mb}"
+                          f" setup_metaphlan:mem_mb={humann_mem_mb}")
+    # Snakemake 7 cannot create conda environments with mamba 2, so use conda
+    snakemake_extra = (f"{targets_and_config} "
+                       f"--conda-frontend conda "
+                       f"--resources mem_mb={mem_mb} "
+                       f"--set-resources {set_resources}")
+    return f'--cores {cores} --snakemake_extra "{snakemake_extra}"'
+
+
+if IS_LOCAL:
+    homi_args = build_local_homi_args(HOMI_CORES, HOMI_MEM_MB, KRAKEN_MEM_MB,
+                                      HUMANN_MEM_MB, SKIP_HUMANN)
+    # the outer snakemake counts this memory for each nested HoMi run
+    homi_job_mem_mb = HOMI_MEM_MB
+else:
+    homi_args = SLURM_HOMI_ARGS
+    homi_job_mem_mb = int(8*1000)
 
 # CONDA ENVIRONMENT PATHS!
 hostile_conda = "../conda_envs/hostile.yaml"
@@ -52,16 +104,14 @@ semi_srr_ids = [srr_id
                 for taxon_srr_ids_list in semi_metadata["SRR"].apply(
                     lambda x: x.split(".")
                     ).values
-                for srr_id in taxon_srr_ids_list] 
-#semi_homi_args = """--profile slurm --snakemake_extra "--jobs 40 --default-resources qos=cpu-normal" """
-semi_homi_args = """--profile slurm --snakemake_extra "--jobs 40 --default-resources qos=cpu-normal --until host_filter" """
+                for srr_id in taxon_srr_ids_list]
+semi_homi_args = homi_args
 
 
 # mock community data
 pereira_df = pd.read_csv("Pereira/Pereira_data.csv")
 pereira_srr_ids = pereira_df["SRR"]
-#pereira_homi_args = """--profile slurm --snakemake_extra "--jobs 40 --default-resources qos=cpu-normal" """
-pereira_homi_args = """--profile slurm --snakemake_extra "--jobs 40 --default-resources qos=cpu-normal --until host_filter" """
+pereira_homi_args = homi_args
 
 # Per nucleotide quality score for Polyester-simulated reads
 ## error rate changes depending on the phred score
@@ -75,9 +125,25 @@ custom_hostile_index_specs = ["rna", "hisat2"]
 indexes = ["dna", "rna", "hisat2"]
 
 
-## this is not dependent on anything 
+# metaphlan taxonomy comes from HUMAnN, so it is only plotted if HUMAnN runs
+taxonomy_methods = ["kraken"] if SKIP_HUMANN else ["kraken", "metaphlan"]
+
+# HoMi writes outputs to the PROJ path in each HoMi config, e.g. synthetic/homi_outputs/dna_transcriptomes_p30
+synthetic_homi_proj_suffixes = {
+    "synthetic": "",
+    "synthetic_transcriptomes_p30": "_transcriptomes_p30",
+    "synthetic_transcriptomes_p40": "_transcriptomes_p40"
+}
+
+
+def get_synthetic_homi_proj(wildcards):
+    suffix = synthetic_homi_proj_suffixes[wildcards.proj]
+    return os.path.join(synthetic_work_dir, "homi_outputs", f"{wildcards.index}{suffix}")
+
+
+## this is not dependent on anything
 gen_refs_out = [expand("t2t_hla_{hostile_index_spec}_index",
-                        hostile_index_spec=custom_hostile_index_specs),
+                        hostile_index_spec=indexes),
                 "reference_genomes_downloaded"]
 
 ## this is dependent on gen refs 
@@ -112,18 +178,15 @@ synthetic_outs = [expand(os.path.join(synthetic_work_dir, synthetic_communities_
                       proj=["synthetic_transcriptomes_p30", 
                             "synthetic_transcriptomes_p40", 
                             "synthetic"],
-                      method=["kraken", 
-                            "metaphlan"]),
+                      method=taxonomy_methods),
                   expand("taxonomy_compared/{index}/{proj}/{method}_species.pdf",
                       index=indexes,
                       proj=["synthetic_transcriptomes_p30", 
                             "synthetic_transcriptomes_p40", 
                             "synthetic"],
-                      method=["kraken", 
-                            "metaphlan"])]
+                      method=taxonomy_methods)]
 
-#synthetic_homi_args = """--profile slurm --snakemake_extra "--jobs 40 --default-resources qos=cpu-normal" """
-synthetic_homi_args = """--profile slurm --snakemake_extra "--jobs 40 --default-resources qos=cpu-normal --until host_filter" """
+synthetic_homi_args = homi_args
 
 ## this is only dependent on gen refs 
 semi_outs = [expand(os.path.join("semi", "samples", "{sample}_{read}.fastq.gz"),
@@ -149,9 +212,11 @@ pereira_outs = [expand(os.path.join("Pereira", "{srr_id}_R1.fastq.gz"),
                     index=indexes)]
                 
 ## this requires all other subworkflows to be run!
-compare_all_outs = ["taxonomy_compared/combined_taxa_boxplot_genus.pdf",
-                    "taxonomy_compared/combined_taxa_boxplot_species.pdf",
-                    "all_hostile_out_benchmark.pdf"]
+compare_all_outs = ["all_hostile_out_benchmark.pdf"]
+# the combined taxonomy plots use metaphlan outputs from HUMAnN
+if not SKIP_HUMANN:
+    compare_all_outs.extend(["taxonomy_compared/combined_taxa_boxplot_genus.pdf",
+                             "taxonomy_compared/combined_taxa_boxplot_species.pdf"])
 
 
 ## dictionary of outputs per sub-workflow 

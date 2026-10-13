@@ -17,7 +17,7 @@ rule fastq_dump_semi:
         mkdir -p semi/data
         mkdir -p semi/samples
         cd semi
-        fastq-dump --gzip --readids --read-filter pass --dumpbase --split-3 --clip {wildcards.srr_id}
+        fastq-dump --gzip --read-filter pass --dumpbase --split-3 --clip {wildcards.srr_id}
         cd ..
         mv {params.semi_work_dir}/{wildcards.srr_id}_pass_1.fastq.gz {output.fwd}
         mv {params.semi_work_dir}/{wildcards.srr_id}_pass_2.fastq.gz {output.rev}
@@ -169,13 +169,13 @@ rule run_HoMi_semi:
         fwd=expand(os.path.join(semi_work_dir, "samples", "{sample}_{read}.fastq.gz"),
                 sample=semi_samples, read=reads),
         alt_indexes_created=expand("t2t_hla_{hostile_index_spec}_index",
-                hostile_index_spec=custom_hostile_index_specs)
+                hostile_index_spec=indexes)
     output:
         "{index}_HoMi_is_done_semi"
     threads: 1
     resources:
         partition=hpc_partition,
-        mem_mb=int(8*1000), # MB
+        mem_mb=homi_job_mem_mb, # MB
         runtime=int(24*60), # min
         homi_runs=1
     params:
@@ -203,5 +203,5 @@ rule plot_expected_vs_actual_semi:
         label="True percent host reads (transcriptome, jittered)"
     shell:
         """
-        Rscript {params.script} -i {wildcards.index}_semi_reads_breakdown.csv -o {output.plot}  -n "{params.label}" > {output.model}
+        Rscript {params.script} -i semi/homi_outputs/{wildcards.index}_reads_breakdown.csv -o {output.plot}  -n "{params.label}" > {output.model}
         """

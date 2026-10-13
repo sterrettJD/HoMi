@@ -6,7 +6,7 @@ This directory includes helper scripts to benchmark HoMi against simulated fully
 `benchmarking_env.yaml` contains the conda environment used for benchmarking. To create this environment, run the following command from this `benchmarking/` directory:
 ```
 mamba env create -n benchmarking-homi --file benchmarking_env.yaml
-pip install homi-pipeline
+pip install -e ..
 ```
 
 **NOTE:** Users need to install the SRA toolkit outside of conda, as SRA-tools doesn't support a conda distribution. See the [SRA toolkit official instructions](https://github.com/ncbi/sra-tools/wiki/01.-Downloading-SRA-Toolkit).
@@ -27,24 +27,111 @@ The benchmarking pipeline is modularized into independent workflows in the `rule
 
 This structure allows you to run specific workflows independently or together, reducing computational overhead and improving debuggability.
 
-## Running Workflows
+## Run the Pipeline
 
-You can now run specific workflows rather than the full pipeline:
+The workflows are `gen_refs`, `semi`, `pereira`, `synthetic` and `compare_all`.
+Run the commands from this `benchmarking/` directory.
 
+### Set Up
+
+1. Create the benchmarking environment:
+   ```bash
+   mamba env create -n benchmarking-homi --file benchmarking_env.yaml
+   ```
+2. Activate the environment:
+   ```bash
+   conda activate benchmarking-homi
+   ```
+3. Install HoMi from this repository:
+   ```bash
+   pip install -e ..
+   ```
+4. Create the `hostile` environment. HoMi uses this environment name for host read removal:
+   ```bash
+   mamba env create -n hostile --file ../src/homi_pipeline/conda_envs/hostile.yaml
+   ```
+
+### Run on a Local Computer
+
+The local mode runs each step on this computer. HoMi makes the MultiQC reports, the Kraken2 results and the reads breakdown report. By default, it does not run MetaPhlAn or HUMAnN. It uses the Kraken2 Standard-16 database, which needs approximately 16 GB of memory. The run script sets a hard memory limit. If the pipeline uses more memory than the limit, the system stops the pipeline.
+
+1. Turn on linger. Linger keeps the memory limit and the pipeline active after you disconnect from SSH. This is primarily useful if you SSH into this computer.
+   ```bash
+   loginctl enable-linger $USER
+   ```
+2. Start a tmux session:
+   ```bash
+   tmux new -s bench
+   ```
+3. Download the Kraken2 database:
+   ```bash
+   bash download_kraken_standard16.sh
+   ```
+4. Activate the environment:
+   ```bash
+   conda activate benchmarking-homi
+   ```
+5. Run the workflows in this sequence:
+   ```bash
+   bash run_benchmarking_local.sh gen_refs
+   bash run_benchmarking_local.sh semi
+   bash run_benchmarking_local.sh pereira
+   bash run_benchmarking_local.sh synthetic
+   bash run_benchmarking_local.sh compare_all
+   ```
+   To give more options to Snakemake, write them after the workflow name. Example: `bash run_benchmarking_local.sh semi --rerun-triggers mtime`
+6. To disconnect from the tmux session, push `Ctrl+b`, then `d`. You can then log off.
+
+To examine a run after you log in again:
+* To see the output, connect to the tmux session:
+  ```bash
+  tmux attach -t bench
+  ```
+* To read the log, type `tail -f local_<workflow>.log`.
+* To see the memory use, type:
+  ```bash
+  systemctl --user status 'homi-bench-*'
+  ```
+
+#### Memory and CPU Limits
+
+The default limits are for a computer with 32 GB of memory and 4 CPU cores. Memory values are in MB, except `CGROUP_MAX`.
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `CORES` | 4 | CPU cores for Snakemake and for each HoMi run |
+| `HOMI_MEM_MB` | 24000 | Memory for each HoMi run |
+| `KRAKEN_MEM_MB` | 18000 | Memory for each Kraken2 job in HoMi |
+| `SKIP_HUMANN` | `true` | Set to `false` to also run MetaPhlAn and HUMAnN |
+| `HUMANN_MEM_MB` | 22000 | Memory for each HUMAnN job in HoMi. Must not be more than `HOMI_MEM_MB`. |
+| `SMK_MEM_MB` | 26000 | Memory for all jobs that run at the same time. Must be at least `HOMI_MEM_MB`. |
+| `CGROUP_MAX` | `28G` | Hard memory limit. Keep it a few GB below the total memory. |
+
+Example for a computer with 64 GB of memory and 8 CPU cores:
 ```bash
-# Run just reference generation
-snakemake -s benchmarking.smk --config run=gen_refs wanted_partition=amilan --cores 2 --use-conda
-
-# Run semi-synthetic workflow (useful for focused testing)
-snakemake -s benchmarking.smk --config run=semi wanted_partition=amilan --cores 2 --use-conda
-
-# Run all benchmarks and compare
-snakemake -s benchmarking.smk --config run=compare_all wanted_partition=amilan --profile slurm --use-conda
+CORES=8 HOMI_MEM_MB=40000 SMK_MEM_MB=48000 CGROUP_MAX=56G bash run_benchmarking_local.sh semi
 ```
 
-**Available workflows:** `gen_refs`, `synthetic`, `semi`, `pereira`, `compare_all`
+#### Run MetaPhlAn and HUMAnN
 
-For SLURM environments such as the Alpine HPC (Colorado), add `--default-resources qos=normal` to the command.
+Set `SKIP_HUMANN=false`. You can do this after a run without HUMAnN. HoMi then runs only the MetaPhlAn and HUMAnN steps and the reads breakdown report. It does not run the read trimming, host read removal or Kraken2 steps again.
+```bash
+SKIP_HUMANN=false bash run_benchmarking_local.sh semi
+```
+The first run downloads the MetaPhlAn, ChocoPhlAn, UniRef90 and utility mapping databases to `synthetic/data/`. These databases need approximately 50 GB of disk space. HUMAnN also keeps large temporary files for each sample. To delete them after a run, use `HoMi_cleanup.py <HoMi config> <HoMi metadata> --humann`.
+
+### Run on an HPC with SLURM
+
+1. Install a Snakemake SLURM profile named `slurm`.
+2. Download the Kraken2 database with `manual_kraken_db_download.sh`.
+3. Run each workflow. Replace `<workflow>`, `<partition>` and `<qos>`:
+   ```bash
+   snakemake -s benchmarking.smk \
+       --config run=<workflow> wanted_partition=<partition> \
+       --profile slurm \
+       --default-resources qos=<qos> \
+       --use-conda
+   ```
 
 ### Legacy Scripts
 

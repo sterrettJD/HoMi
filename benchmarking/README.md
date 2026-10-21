@@ -118,7 +118,19 @@ Set `SKIP_HUMANN=false`. You can do this after a run without HUMAnN. HoMi then r
 ```bash
 SKIP_HUMANN=false bash run_benchmarking_local.sh semi
 ```
-The first run downloads the MetaPhlAn, ChocoPhlAn, UniRef90 and utility mapping databases to `synthetic/data/`. These databases need approximately 50 GB of disk space. HUMAnN also keeps large temporary files for each sample. To delete them after a run, use `HoMi_cleanup.py <HoMi config> <HoMi metadata> --humann`.
+The first run downloads the MetaPhlAn, ChocoPhlAn, UniRef90 and utility mapping databases to `synthetic/data/`. These databases need approximately 50 GB of disk space. HUMAnN also keeps large temporary files for each sample. To delete them after a run, use `cleanup_homi_run.py` (see below).
+
+#### Delete Intermediate Files
+
+After a HoMi run is complete, `cleanup_homi_run.py` deletes the trimmed reads, the Kraken2 classified reads and the HUMAnN temporary files. These deletions do not cause Snakemake to run HoMi steps again. Give it a HoMi config. Without `--delete`, it only lists the files and their sizes.
+```bash
+python cleanup_homi_run.py semi/dna_semi_HoMi_config.yaml
+python cleanup_homi_run.py semi/dna_semi_HoMi_config.yaml --delete
+```
+To do this for all semi configs:
+```bash
+for c in semi/*_semi_HoMi_config.yaml; do python cleanup_homi_run.py "$c" --delete; done
+```
 
 ### Run on an HPC with SLURM
 

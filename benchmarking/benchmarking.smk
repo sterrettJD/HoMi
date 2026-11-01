@@ -27,11 +27,11 @@ hpc_partition = config.get("wanted_partition", "local")
 SKIP_HUMANN = str(config.get("skip_humann", IS_LOCAL)).lower() == "true"
 ## cores and memory (MB) for each nested HoMi run when executor=local
 HOMI_CORES = int(config.get("homi_cores", 4))
-HOMI_MEM_MB = int(config.get("homi_mem_mb", 28000))
+HOMI_MEM_MB = int(config.get("homi_mem_mb", 26000))
 ## kraken memory (MB) when executor=local. The Standard-16 database needs about 16 GB.
 KRAKEN_MEM_MB = int(config.get("kraken_mem_mb", 18000))
 ## HUMAnN and MetaPhlAn database setup memory (MB) when executor=local and skip_humann=False
-HUMANN_MEM_MB = int(config.get("humann_mem_mb", 26000))
+HUMANN_MEM_MB = int(config.get("humann_mem_mb", 24000))
 
 ## local runs delete the HoMi intermediate files after each HoMi run (cleanup_homi_run.py).
 ## The plots use only the reads breakdown, Kraken2 and MetaPhlAn outputs.

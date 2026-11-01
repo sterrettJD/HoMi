@@ -8,12 +8,14 @@
 # Set these variables before the command to fit a different computer.
 # Memory values are in MB, except CGROUP_MAX.
 #   CORES          CPU cores for snakemake and for each HoMi run (default 4)
-#   HOMI_MEM_MB    memory for each HoMi run (default 24000)
+#   HOMI_MEM_MB    memory for each HoMi run (default 26000)
 #   KRAKEN_MEM_MB  memory for each kraken job inside HoMi (default 18000)
 #   SKIP_HUMANN    true or false (default true). false also runs MetaPhlAn and HUMAnN.
-#   HUMANN_MEM_MB  memory for each HUMAnN job inside HoMi (default 22000).
+#   CLEANUP_HOMI   true or false (default true). true deletes the HoMi intermediate
+#                  files after each HoMi run, with cleanup_homi_run.py.
+#   HUMANN_MEM_MB  memory for each HUMAnN job inside HoMi (default 24000).
 #                  Must not be more than HOMI_MEM_MB.
-#   SMK_MEM_MB     memory for all jobs that run at the same time (default 26000).
+#   SMK_MEM_MB     memory for all jobs that run at the same time (default 27000).
 #                  Must be at least HOMI_MEM_MB.
 #   CGROUP_MAX     hard limit (default 28G). Above it, the kernel stops pipeline
 #                  processes, not the OS or sshd. Keep it a few GB below total RAM.
@@ -24,11 +26,12 @@ set -euo pipefail
 
 RUN=${1:?"usage: run_benchmarking_local.sh <gen_refs|semi|pereira|synthetic|compare_all>"}
 CORES=${CORES:-4}
-HOMI_MEM_MB=${HOMI_MEM_MB:-24000}
+HOMI_MEM_MB=${HOMI_MEM_MB:-26000}
 KRAKEN_MEM_MB=${KRAKEN_MEM_MB:-18000}
 SKIP_HUMANN=${SKIP_HUMANN:-true}
-HUMANN_MEM_MB=${HUMANN_MEM_MB:-22000}
-SMK_MEM_MB=${SMK_MEM_MB:-26000}
+CLEANUP_HOMI=${CLEANUP_HOMI:-true}
+HUMANN_MEM_MB=${HUMANN_MEM_MB:-24000}
+SMK_MEM_MB=${SMK_MEM_MB:-27000}
 CGROUP_MAX=${CGROUP_MAX:-28G}
 
 if (( SMK_MEM_MB < HOMI_MEM_MB )); then
@@ -42,7 +45,8 @@ fi
 
 SMK_CONFIG=(run="$RUN" executor=local
             homi_cores="$CORES" homi_mem_mb="$HOMI_MEM_MB" kraken_mem_mb="$KRAKEN_MEM_MB"
-            skip_humann="$SKIP_HUMANN" humann_mem_mb="$HUMANN_MEM_MB")
+            skip_humann="$SKIP_HUMANN" humann_mem_mb="$HUMANN_MEM_MB"
+            cleanup_homi="$CLEANUP_HOMI")
 
 snakemake -s benchmarking.smk --config "${SMK_CONFIG[@]}" --unlock
 

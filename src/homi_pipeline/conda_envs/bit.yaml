@@ -1,0 +1,9 @@
+name: bit
+channels:
+  - conda-forge
+  - bioconda
+  - astrobiomike
+  - defaults
+dependencies:
+  # bit 1.17 removed bit-combine-bracken-and-add-lineage, which aggregate_bracken uses
+  - bit>=1.8.62,<1.17

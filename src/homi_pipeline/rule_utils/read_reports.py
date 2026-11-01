@@ -16,7 +16,9 @@ def get_args():
     parser.add_argument("--hostile_dir",
                        help="Path to the directory containing hostile output reports")
     parser.add_argument("--genefams_filepath",
-                        help="Filepath containing the gene families output from HUMAnN")
+                        default=None,
+                        help="Filepath containing the gene families output from HUMAnN. "
+                             "If not given, the unmapped nonhost column is not added.")
     parser.add_argument("--output", 
                         help="Where should the output be stored?")
     
@@ -111,8 +113,9 @@ def main():
     
     df = create_df_from_hostile_reports(metadata, args.hostile_dir)
     
-    unmapped_nonhost = get_unmapped_nonhost_from_humann(args.genefams_filepath)
-    df = add_unmapped_nonhost_to_hostile_reports(unmapped_nonhost, df)
+    if args.genefams_filepath is not None:
+        unmapped_nonhost = get_unmapped_nonhost_from_humann(args.genefams_filepath)
+        df = add_unmapped_nonhost_to_hostile_reports(unmapped_nonhost, df)
 
     df = add_original_read_counts_to_df(metadata, args.raw_reads_dir, df)
 

@@ -45,18 +45,18 @@ rule plot_multi_taxonomy_boxplots:
         script="Compare_all_taxonomy_results.R",
         outdir="taxonomy_compared/",
         # Not the best way to do this, but easier than alternatives
-        input_files=",".join(["dna_benchmarking_synthetic_transcriptomes_p30.f0.0.r0.0.nonhost.humann/all_bugs_list.tsv",
-                             "dna_benchmarking_synthetic.f0.0.r0.0.nonhost.humann/all_bugs_list.tsv",
-                             "dna_semi.f0.0.r0.0.nonhost.humann/all_bugs_list.tsv",
-                             "dna_benchmarking_synthetic_transcriptomes_p30.f0.0.r0.0.nonhost.kraken/Combined-taxonomy.tsv",
-                             "dna_benchmarking_synthetic.f0.0.r0.0.nonhost.kraken/Combined-taxonomy.tsv",
-                             "dna_semi.f0.0.r0.0.nonhost.kraken/Combined-taxonomy.tsv",
-                             "rna_benchmarking_synthetic_transcriptomes_p30.f0.0.r0.0.nonhost.humann/all_bugs_list.tsv",
-                             "rna_benchmarking_synthetic.f0.0.r0.0.nonhost.humann/all_bugs_list.tsv",
-                             "rna_semi.f0.0.r0.0.nonhost.humann/all_bugs_list.tsv",
-                             "rna_benchmarking_synthetic_transcriptomes_p30.f0.0.r0.0.nonhost.kraken/Combined-taxonomy.tsv",
-                             "rna_benchmarking_synthetic.f0.0.r0.0.nonhost.kraken/Combined-taxonomy.tsv",
-                             "rna_semi.f0.0.r0.0.nonhost.kraken/Combined-taxonomy.tsv"
+        input_files=",".join(["synthetic/homi_outputs/dna_transcriptomes_p30.f0.0.r0.0.nonhost.humann/all_bugs_list.tsv",
+                             "synthetic/homi_outputs/dna.f0.0.r0.0.nonhost.humann/all_bugs_list.tsv",
+                             "semi/homi_outputs/dna.f0.0.r0.0.nonhost.humann/all_bugs_list.tsv",
+                             "synthetic/homi_outputs/dna_transcriptomes_p30.f0.0.r0.0.nonhost.kraken/Combined-taxonomy.tsv",
+                             "synthetic/homi_outputs/dna.f0.0.r0.0.nonhost.kraken/Combined-taxonomy.tsv",
+                             "semi/homi_outputs/dna.f0.0.r0.0.nonhost.kraken/Combined-taxonomy.tsv",
+                             "synthetic/homi_outputs/rna_transcriptomes_p30.f0.0.r0.0.nonhost.humann/all_bugs_list.tsv",
+                             "synthetic/homi_outputs/rna.f0.0.r0.0.nonhost.humann/all_bugs_list.tsv",
+                             "semi/homi_outputs/rna.f0.0.r0.0.nonhost.humann/all_bugs_list.tsv",
+                             "synthetic/homi_outputs/rna_transcriptomes_p30.f0.0.r0.0.nonhost.kraken/Combined-taxonomy.tsv",
+                             "synthetic/homi_outputs/rna.f0.0.r0.0.nonhost.kraken/Combined-taxonomy.tsv",
+                             "semi/homi_outputs/rna.f0.0.r0.0.nonhost.kraken/Combined-taxonomy.tsv"
                              ])
     shell:
         """

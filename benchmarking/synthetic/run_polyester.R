@@ -18,12 +18,16 @@ if (!requireNamespace("BiocManager", quietly=TRUE)){
     install.packages("BiocManager", repos="http://cran.us.r-project.org")
 }
 
-if (!require("polyester")){
-    BiocManager::install("polyester")
-}
-
 if (!require("Biostrings")){
     BiocManager::install("Biostrings")
+}
+
+# Bioconductor removed polyester after release 3.19, so install the last release from source.
+if (!require("polyester")){
+    BiocManager::install(c("IRanges", "S4Vectors", "limma", "zlibbioc"))
+    install.packages("logspline", repos="http://cran.us.r-project.org")
+    install.packages("https://bioconductor.org/packages/3.19/bioc/src/contrib/polyester_1.39.0.tar.gz",
+                     repos=NULL, type="source")
 }
 
 suppressPackageStartupMessages(library("optparse"))

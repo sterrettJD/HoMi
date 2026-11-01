@@ -245,3 +245,43 @@ def get_hostile_exts(config):
 def get_hostile_index_prefix(config):
     # e.g., returns "t2t_hla_dna_index/human-t2t-hla" or "t2t_hla_hisat2_index/index"
     return config["hostile_index_prefix"]
+
+
+def is_humann_skipped(config):
+    """
+    Returns True if the config sets skip_humann.
+    Values from `snakemake --config` can be strings, so "True" and "true" also count.
+    """
+    skip_humann = config.get("skip_humann", False)
+    if isinstance(skip_humann, str):
+        return skip_humann.strip().lower() == "true"
+    return bool(skip_humann)
+
+
+def get_genefams_path(trim_trunc_path):
+    return path.join(f"{trim_trunc_path}.nonhost.humann", "all_genefamilies.tsv")
+
+
+def get_reads_breakdown_inputs(config, samples, trim_trunc_path):
+    """
+    Returns the inputs for the reads_breakdown rule.
+    The HUMAnN gene families file is only required if HUMAnN is not skipped.
+    """
+    inputs = {
+        "METADATA": config["METADATA"].strip(),
+        "REPORTS": [path.join(f"{trim_trunc_path}.nonhost", f"{sample}.report")
+                    for sample in samples]
+    }
+    if not is_humann_skipped(config):
+        inputs["GENEFAMS"] = get_genefams_path(trim_trunc_path)
+    return inputs
+
+
+def get_genefams_arg(config, trim_trunc_path):
+    """
+    Returns the read_reports.py argument for the HUMAnN gene families file,
+    or a blank string if HUMAnN is skipped.
+    """
+    if is_humann_skipped(config):
+        return ""
+    return f"--genefams_filepath {get_genefams_path(trim_trunc_path)}"

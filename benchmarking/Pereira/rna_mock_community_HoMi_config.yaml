@@ -45,6 +45,8 @@ hostile_aligner: bowtie2
 
 # Path to MetaPhlan bowtie database (step 1 of HUMAnN)
 metaphlan_bowtie_db: synthetic/data/metaphlan_db/
+# HUMAnN 3.9 accepts only vJun23 MetaPhlAn profiles. download_metaphlan_db.sh downloads this index.
+metaphlan_index_name: mpa_vJun23_CHOCOPhlAnSGB_202307
 
 # Paths to Chocophlan and UniRef databases for HUMAnN
 # If these aren't already downloaded, HoMi will download them
@@ -111,3 +113,8 @@ default_long_partition_name: acpu
 # map_host_slurm_extra: qos=long email=sample_email@colorado.edu
 # All rules would receive the email param, 
 # and the bbmap host rule would also receive the qos param
+
+
+###############################
+### Extra parameters ###
+run_kraken_extra: " --memory-mapping "

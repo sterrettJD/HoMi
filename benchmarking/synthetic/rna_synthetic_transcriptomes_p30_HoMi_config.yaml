@@ -2,7 +2,7 @@
 PROJ: synthetic/homi_outputs/rna_transcriptomes_p30
 
 # Metadata file
-METADATA: synthetic/synthetic_transcriptomes_homi_metadata.csv
+METADATA: synthetic/synthetic_transcriptomes_p30_homi_metadata.csv
 fwd_reads_path: forward_reads
 rev_reads_path: reverse_reads
 
@@ -45,6 +45,8 @@ hostile_aligner: bowtie2
 
 # Path to MetaPhlan bowtie database (step 1 of HUMAnN)
 metaphlan_bowtie_db: synthetic/data/metaphlan_db/
+# HUMAnN 3.9 accepts only vJun23 MetaPhlAn profiles. download_metaphlan_db.sh downloads this index.
+metaphlan_index_name: mpa_vJun23_CHOCOPhlAnSGB_202307
 
 # Paths to Chocophlan and UniRef databases for HUMAnN
 # If these aren't already downloaded, HoMi will download them

@@ -9,35 +9,45 @@ import pandas as pd
 
 ######## CONFIG ########
 
-## IMPORTANT!! this is what determines which parts of benchmarking are run right now ##
-## options for WANT_TO_RUN: "gen_refs", "synthetic", "semi", "pereira", "compare_all" ##
-## define on the command line when you call snakemake like so: --config run=gen_refs  ##
+## IMPORTANT!! this is what determines which parts of benchmarking are run right now
+## options for WANT_TO_RUN: "gen_refs", "synthetic", "semi", "pereira", "compare_all"
+## define on the command line when you call snakemake like so: --config run=gen_refs
 WANT_TO_RUN = config["run"]
 
-## executor=slurm (default) submits jobs to SLURM. executor=local runs on this computer. ##
-## define on the command line when you call snakemake like so: --config executor=local ##
+## executor=slurm (default) submits jobs to SLURM. executor=local runs on this computer.
+## define on the command line when you call snakemake like so: --config executor=local
 EXECUTOR = config.get("executor", "slurm")
 IS_LOCAL = EXECUTOR == "local"
 
 ## this may need to be changed based on HPC being used!!
-## define on the command line when you call snakemake like so: --config wanted_partition=amilan ##
+## define on the command line when you call snakemake like so: --config wanted_partition=amilan
 hpc_partition = config.get("wanted_partition", "local")
 
-## local runs skip HUMAnN by default, because it needs more memory than a desktop has ##
+## I skipped humann by default in local runs because my desktop is only 4 cores/32GB RAM which means humann can take a while...
 SKIP_HUMANN = str(config.get("skip_humann", IS_LOCAL)).lower() == "true"
-## cores and memory (MB) for each nested HoMi run when executor=local ##
+## cores and memory (MB) for each nested HoMi run when executor=local
 HOMI_CORES = int(config.get("homi_cores", 4))
-HOMI_MEM_MB = int(config.get("homi_mem_mb", 24000))
-## kraken memory (MB) when executor=local. The Standard-16 database needs about 16 GB. ##
+HOMI_MEM_MB = int(config.get("homi_mem_mb", 28000))
+## kraken memory (MB) when executor=local. The Standard-16 database needs about 16 GB.
 KRAKEN_MEM_MB = int(config.get("kraken_mem_mb", 18000))
-## HUMAnN and MetaPhlAn database setup memory (MB) when executor=local and skip_humann=False ##
-HUMANN_MEM_MB = int(config.get("humann_mem_mb", 22000))
+## HUMAnN and MetaPhlAn database setup memory (MB) when executor=local and skip_humann=False
+HUMANN_MEM_MB = int(config.get("humann_mem_mb", 26000))
 
-## nested HoMi targets for local runs. Explicit targets keep HoMi from running its rule all, ##
-## which also asks for host read mapping and nonpareil outputs.                              ##
-## The MultiQC reports read the trimmed reads, so they must be made before those are deleted. ##
+## local runs delete the HoMi intermediate files after each HoMi run (cleanup_homi_run.py).
+## The plots use only the reads breakdown, Kraken2 and MetaPhlAn outputs.
+## Otherwise, cleanup_homi_run.py only lists the files.
+CLEANUP_HOMI = str(config.get("cleanup_homi", IS_LOCAL)).lower() == "true"
+homi_cleanup_flag = "--delete" if CLEANUP_HOMI else ""
+
+## nested HoMi targets for local runs. Explicit targets keep HoMi from running its rule all,
+## which also asks for host read mapping and nonpareil outputs.
+## The MultiQC reports read the trimmed reads, so they must be made before those are deleted.
 LOCAL_HOMI_TARGETS = "aggregate_bracken reads_breakdown multiqc_pass1 multiqc_pass2"
 LOCAL_HUMANN_TARGETS = "aggregate_humann_outs_nonhost"
+
+## The HoMi configs set run_kraken_extra to --memory-mapping for the large HPC database.
+## Local runs use Standard-16 database, which is quite a bit smaller and doesn't need memory mapping.
+LOCAL_HOMI_CONFIG = "run_kraken_extra=''"
 
 SLURM_HOMI_ARGS = """--profile slurm --snakemake_extra "--jobs 40 --default-resources qos=cpu-normal --until host_filter" """
 
@@ -49,14 +59,19 @@ def build_local_homi_args(cores, mem_mb, kraken_mem_mb, humann_mem_mb, skip_huma
     the snakemake command, and --resources and --set-resources take a list of values.
     """
     set_resources = f"run_kraken:mem_mb={kraken_mem_mb}"
+    # --config also takes a list of values, so all values go in one --config
     if skip_humann:
-        targets_and_config = f"{LOCAL_HOMI_TARGETS} --config skip_humann=True"
+        targets_and_config = f"{LOCAL_HOMI_TARGETS} --config {LOCAL_HOMI_CONFIG} skip_humann=True"
     else:
-        targets_and_config = f"{LOCAL_HOMI_TARGETS} {LOCAL_HUMANN_TARGETS}"
+        targets_and_config = f"{LOCAL_HOMI_TARGETS} {LOCAL_HUMANN_TARGETS} --config {LOCAL_HOMI_CONFIG}"
         set_resources += (f" run_humann_nonhost:mem_mb={humann_mem_mb}"
                           f" setup_metaphlan:mem_mb={humann_mem_mb}")
-    # Snakemake 7 cannot create conda environments with mamba 2, so use conda
+    # Snakemake 7 cannot create conda environments with mamba 2, so use conda.
+    # cleanup_homi_run.py deletes the intermediate files. If a changed param or code made
+    # a completed step run again, HoMi would have to start again from read trimming.
+    # So only missing or older files make HoMi steps run.
     snakemake_extra = (f"{targets_and_config} "
+                       f"--rerun-triggers mtime "
                        f"--conda-frontend conda "
                        f"--resources mem_mb={mem_mb} "
                        f"--set-resources {set_resources}")

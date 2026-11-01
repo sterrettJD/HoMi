@@ -2,7 +2,7 @@
 PROJ: synthetic/homi_outputs/dna_transcriptomes_p30
 
 # Metadata file
-METADATA: synthetic/synthetic_transcriptomes_homi_metadata.csv
+METADATA: synthetic/synthetic_transcriptomes_p30_homi_metadata.csv
 fwd_reads_path: forward_reads
 rev_reads_path: reverse_reads
 

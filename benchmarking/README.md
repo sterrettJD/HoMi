@@ -53,7 +53,11 @@ Run the commands from this `benchmarking/` directory.
 
 ### Run on a Local Computer
 
-The local mode runs each step on this computer. HoMi makes the MultiQC reports, the Kraken2 results and the reads breakdown report. By default, it does not run MetaPhlAn or HUMAnN. It uses the Kraken2 Standard-16 database, which needs approximately 16 GB of memory. The run script sets a hard memory limit. If the pipeline uses more memory than the limit, the system stops the pipeline.
+The local mode runs each step on John's desktop. HoMi makes the MultiQC reports, the Kraken2 results and the reads breakdown report. By default, it does not run MetaPhlAn or HUMAnN. It uses the Kraken2 Standard-16 database, which needs approximately 16 GB of memory. The HoMi configs set `run_kraken_extra` to `--memory-mapping` for running on HPC. Local mode removes this option in `benchmarking.smk`, because Standard-16 fits in memory. 
+
+The run script runs the pipeline via systemd to set a hard memory limit. If this is exceeded, the pipeline stops.
+
+For running "locally" on a non-slurm cluster via an ssh connection:
 
 1. Turn on linger. Linger keeps the memory limit and the pipeline active after you disconnect from SSH. This is primarily useful if you SSH into this computer.
    ```bash
@@ -79,7 +83,9 @@ The local mode runs each step on this computer. HoMi makes the MultiQC reports, 
    bash run_benchmarking_local.sh synthetic
    bash run_benchmarking_local.sh compare_all
    ```
+
    To give more options to Snakemake, write them after the workflow name. Example: `bash run_benchmarking_local.sh semi --rerun-triggers mtime`
+
 6. To disconnect from the tmux session, push `Ctrl+b`, then `d`. You can then log off.
 
 To examine a run after you log in again:
@@ -100,11 +106,12 @@ The default limits are for a computer with 32 GB of memory and 4 CPU cores. Memo
 | Variable | Default | Description |
 | --- | --- | --- |
 | `CORES` | 4 | CPU cores for Snakemake and for each HoMi run |
-| `HOMI_MEM_MB` | 24000 | Memory for each HoMi run |
+| `HOMI_MEM_MB` | 26000 | Memory for each HoMi run |
 | `KRAKEN_MEM_MB` | 18000 | Memory for each Kraken2 job in HoMi |
 | `SKIP_HUMANN` | `true` | Set to `false` to also run MetaPhlAn and HUMAnN |
-| `HUMANN_MEM_MB` | 22000 | Memory for each HUMAnN job in HoMi. Must not be more than `HOMI_MEM_MB`. |
-| `SMK_MEM_MB` | 26000 | Memory for all jobs that run at the same time. Must be at least `HOMI_MEM_MB`. |
+| `CLEANUP_HOMI` | `true` | Set to `false` to keep the HoMi intermediate files. See Delete Intermediate Files. |
+| `HUMANN_MEM_MB` | 24000 | Memory for each HUMAnN job in HoMi. Must not be more than `HOMI_MEM_MB`. |
+| `SMK_MEM_MB` | 27000 | Memory for all jobs that run at the same time. Must be at least `HOMI_MEM_MB`. |
 | `CGROUP_MAX` | `28G` | Hard memory limit. Keep it a few GB below the total memory. |
 
 Example for a computer with 64 GB of memory and 8 CPU cores:
@@ -122,7 +129,11 @@ The first run downloads the MetaPhlAn, ChocoPhlAn, UniRef90 and utility mapping 
 
 #### Delete Intermediate Files
 
-After a HoMi run is complete, `cleanup_homi_run.py` deletes the trimmed reads, the Kraken2 classified reads and the HUMAnN temporary files. These deletions do not cause Snakemake to run HoMi steps again. Give it a HoMi config. Without `--delete`, it only lists the files and their sizes.
+In local mode, the pipeline runs `cleanup_homi_run.py` after each HoMi run. HoMi runs one at a time, so the disk must hold the intermediate files of only one run. The script keeps the files that the plots use: the reads breakdown report, the Kraken2 `Combined-taxonomy.tsv` and the MetaPhlAn bugs lists. It deletes the trimmed reads, the Kraken2 read outputs, the HUMAnN temporary files and the nonhost reads. These deletions do not cause Snakemake to run HoMi steps again, as they aren't required files for completion. To keep the files, set `CLEANUP_HOMI=false`.
+
+If a changed param made a completed step run again, HoMi would have to start again from read trimming, so the local mode runs HoMi with `--rerun-triggers mtime`. Only missing or older files make HoMi steps run. 
+
+This script can be run outside the pipeline - it deletes only the files that HoMi does not need again. Give it a HoMi config to clean up that run. Without `--delete`, it only lists the files and their sizes.
 ```bash
 python cleanup_homi_run.py semi/dna_semi_HoMi_config.yaml
 python cleanup_homi_run.py semi/dna_semi_HoMi_config.yaml --delete

@@ -179,10 +179,13 @@ rule run_HoMi_semi:
         runtime=int(24*60), # min
         homi_runs=1
     params:
-        homi_args=semi_homi_args
+        homi_args=semi_homi_args,
+        cleanup_flag=homi_cleanup_flag
     shell:
         """
-        HoMi.py {input.homi_config} {params.homi_args} --unlock && touch {output}
+        HoMi.py {input.homi_config} {params.homi_args} --unlock && \
+        python cleanup_homi_run.py {input.homi_config} {params.cleanup_flag} && \
+        touch {output}
         """
 
 

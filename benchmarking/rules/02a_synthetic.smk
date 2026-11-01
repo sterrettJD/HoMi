@@ -286,10 +286,13 @@ rule run_HoMi_synthetic_communities:
         runtime=int(20*60), # min
         homi_runs=1
     params:
-        homi_args=homi_args
+        homi_args=homi_args,
+        cleanup_flag=homi_cleanup_flag
     shell:
         """
-        HoMi.py {input.homi_config} {params.homi_args} --unlock && touch {output}
+        HoMi.py {input.homi_config} {params.homi_args} --unlock && \
+        python cleanup_homi_run.py {input.homi_config} {params.cleanup_flag} && \
+        touch {output}
         """
 
 rule plot_expected_vs_actual_synthetic_communities:
@@ -363,10 +366,13 @@ rule run_HoMi_synthetic_transcriptomes:
         runtime=int(20*60), # min
         homi_runs=1
     params:
-        homi_args=homi_args
+        homi_args=homi_args,
+        cleanup_flag=homi_cleanup_flag
     shell:
         """
-        HoMi.py {input.homi_config} {params.homi_args} --unlock && touch {output}
+        HoMi.py {input.homi_config} {params.homi_args} --unlock && \
+        python cleanup_homi_run.py {input.homi_config} {params.cleanup_flag} && \
+        touch {output}
         """
 
 
